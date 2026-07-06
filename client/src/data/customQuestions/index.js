@@ -16,7 +16,6 @@ export const customQuestions = {
 
 // Helper function to get custom questions
 export const getCustomQuestions = (categoryId, count = 15) => {
-  console.log(`🔍 Looking for custom questions for: "${categoryId}"`);
   
   let questions = customQuestions[categoryId] || [];
   
@@ -25,7 +24,6 @@ export const getCustomQuestions = (categoryId, count = 15) => {
     for (const key of keys) {
       if (categoryId.includes(key) || key.includes(categoryId)) {
         questions = customQuestions[key];
-        console.log(`✅ Found match via partial: "${key}"`);
         break;
       }
     }
