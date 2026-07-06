@@ -9,8 +9,7 @@ import {
   FlaskConical, Atom, Dna, BookOpen,
   Landmark, Building2, Shield, Users,
   DollarSign, Heart, Music, Palette,
-  Settings, Sliders, CheckCircle, Play, X,
-  Crown, Star, Lock
+  Settings, Sliders, CheckCircle, Play, X
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import categoryHierarchy from '../data/categoryData';
@@ -19,24 +18,11 @@ const Categories = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedItems, setExpandedItems] = useState({});
-  const [questionCount, setQuestionCount] = useState(10);
+  const [questionCount, setQuestionCount] = useState(15);
   const [showCountSelector, setShowCountSelector] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
 
-  // FREE USER QUESTION COUNTS - Only 5, 10, 15
-  const questionCounts = [
-    { value: 5, label: '5', free: true },
-    { value: 10, label: '10', free: true },
-    { value: 15, label: '15', free: true },
-    // 20-50 COMMENTED OUT FOR FREE USERS
-    // { value: 20, label: '20', free: false, premium: true },
-    // { value: 25, label: '25', free: false, premium: true },
-    // { value: 30, label: '30', free: false, premium: true },
-    // { value: 35, label: '35', free: false, premium: true },
-    // { value: 40, label: '40', free: false, premium: true },
-    // { value: 45, label: '45', free: false, premium: true },
-    // { value: 50, label: '50', free: false, premium: true },
-  ];
+  const questionCounts = [5, 10, 15, 20, 25, 30, 40, 50];
 
   const toggleExpand = (id) => {
     setExpandedItems(prev => ({
@@ -45,72 +31,37 @@ const Categories = () => {
     }));
   };
 
-  // Search filter function - FIXED
-  const matchesSearch = (item, term) => {
-    if (!term) return true;
-    const lowerTerm = term.toLowerCase();
-    if (item.name.toLowerCase().includes(lowerTerm)) return true;
-    if (item.description && item.description.toLowerCase().includes(lowerTerm)) return true;
-    return false;
-  };
-
-  // Filter tree based on search term - FIXED
-  const filterTree = (items, term) => {
-    if (!term) return items;
-    
-    const filtered = [];
-    
-    items.forEach(item => {
-      // Check if current item matches
-      const itemMatches = item.name.toLowerCase().includes(term.toLowerCase()) ||
-                         (item.description && item.description.toLowerCase().includes(term.toLowerCase()));
-      
-      // Filter children
-      let filteredChildren = [];
-      if (item.children) {
-        filteredChildren = filterTree(item.children, term);
-      }
-      
-      // Include item if it matches OR has matching children
-      if (itemMatches || filteredChildren.length > 0) {
-        filtered.push({
-          ...item,
-          children: filteredChildren.length > 0 ? filteredChildren : item.children
-        });
-      }
-    });
-    
-    return filtered;
-  };
-
   const handleCategoryClick = (category) => {
-    
+    console.log('📚 Category clicked:', category);
     let questionId = category.id;
+    
     if (category.source === 'api' && category.apiId) {
       questionId = category.apiId;
     } else if (category.customQuestionId) {
       questionId = category.customQuestionId;
     }
     
+    // Reset to default when selecting a new category
+    setQuestionCount(15);
     setSelectedCategory({
       ...category,
       questionId: questionId
     });
-    setQuestionCount(10);
     setShowCountSelector(true);
   };
 
   const startQuiz = () => {
-    if (!selectedCategory) {
-      toast.error('No category selected');
-      return;
-    }
+    if (!selectedCategory) return;
     
     const category = selectedCategory;
     const questionId = category.questionId;
+    
+    // Use the selected question count
     const count = questionCount;
     
+    console.log(`📚 Starting quiz for: ${category.name} with ${count} questions`);
     
+    toast.info(`Loading ${category.name} quiz with ${count} questions...`);
     sessionStorage.setItem('selectedCategory', JSON.stringify({
       id: questionId,
       name: category.name,
@@ -122,28 +73,6 @@ const Categories = () => {
     setSelectedCategory(null);
     navigate('/quiz');
   };
-
-  // Get filtered tree based on search
-  const getFilteredTree = () => {
-    if (!searchTerm) return categoryHierarchy;
-    return filterTree(categoryHierarchy, searchTerm);
-  };
-
-  const filteredTree = getFilteredTree();
-
-  // Count visible categories
-  const countVisibleCategories = (items) => {
-    let count = 0;
-    items.forEach(item => {
-      count++;
-      if (item.children && item.children.length > 0) {
-        count += countVisibleCategories(item.children);
-      }
-    });
-    return count;
-  };
-
-  const visibleCount = searchTerm ? countVisibleCategories(filteredTree) : 0;
 
   const renderCategoryTree = (items, depth = 0) => {
     return items.map((item) => {
@@ -187,11 +116,6 @@ const Categories = () => {
             {!hasChildren && (
               <span className="ml-auto text-xs bg-yellow-400/20 text-yellow-400 px-3 py-1 rounded-full flex items-center gap-1">
                 <Trophy className="w-3 h-3" /> Quiz
-              </span>
-            )}
-            {searchTerm && matchesSearch(item, searchTerm) && (
-              <span className="ml-2 text-xs text-[#6C2BD9] bg-[#6C2BD9]/20 px-2 py-0.5 rounded-full">
-                Match
               </span>
             )}
           </motion.div>
@@ -271,58 +195,22 @@ const Categories = () => {
           type="text"
           placeholder="Search categories..."
           value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            // Auto-expand all when searching
-            if (e.target.value) {
-              const expandAll = (items) => {
-                items.forEach(item => {
-                  if (item.children && item.children.length > 0) {
-                    setExpandedItems(prev => ({ ...prev, [item.id]: true }));
-                    expandAll(item.children);
-                  }
-                });
-              };
-              expandAll(categoryHierarchy);
-            } else {
-              setExpandedItems({});
-            }
-          }}
+          onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full pl-12 pr-4 py-4 bg-[#2D2D5E] rounded-xl border border-white/10 text-white placeholder-gray-500 focus:border-[#6C2BD9] focus:outline-none focus:ring-2 focus:ring-[#6C2BD9]/20 transition-all text-base"
         />
-        {searchTerm && (
-          <button
-            onClick={() => {
-              setSearchTerm('');
-              setExpandedItems({});
-            }}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        )}
       </div>
-
-      {/* Search Results Count */}
-      {searchTerm && (
-        <div className="text-sm text-gray-400">
-          Found <span className="text-white font-bold">{visibleCount}</span> categories matching "{searchTerm}"
-        </div>
-      )}
 
       {/* Category Tree */}
       <div className="glass-card p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <FolderTree className="w-5 h-5 text-[#6C2BD9]" />
-            {searchTerm ? 'Search Results' : 'All Categories'}
+            All Categories
           </h2>
-          <span className="text-xs text-gray-500">
-            {searchTerm ? `${visibleCount} categories` : 'Click ▶ to expand sub-categories'}
-          </span>
+          <span className="text-xs text-gray-500">Click ▶ to expand sub-categories</span>
         </div>
         <div className="max-h-[700px] overflow-y-auto custom-scrollbar pr-2">
-          {renderCategoryTree(filteredTree)}
+          {renderCategoryTree(categoryHierarchy)}
         </div>
       </div>
 
@@ -346,6 +234,7 @@ const Categories = () => {
               className="glass-card p-8 max-w-md w-full relative"
               onClick={(e) => e.stopPropagation()}
             >
+              {/* Close button */}
               <button
                 onClick={() => {
                   setShowCountSelector(false);
@@ -365,18 +254,18 @@ const Categories = () => {
                 <p className="text-xs text-gray-500 mt-1">Selected: <span className="text-white font-bold">{questionCount}</span> questions</p>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 mb-6 max-w-xs mx-auto">
-                {questionCounts.map((item) => (
+              <div className="grid grid-cols-4 gap-2 mb-6">
+                {questionCounts.map((count) => (
                   <button
-                    key={item.value}
-                    onClick={() => setQuestionCount(item.value)}
+                    key={count}
+                    onClick={() => setQuestionCount(count)}
                     className={`p-3 rounded-lg transition-all ${
-                      questionCount === item.value
+                      questionCount === count
                         ? 'bg-[#6C2BD9] text-white border border-[#6C2BD9] shadow-lg shadow-[#6C2BD9]/20'
                         : 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10'
                     }`}
                   >
-                    {item.value}
+                    {count}
                   </button>
                 ))}
               </div>
