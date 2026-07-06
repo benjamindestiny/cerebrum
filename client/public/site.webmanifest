@@ -1,0 +1,17 @@
+{
+  "name": "Cerebrum",
+  "short_name": "Cerebrum",
+  "description": "Interactive Quiz Platform",
+  "theme_color": "#0A0A1A",
+  "background_color": "#0A0A1A",
+  "display": "standalone",
+  "orientation": "portrait",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}
