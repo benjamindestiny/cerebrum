@@ -287,7 +287,7 @@ const Quiz = () => {
     }
   };
 
-  // ✅ FIXED finishQuiz function
+  // ✅ CORRECTED finishQuiz function - NO user_name!
   const finishQuiz = async () => {
     let correct = 0;
     questions.forEach((q, i) => {
@@ -310,11 +310,11 @@ const Quiz = () => {
     // Save to Supabase if logged in
     if (user) {
       try {
-        // ✅ MATCH YOUR DATABASE SCHEMA EXACTLY - No user_name
+        // ✅ ONLY columns that exist in your table - NO user_name!
         const quizData = {
           user_id: user.id,
           category: categoryInfo?.name || "General Knowledge",
-          score: percentage, // ✅ Store percentage (0-100)
+          score: percentage, // Store percentage (0-100)
           total_questions: questions.length,
           percentage: parseFloat(percentage.toFixed(2)),
           time_taken: timeTaken,
@@ -334,13 +334,13 @@ const Quiz = () => {
           console.log("✅ Quiz saved!", data);
           toast.success("Results saved! 🎉");
 
-          // ✅ Update leaderboard with percentage score
+          // ✅ Update leaderboard
           try {
             await supabase.from("leaderboard").insert({
               user_id: user.id,
               username:
                 user.user_metadata?.name || user.email?.split("@")[0] || "User",
-              score: percentage, // ✅ Store percentage (0-100)
+              score: percentage,
               category: categoryInfo?.name || "General Knowledge",
             });
             console.log("✅ Leaderboard updated!");
