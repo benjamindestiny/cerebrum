@@ -66,6 +66,17 @@ const Quiz = () => {
   const [questionCount, setQuestionCount] = useState(15);
   const [user, setUser] = useState(null);
   const [quizStartTime, setQuizStartTime] = useState(Date.now());
+  const [stats, setStats] = useState({
+    totalQuizzes: 0,
+    bestScore: 0,
+    averageScore: 0,
+    totalPoints: 0,
+    streak: 0,
+    riddlesSolved: 0,
+    readArticles: 0,
+    totalTime: 0,
+    perfectScores: 0,
+  });
 
   useEffect(() => {
     const storedCategory = sessionStorage.getItem("selectedCategory");
@@ -81,64 +92,6 @@ const Quiz = () => {
       setUser(data.user);
     });
   }, []);
-
-  // ✅ Streak update function
-  const updateStreak = async (userId) => {
-    try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("stats, last_quiz_date")
-        .eq("id", userId)
-        .single();
-
-      if (userError) throw userError;
-
-      const stats = userData?.stats || {};
-      const lastQuizDate = userData?.last_quiz_date
-        ? new Date(userData.last_quiz_date)
-        : null;
-      const currentStreak = stats.streak || 0;
-
-      let newStreak = 1;
-
-      if (lastQuizDate) {
-        const lastDate = new Date(lastQuizDate);
-        lastDate.setHours(0, 0, 0, 0);
-
-        if (lastDate.getTime() === yesterday.getTime()) {
-          newStreak = currentStreak + 1;
-        } else if (lastDate.getTime() === today.getTime()) {
-          newStreak = currentStreak;
-        } else {
-          newStreak = 1;
-        }
-      }
-
-      const { error: updateError } = await supabase
-        .from("users")
-        .update({
-          stats: {
-            ...stats,
-            streak: newStreak,
-            total_quizzes: (stats.total_quizzes || 0) + 1,
-          },
-          last_quiz_date: new Date().toISOString(),
-        })
-        .eq("id", userId);
-
-      if (updateError) throw updateError;
-
-      return newStreak;
-    } catch (error) {
-      console.error("Error updating streak:", error);
-      return 0;
-    }
-  };
 
   const loadQuestions = async (diff) => {
     setLoading(true);
@@ -355,7 +308,7 @@ const Quiz = () => {
     setSelectedDifficulty(null);
   };
 
-  // ✅ CORRECTED finishQuiz with streak tracking
+  // ✅ UPDATED finishQuiz - properly updates stats and achievements
   const finishQuiz = async () => {
     let correct = 0;
     questions.forEach((q, i) => {
@@ -376,6 +329,7 @@ const Quiz = () => {
 
     if (user) {
       try {
+        // ✅ Save quiz result
         const quizData = {
           user_id: user.id,
           category: categoryInfo?.name || "General Knowledge",
@@ -402,9 +356,82 @@ const Quiz = () => {
         console.log("✅ Quiz saved with score:", percentage);
         toast.success("Results saved! 🎉");
 
+        // ✅ Get current user stats
+        const { data: userData, error: userError } = await supabase
+          .from("users")
+          .select("stats")
+          .eq("id", user.id)
+          .single();
+
+        if (userError && userError.code !== "PGRST116") {
+          console.error("Error fetching user stats:", userError);
+        }
+
+        const currentStats = userData?.stats || {};
+
+        // ✅ Calculate new stats
+        const totalQuizzes = (currentStats.total_quizzes || 0) + 1;
+        const totalScore = (currentStats.total_score || 0) + percentage;
+        const bestScore = Math.max(currentStats.best_score || 0, percentage);
+        const averageScore = Math.round(totalScore / totalQuizzes);
+        const totalPoints =
+          (currentStats.total_points || 0) + Math.floor(percentage / 10);
+        const perfectScores =
+          (currentStats.perfect_scores || 0) + (percentage === 100 ? 1 : 0);
+
         // ✅ Update streak
-        const newStreak = await updateStreak(user.id);
-        console.log("📊 Current streak:", newStreak);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        const lastQuizDate = currentStats.last_quiz_date
+          ? new Date(currentStats.last_quiz_date)
+          : null;
+        let streak = currentStats.streak || 0;
+
+        if (lastQuizDate) {
+          const lastDate = new Date(lastQuizDate);
+          lastDate.setHours(0, 0, 0, 0);
+
+          if (lastDate.getTime() === yesterday.getTime()) {
+            streak = streak + 1;
+          } else if (lastDate.getTime() === today.getTime()) {
+            // Already played today, keep streak
+          } else {
+            streak = 1;
+          }
+        } else {
+          streak = 1;
+        }
+
+        // ✅ Update users table with all stats
+        const updatedStats = {
+          total_quizzes: totalQuizzes,
+          best_score: bestScore,
+          average_score: averageScore,
+          total_points: totalPoints,
+          streak: streak,
+          perfect_scores: perfectScores,
+          riddles_solved: currentStats.riddles_solved || 0,
+          read_articles: currentStats.read_articles || 0,
+          total_time: (currentStats.total_time || 0) + timeTaken,
+          last_quiz_date: new Date().toISOString(),
+        };
+
+        const { error: updateError } = await supabase
+          .from("users")
+          .update({
+            stats: updatedStats,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", user.id);
+
+        if (updateError) {
+          console.error("❌ Error updating stats:", updateError);
+        } else {
+          console.log("✅ Stats updated:", updatedStats);
+        }
 
         // ✅ Update leaderboard
         try {
@@ -422,44 +449,39 @@ const Quiz = () => {
 
           if (existingEntry) {
             if (percentage > existingEntry.score) {
-              const { data: updateData, error: updateError } = await supabase
+              await supabase
                 .from("leaderboard")
                 .update({
                   score: percentage,
                   username: username,
                   category: categoryInfo?.name || "General Knowledge",
                 })
-                .eq("user_id", user.id)
-                .select();
-
-              if (updateError) {
-                console.error("❌ Leaderboard update error:", updateError);
-              } else {
-                console.log("✅ Leaderboard updated to:", percentage);
-              }
-            } else {
-              console.log("📊 Keeping best score:", existingEntry.score);
+                .eq("user_id", user.id);
             }
           } else {
-            const { data: insertData, error: insertError } = await supabase
-              .from("leaderboard")
-              .insert({
-                user_id: user.id,
-                username: username,
-                score: percentage,
-                category: categoryInfo?.name || "General Knowledge",
-              })
-              .select();
-
-            if (insertError) {
-              console.error("❌ Leaderboard insert error:", insertError);
-            } else {
-              console.log("✅ Leaderboard inserted with score:", percentage);
-            }
+            await supabase.from("leaderboard").insert({
+              user_id: user.id,
+              username: username,
+              score: percentage,
+              category: categoryInfo?.name || "General Knowledge",
+            });
           }
         } catch (lbError) {
           console.error("❌ Leaderboard error:", lbError);
         }
+
+        // ✅ Update local stats state
+        setStats({
+          totalQuizzes: totalQuizzes,
+          bestScore: bestScore,
+          averageScore: averageScore,
+          totalPoints: totalPoints,
+          streak: streak,
+          riddlesSolved: currentStats.riddles_solved || 0,
+          readArticles: currentStats.read_articles || 0,
+          totalTime: (currentStats.total_time || 0) + timeTaken,
+          perfectScores: perfectScores,
+        });
       } catch (error) {
         console.error("❌ Save error:", error);
         toast.error("Error saving results");
