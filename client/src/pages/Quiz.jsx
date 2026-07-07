@@ -301,20 +301,22 @@ const Quiz = () => {
     console.log(
       `📊 Results: ${correct}/${questions.length} correct = ${percentage}%`,
     );
+    console.log(
+      `📊 Percentage calculation: (${correct} / ${questions.length}) * 100 = ${percentage}%`,
+    );
 
     toast.success(`🎉 Score: ${percentage}%`, {
       position: "top-right",
       autoClose: 1500,
     });
 
-    // Save to Supabase if logged in
     if (user) {
       try {
-        // ✅ ONLY columns that exist in your table - NO user_name!
+        // ✅ Save quiz result with correct percentage
         const quizData = {
           user_id: user.id,
           category: categoryInfo?.name || "General Knowledge",
-          score: percentage, // Store percentage (0-100)
+          score: percentage,
           total_questions: questions.length,
           percentage: parseFloat(percentage.toFixed(2)),
           time_taken: timeTaken,
@@ -323,30 +325,79 @@ const Quiz = () => {
 
         console.log("📊 Saving quiz data:", quizData);
 
-        const { data, error } = await supabase
+        const { data: quizResult, error: quizError } = await supabase
           .from("quiz_results")
-          .insert(quizData);
+          .insert(quizData)
+          .select();
 
-        if (error) {
-          console.error("❌ Error saving quiz:", error);
-          toast.error("Failed to save results: " + error.message);
-        } else {
-          console.log("✅ Quiz saved!", data);
-          toast.success("Results saved! 🎉");
+        if (quizError) {
+          console.error("❌ Error saving quiz:", quizError);
+          toast.error("Failed to save results: " + quizError.message);
+          return;
+        }
 
-          // ✅ Update leaderboard
-          try {
-            await supabase.from("leaderboard").insert({
-              user_id: user.id,
-              username:
-                user.user_metadata?.name || user.email?.split("@")[0] || "User",
-              score: percentage,
-              category: categoryInfo?.name || "General Knowledge",
-            });
-            console.log("✅ Leaderboard updated!");
-          } catch (lbError) {
-            console.error("Leaderboard error:", lbError);
+        console.log("✅ Quiz saved with score:", percentage);
+        toast.success("Results saved! 🎉");
+
+        // ✅ Update leaderboard
+        try {
+          const username =
+            user.user_metadata?.name ||
+            user.user_metadata?.full_name ||
+            user.email?.split("@")[0] ||
+            "User";
+
+          // Check if user already has a leaderboard entry
+          const { data: existingEntry, error: checkError } = await supabase
+            .from("leaderboard")
+            .select("score")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (existingEntry) {
+            // Update only if new score is higher
+            if (percentage > existingEntry.score) {
+              const { data: updateData, error: updateError } = await supabase
+                .from("leaderboard")
+                .update({
+                  score: percentage,
+                  username: username,
+                  category: categoryInfo?.name || "General Knowledge",
+                })
+                .eq("user_id", user.id)
+                .select();
+
+              if (updateError) {
+                console.error("❌ Leaderboard update error:", updateError);
+              } else {
+                console.log("✅ Leaderboard updated to:", percentage);
+                toast.success("Leaderboard updated! 🏆");
+              }
+            } else {
+              console.log("📊 Keeping best score:", existingEntry.score);
+              toast.info("Your best score is already higher! 💪");
+            }
+          } else {
+            // Insert new entry
+            const { data: insertData, error: insertError } = await supabase
+              .from("leaderboard")
+              .insert({
+                user_id: user.id,
+                username: username,
+                score: percentage,
+                category: categoryInfo?.name || "General Knowledge",
+              })
+              .select();
+
+            if (insertError) {
+              console.error("❌ Leaderboard insert error:", insertError);
+            } else {
+              console.log("✅ Leaderboard inserted with score:", percentage);
+              toast.success("Leaderboard updated! 🏆");
+            }
           }
+        } catch (lbError) {
+          console.error("❌ Leaderboard error:", lbError);
         }
       } catch (error) {
         console.error("❌ Save error:", error);
@@ -354,6 +405,7 @@ const Quiz = () => {
       }
     } else {
       console.log("⚠️ User not logged in, results not saved");
+      toast.warning("Please log in to save results");
     }
 
     // Store in session for results page
@@ -372,10 +424,6 @@ const Quiz = () => {
     setQuizComplete(true);
 
     setTimeout(() => navigate("/results"), 1200);
-  };
-
-  const handleGoBack = () => {
-    navigate("/categories");
   };
 
   const handleRetry = () => {
