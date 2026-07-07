@@ -21,39 +21,41 @@ const Auth = () => {
     confirmPassword: ''
   });
 
-  // Handle email verification callback
+  // ✅ THIS HANDLES THE VERIFICATION CODE FROM THE URL
   useEffect(() => {
-    const handleEmailVerification = async () => {
+    const handleVerification = async () => {
       const params = new URLSearchParams(location.search);
       const code = params.get('code');
       
+      console.log('🔍 Checking for verification code...', code);
+      
       if (code) {
-        console.log('Verification code detected:', code);
+        console.log('✅ Verification code found:', code);
         setLoading(true);
         
         try {
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           
           if (error) {
-            console.error('Verification error:', error);
-            toast.error('Verification link expired or invalid. Please try signing in.');
+            console.error('❌ Verification error:', error);
+            toast.error('Verification link expired or invalid.');
+            // Remove the code from URL
             window.history.replaceState({}, document.title, window.location.pathname);
             setLoading(false);
             return;
           }
           
           if (data?.session) {
-            console.log('Email verified successfully!', data);
-            toast.success('Email verified! Welcome to Cerebrum! 🎉');
+            console.log('✅ Verification successful!', data);
+            toast.success('Email verified! Welcome! 🎉');
+            // Remove the code from URL
             window.history.replaceState({}, document.title, window.location.pathname);
-            
-            setTimeout(() => {
-              navigate('/dashboard');
-            }, 1500);
+            // Redirect to dashboard
+            navigate('/dashboard');
           }
         } catch (error) {
-          console.error('Unexpected verification error:', error);
-          toast.error('Verification failed. Please try signing in.');
+          console.error('❌ Verification error:', error);
+          toast.error('Verification failed. Please try again.');
           window.history.replaceState({}, document.title, window.location.pathname);
         } finally {
           setLoading(false);
@@ -61,7 +63,7 @@ const Auth = () => {
       }
     };
 
-    handleEmailVerification();
+    handleVerification();
   }, [location, navigate]);
 
   const handleChange = (e) => {
@@ -106,7 +108,7 @@ const Auth = () => {
           password: formData.password,
           options: {
             data: {
-              name: formData.name
+              name: formData.name || formData.email.split('@')[0]
             }
           }
         });
@@ -127,7 +129,7 @@ const Auth = () => {
           return;
         }
 
-        // Since email confirmation is disabled, user is already confirmed
+        // Since email confirmation is disabled, go straight to dashboard
         toast.success('Account created! Welcome to Cerebrum! 🎉');
         navigate('/dashboard');
       }
