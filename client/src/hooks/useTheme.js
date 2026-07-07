@@ -2,24 +2,29 @@ import { useState, useEffect } from 'react';
 
 export const useTheme = () => {
   const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem('cerebrum-theme');
-    if (saved) return saved === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    // Check if theme is stored in localStorage
+    const savedTheme = localStorage.getItem('theme');
+    return savedTheme ? savedTheme === 'dark' : true; // Default to dark
   });
 
-  useEffect(() => {
-    const root = document.documentElement;
-    if (isDark) {
-      root.classList.add('dark');
-      root.classList.remove('light');
-    } else {
-      root.classList.add('light');
-      root.classList.remove('dark');
-    }
-    localStorage.setItem('cerebrum-theme', isDark ? 'dark' : 'light');
-  }, [isDark]);
+  const toggleTheme = () => {
+    setIsDark(prev => {
+      const newTheme = !prev;
+      localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+      return newTheme;
+    });
+  };
 
-  const toggleTheme = () => setIsDark(prev => !prev);
+  // Apply theme to document
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDark]);
 
   return { isDark, toggleTheme };
 };
