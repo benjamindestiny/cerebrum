@@ -1,9 +1,9 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
-import { supabase } from "../services/supabase";
-import { authService } from "../services/authService";
+ximport React, { createContext, useState, useContext, useEffect } from 'react';
+import { supabase } from '../services/supabase';
+import { authService } from '../services/authService';
 
-const AuthContext = createContext();
-
+coxxnst AuthContext = createContext();
+xx
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
@@ -14,48 +14,46 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Check for active session
     const checkSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
+      const { data: { session } } = await supabase.auth.getSession();
+      
       if (session) {
         const user = session.user;
         setCurrentUser(user);
-
+        
         // Get user profile
         try {
           const profile = await authService.getProfile(user.id);
           setUserProfile(profile);
         } catch (error) {
-          console.error("Error fetching profile:", error);
+          console.error('Error fetching profile:', error);
         }
       }
-
+      
       setLoading(false);
     };
 
     checkSession();
 
     // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session) {
-        const user = session.user;
-        setCurrentUser(user);
-
-        try {
-          const profile = await authService.getProfile(user.id);
-          setUserProfile(profile);
-        } catch (error) {
-          console.error("Error fetching profile:", error);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session) {
+          const user = session.user;
+          setCurrentUser(user);
+          
+          try {
+            const profile = await authService.getProfile(user.id);
+            setUserProfile(profile);
+          } catch (error) {
+            console.error('Error fetching profile:', error);
+          }
+        } else {
+          setCurrentUser(null);
+          setUserProfile(null);
         }
-      } else {
-        setCurrentUser(null);
-        setUserProfile(null);
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    );
 
     return () => {
       subscription.unsubscribe();
@@ -98,15 +96,18 @@ export const AuthProvider = ({ children }) => {
   const value = {
     currentUser,
     userProfile,
-    setUserProfile, // Add this line
     loading,
     signUp,
     signIn,
     signInWithGoogle,
     signOut,
     updateProfile,
-    updateStats,
+    updateStats
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
