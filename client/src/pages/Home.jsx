@@ -130,7 +130,7 @@ const Home = () => {
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#00C9A7]/10 rounded-full blur-3xl -z-10"></div>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#6C2BD9]/5 rounded-full blur-3xl -z-10"></div>
 
-        <div className="container mx-auto px-4 max-w-7xl relative z-10">
+        <div className="app-container relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
