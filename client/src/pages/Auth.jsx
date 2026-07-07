@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { Brain, Mail, Lock, User, LogIn, Loader2, Chrome, Github, ArrowLeft } from 'lucide-react';
@@ -7,6 +7,7 @@ import { supabase } from '../services/supabase';
 
 const Auth = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLogin, setIsLogin] = useState(true);
   const [showReset, setShowReset] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -19,6 +20,46 @@ const Auth = () => {
     password: '',
     confirmPassword: ''
   });
+
+  // Handle email verification callback
+  useEffect(() => {
+    const handleEmailVerification = async () => {
+      const params = new URLSearchParams(location.search);
+      const code = params.get('code');
+      
+      if (code) {
+        console.log('Verification code detected:', code);
+        setLoading(true);
+        
+        try {
+          // Exchange the code for a session
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (error) {
+            console.error('Verification error:', error);
+            toast.error('Failed to verify email. Please try again.');
+          } else if (data?.session) {
+            console.log('Email verified successfully!', data);
+            toast.success('Email verified! Welcome to Cerebrum! 🎉');
+            
+            // Redirect to dashboard after successful verification
+            setTimeout(() => {
+              navigate('/dashboard');
+            }, 1500);
+          }
+        } catch (error) {
+          console.error('Unexpected verification error:', error);
+          toast.error('Something went wrong during verification.');
+        } finally {
+          setLoading(false);
+          // Clean URL without reloading page
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }
+    };
+
+    handleEmailVerification();
+  }, [location, navigate]);
 
   const handleChange = (e) => {
     setFormData({
@@ -41,6 +82,14 @@ const Auth = () => {
         if (error) {
           if (error.message.includes('Email not confirmed')) {
             toast.error('Please confirm your email first. Check your inbox!');
+            // Optionally resend confirmation email
+            const { error: resendError } = await supabase.auth.resend({
+              type: 'signup',
+              email: formData.email,
+            });
+            if (!resendError) {
+              toast.info('We resent the confirmation email to your inbox.');
+            }
           } else {
             toast.error(error.message);
           }
@@ -57,13 +106,22 @@ const Auth = () => {
           return;
         }
 
+        if (formData.password.length < 6) {
+          toast.error('Password must be at least 6 characters');
+          setLoading(false);
+          return;
+        }
+
         const { data, error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
           options: {
             data: {
-              name: formData.name
-            }
+              name: formData.name || formData.email.split('@')[0],
+              full_name: formData.name || formData.email.split('@')[0]
+            },
+            // Important: Set redirect URL for email confirmation
+            emailRedirectTo: `${window.location.origin}/auth`
           }
         });
 
@@ -83,7 +141,10 @@ const Auth = () => {
           return;
         }
 
-        toast.success('Account created! Check your email to confirm.');
+        toast.success('Account created! Check your email to confirm. 📧');
+        toast.info('Please check your spam folder if you don\'t see the email.');
+        
+        // Clear form and switch to login
         setIsLogin(true);
         setFormData({ name: '', email: '', password: '', confirmPassword: '' });
       }
@@ -105,12 +166,12 @@ const Auth = () => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${window.location.origin}/auth`,
       });
 
       if (error) throw error;
       
-      toast.success('Password reset email sent! Check your inbox.');
+      toast.success('Password reset email sent! Check your inbox. 📧');
       setShowReset(false);
       setResetEmail('');
     } catch (error) {
@@ -127,7 +188,7 @@ const Auth = () => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin
+          redirectTo: `${window.location.origin}/auth`
         }
       });
 
@@ -153,7 +214,7 @@ const Auth = () => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
-          redirectTo: window.location.origin
+          redirectTo: `${window.location.origin}/auth`
         }
       });
 
@@ -237,6 +298,12 @@ const Auth = () => {
           </div>
           <h1 className="text-2xl font-bold text-white">Cerebrum</h1>
           <p className="text-gray-400 text-sm">{isLogin ? 'Welcome back!' : 'Create your account'}</p>
+          {loading && (
+            <div className="mt-2 flex items-center justify-center gap-2 text-[#a78bfa] text-sm">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Processing...
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
