@@ -287,22 +287,17 @@ const Quiz = () => {
     }
   };
 
-  // ✅ CORRECTED finishQuiz function - NO user_name!
   const finishQuiz = async () => {
     let correct = 0;
     questions.forEach((q, i) => {
       if (answers[i] === q.correct_answer) correct++;
     });
 
-    // ✅ Calculate percentage correctly (0-100)
     const percentage = Math.round((correct / questions.length) * 100);
     const timeTaken = Math.floor((Date.now() - quizStartTime) / 1000);
 
     console.log(
       `📊 Results: ${correct}/${questions.length} correct = ${percentage}%`,
-    );
-    console.log(
-      `📊 Percentage calculation: (${correct} / ${questions.length}) * 100 = ${percentage}%`,
     );
 
     toast.success(`🎉 Score: ${percentage}%`, {
@@ -312,7 +307,6 @@ const Quiz = () => {
 
     if (user) {
       try {
-        // ✅ Save quiz result with correct percentage
         const quizData = {
           user_id: user.id,
           category: categoryInfo?.name || "General Knowledge",
@@ -339,7 +333,6 @@ const Quiz = () => {
         console.log("✅ Quiz saved with score:", percentage);
         toast.success("Results saved! 🎉");
 
-        // ✅ Update leaderboard
         try {
           const username =
             user.user_metadata?.name ||
@@ -347,7 +340,6 @@ const Quiz = () => {
             user.email?.split("@")[0] ||
             "User";
 
-          // Check if user already has a leaderboard entry
           const { data: existingEntry, error: checkError } = await supabase
             .from("leaderboard")
             .select("score")
@@ -355,7 +347,6 @@ const Quiz = () => {
             .maybeSingle();
 
           if (existingEntry) {
-            // Update only if new score is higher
             if (percentage > existingEntry.score) {
               const { data: updateData, error: updateError } = await supabase
                 .from("leaderboard")
@@ -378,7 +369,6 @@ const Quiz = () => {
               toast.info("Your best score is already higher! 💪");
             }
           } else {
-            // Insert new entry
             const { data: insertData, error: insertError } = await supabase
               .from("leaderboard")
               .insert({
@@ -408,7 +398,6 @@ const Quiz = () => {
       toast.warning("Please log in to save results");
     }
 
-    // Store in session for results page
     const resultData = {
       score: percentage,
       correct,
@@ -426,6 +415,10 @@ const Quiz = () => {
     setTimeout(() => navigate("/results"), 1200);
   };
 
+  const handleGoBack = () => {
+    navigate('/categories');
+  };
+
   const handleRetry = () => {
     setShowDifficultySelect(true);
     setError(null);
@@ -437,7 +430,7 @@ const Quiz = () => {
   };
 
   // ============================================
-  // DIFFICULTY SELECTION SCREEN
+  // DIFFICULTY SELECTION SCREEN - RESPONSIVE
   // ============================================
   if (showDifficultySelect) {
     const difficulties = [
@@ -473,23 +466,23 @@ const Quiz = () => {
     const selectedCount = questionCount || 15;
 
     return (
-      <div className="max-w-md mx-auto">
-        <div className="glass-card p-8 text-center">
-          <div className="mb-6">
+      <div className="max-w-md mx-auto px-4 sm:px-0">
+        <div className="glass-card p-4 sm:p-8 text-center">
+          <div className="mb-4 sm:mb-6">
             <div className="flex items-center justify-center gap-2 mb-2">
-              <Brain className="w-8 h-8 text-[#7c3aed]" />
-              <span className="text-sm text-gray-400">Quiz</span>
+              <Brain className="w-6 h-6 sm:w-8 sm:h-8 text-[#7c3aed]" />
+              <span className="text-xs sm:text-sm text-gray-400">Quiz</span>
             </div>
-            <h2 className="text-2xl font-bold text-white">
+            <h2 className="text-xl sm:text-2xl font-bold text-white">
               {categoryInfo?.name || "General Knowledge"}
             </h2>
-            <p className="text-sm text-gray-400 mt-1">Choose your difficulty</p>
+            <p className="text-xs sm:text-sm text-gray-400 mt-1">Choose your difficulty</p>
             <p className="text-xs text-gray-500 mt-1">
               {selectedCount} questions
             </p>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {difficulties.map((diff) => (
               <motion.button
                 key={diff.id}
@@ -497,24 +490,24 @@ const Quiz = () => {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => loadQuestions(diff.id)}
                 disabled={loading}
-                className={`w-full p-4 rounded-xl ${diff.bg} border ${diff.border} hover:border-[#7c3aed]/50 transition-all flex items-center justify-between group ${
+                className={`w-full p-3 sm:p-4 rounded-xl ${diff.bg} border ${diff.border} hover:border-[#7c3aed]/50 transition-all flex items-center justify-between group ${
                   loading ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{diff.icon}</span>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <span className="text-xl sm:text-2xl">{diff.icon}</span>
                   <div className="text-left">
-                    <div className={`font-semibold ${diff.color}`}>
+                    <div className={`font-semibold text-sm sm:text-base ${diff.color}`}>
                       {diff.label}
                     </div>
-                    <div className="text-xs text-gray-500">{diff.desc}</div>
+                    <div className="text-[10px] sm:text-xs text-gray-500">{diff.desc}</div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs text-gray-500">
+                  <div className="text-[10px] sm:text-xs text-gray-500">
                     {selectedCount} questions
                   </div>
-                  <Sparkles className="w-4 h-4 text-gray-500 group-hover:text-[#7c3aed] transition-colors" />
+                  <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 group-hover:text-[#7c3aed] transition-colors" />
                 </div>
               </motion.button>
             ))}
@@ -522,9 +515,9 @@ const Quiz = () => {
 
           <button
             onClick={handleGoBack}
-            className="mt-6 text-sm text-gray-400 hover:text-white transition-colors flex items-center gap-2 mx-auto"
+            className="mt-4 sm:mt-6 text-xs sm:text-sm text-gray-400 hover:text-white transition-colors flex items-center gap-2 mx-auto"
           >
-            <ArrowLeft className="w-4 h-4" /> Back to Categories
+            <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" /> Back to Categories
           </button>
         </div>
       </div>
@@ -536,10 +529,10 @@ const Quiz = () => {
   // ============================================
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-[300px] sm:min-h-[400px] px-4">
         <div className="text-center">
-          <Loader2 className="w-10 h-10 text-[#7c3aed] animate-spin mx-auto mb-3" />
-          <p className="text-gray-400 text-sm">
+          <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 text-[#7c3aed] animate-spin mx-auto mb-3" />
+          <p className="text-gray-400 text-xs sm:text-sm">
             Loading {difficulty} questions...
           </p>
         </div>
@@ -548,17 +541,17 @@ const Quiz = () => {
   }
 
   // ============================================
-  // QUIZ ACTIVE
+  // QUIZ ACTIVE - RESPONSIVE
   // ============================================
   if (questions.length === 0) {
     return (
-      <div className="text-center py-12 max-w-md mx-auto">
-        <AlertCircle className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-white">No Questions</h2>
-        <p className="text-gray-400 mt-2">Please try again.</p>
+      <div className="text-center py-8 sm:py-12 max-w-md mx-auto px-4">
+        <AlertCircle className="w-12 h-12 sm:w-16 sm:h-16 text-yellow-400 mx-auto mb-4" />
+        <h2 className="text-xl sm:text-2xl font-bold text-white">No Questions</h2>
+        <p className="text-gray-400 text-sm sm:text-base mt-2">Please try again.</p>
         <button
           onClick={handleRetry}
-          className="btn-primary mt-6 flex items-center gap-2 mx-auto"
+          className="btn-primary mt-4 sm:mt-6 flex items-center gap-2 mx-auto text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
         >
           <RefreshCw className="w-4 h-4" /> Try Again
         </button>
@@ -571,18 +564,21 @@ const Quiz = () => {
   const options = currentQuestion?.shuffledOptions || [];
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-4">
+    <div className="max-w-3xl mx-auto px-3 sm:px-4">
+      {/* Header - Responsive */}
+      <div className="flex items-center justify-between mb-3 sm:mb-4 flex-wrap gap-2">
         <button
           onClick={handleGoBack}
-          className="text-gray-400 hover:text-white transition-colors flex items-center gap-1 text-sm"
+          className="text-gray-400 hover:text-white transition-colors flex items-center gap-1 text-xs sm:text-sm"
         >
-          <ArrowLeft className="w-4 h-4" /> Exit
+          <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" /> Exit
         </button>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-500">{categoryInfo?.name}</span>
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <span className="text-[10px] sm:text-xs text-gray-500 truncate max-w-[80px] sm:max-w-none">
+            {categoryInfo?.name}
+          </span>
           <span
-            className={`text-xs px-2 py-0.5 rounded-full ${
+            className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${
               difficulty === "easy"
                 ? "bg-green-500/20 text-green-400"
                 : difficulty === "medium"
@@ -592,24 +588,25 @@ const Quiz = () => {
           >
             {difficulty}
           </span>
-          <span className="text-xs text-gray-500">
-            {questions.length} questions
+          <span className="text-[10px] sm:text-xs text-gray-500">
+            {questions.length} Qs
           </span>
         </div>
       </div>
 
-      <div className="glass-card p-4 mb-6">
+      {/* Progress Card - Responsive */}
+      <div className="glass-card p-3 sm:p-4 mb-4 sm:mb-6">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-gray-400">
+          <span className="text-xs sm:text-sm text-gray-400">
             {currentIndex + 1} / {questions.length}
           </span>
           <motion.div
-            className={`flex items-center gap-1 text-sm ${timeLeft <= 10 ? "text-red-400" : "text-[#00C9A7]"}`}
+            className={`flex items-center gap-1 text-xs sm:text-sm ${timeLeft <= 10 ? "text-red-400" : "text-[#00C9A7]"}`}
             animate={timeLeft <= 10 ? { scale: [1, 1.05, 1] } : {}}
             transition={{ duration: 0.5, repeat: Infinity }}
           >
-            <Clock className="w-4 h-4" />
-            <span className="font-bold">{timeLeft}s</span>
+            <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="font-bold text-sm sm:text-base">{timeLeft}s</span>
           </motion.div>
         </div>
         <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
@@ -622,18 +619,19 @@ const Quiz = () => {
         </div>
       </div>
 
+      {/* Question Card - Responsive */}
       <motion.div
         key={currentIndex}
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3 }}
-        className="glass-card p-6 mb-6"
+        className="glass-card p-4 sm:p-6 mb-4 sm:mb-6"
       >
-        <h2 className="text-lg text-white font-medium mb-5">
+        <h2 className="text-base sm:text-lg text-white font-medium mb-4 sm:mb-5 leading-relaxed">
           {decodeHTML(currentQuestion?.question)}
         </h2>
 
-        <div className="space-y-2.5">
+        <div className="space-y-2 sm:space-y-2.5">
           {options.map((answer, index) => {
             const isSelected = selectedAnswer === answer;
             const isCorrect = answer === currentQuestion.correct_answer;
@@ -647,7 +645,7 @@ const Quiz = () => {
                 whileTap={!isAnswered ? { scale: 0.98 } : {}}
                 onClick={() => handleAnswerSelect(answer)}
                 disabled={isAnswered}
-                className={`w-full text-left px-4 py-2.5 rounded-lg transition-all duration-200 text-sm
+                className={`w-full text-left px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg transition-all duration-200 text-xs sm:text-sm
                   ${isAnswered ? "cursor-default" : "hover:bg-white/10 cursor-pointer"}
                   ${isSelected && !isAnswered ? "bg-[#7c3aed]/30 border border-[#7c3aed] text-white" : ""}
                   ${showCorrect ? "bg-[#00C9A7]/30 border border-[#00C9A7] text-white" : ""}
@@ -655,15 +653,15 @@ const Quiz = () => {
                   ${!isSelected && !isAnswered ? "bg-white/5 hover:bg-white/10 text-gray-300 border border-transparent" : ""}
                 `}
               >
-                <div className="flex items-center justify-between">
-                  <span>{decodeHTML(answer)}</span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs sm:text-sm break-words">{decodeHTML(answer)}</span>
                   {isAnswered && (
-                    <span>
+                    <span className="flex-shrink-0">
                       {isCorrect && (
-                        <Check className="w-4 h-4 text-[#00C9A7]" />
+                        <Check className="w-4 h-4 sm:w-5 sm:h-5 text-[#00C9A7]" />
                       )}
                       {isSelected && !isCorrect && (
-                        <X className="w-4 h-4 text-red-400" />
+                        <X className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
                       )}
                     </span>
                   )}
@@ -674,15 +672,16 @@ const Quiz = () => {
         </div>
       </motion.div>
 
-      <div className="flex justify-between gap-4">
+      {/* Navigation - Responsive */}
+      <div className="flex justify-between gap-3 sm:gap-4">
         <button
           onClick={handlePrevious}
           disabled={currentIndex === 0}
-          className="btn-secondary text-sm px-4 py-2 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="btn-secondary text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-1 sm:gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          <ChevronLeft className="w-4 h-4" /> Back
+          <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" /> Back
         </button>
-        <span className="text-xs text-gray-500 flex items-center">
+        <span className="text-[10px] sm:text-xs text-gray-500 flex items-center">
           {isAnswered ? "✓" : "Select an answer"}
         </span>
       </div>
