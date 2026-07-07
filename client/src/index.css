@@ -8,23 +8,43 @@
     padding: 0;
     box-sizing: border-box;
   }
-  
+
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
-    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family:
+      "Poppins",
+      -apple-system,
+      BlinkMacSystemFont,
+      sans-serif;
     background-color: #0f0f1a;
     color: #e2e8f0;
     min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  #root {
+    min-height: 100vh;
+    width: 100%;
+  }
+
+  img {
+    max-width: 100%;
+    display: block;
   }
 
   ::-webkit-scrollbar {
     width: 6px;
   }
-  
+
   ::-webkit-scrollbar-track {
     background: #1a1a2e;
     border-radius: 10px;
   }
-  
+
   ::-webkit-scrollbar-thumb {
     background: #7c3aed;
     border-radius: 10px;
@@ -37,23 +57,23 @@
   }
 
   .btn-primary {
-    @apply px-6 py-3 bg-[#7c3aed] text-white font-semibold rounded-xl 
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#7c3aed] text-white font-semibold rounded-xl 
            hover:bg-[#6d28d9] transition-all duration-300 
            transform hover:scale-105 active:scale-95 
            disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
-           shadow-lg shadow-[#7c3aed]/25;
+           shadow-lg shadow-[#7c3aed]/25 w-full sm:w-auto;
   }
 
   .btn-secondary {
-    @apply px-6 py-3 bg-[#2d2d5e] text-gray-200 font-semibold rounded-xl 
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#2d2d5e] text-gray-200 font-semibold rounded-xl 
            hover:bg-[#3d3d7e] transition-all duration-300 
            transform hover:scale-105 active:scale-95
-           disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none w-full sm:w-auto;
   }
 
   .input-theme {
     @apply w-full px-4 py-3 rounded-xl border border-gray-700 
-           bg-[#1a1a2e] text-gray-200 placeholder-gray-500
+           bg-[#1a1a2e] text-gray-200 placeholder-gray-500 text-sm sm:text-base
            focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/50 
            focus:border-[#7c3aed] transition-all duration-200;
   }
@@ -71,6 +91,16 @@
   }
 }
 
+@layer utilities {
+  .app-container {
+    @apply w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-6;
+  }
+
+  .app-shell {
+    @apply w-full max-w-6xl mx-auto px-3 sm:px-4 lg:px-6;
+  }
+}
+
 /* Toast Customization */
 .toastify {
   max-width: 340px !important;
@@ -78,7 +108,7 @@
   padding: 10px 16px !important;
   border-radius: 12px !important;
   font-size: 13px !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: "Poppins", sans-serif !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
   background: #1a1a2e !important;
   color: #e2e8f0 !important;

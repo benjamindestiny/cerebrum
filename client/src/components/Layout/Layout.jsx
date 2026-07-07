@@ -1,9 +1,9 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useLocation } from 'react-router-dom';
-import Header from './Header';
-import Footer from './Footer';
+import React from "react";
+import { Outlet } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { useLocation } from "react-router-dom";
+import Header from "./Header";
+import Footer from "./Footer";
 
 const Layout = () => {
   const location = useLocation();
@@ -11,7 +11,7 @@ const Layout = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-7xl">
+      <main className="flex-1 app-container py-6 sm:py-8 lg:py-10">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}

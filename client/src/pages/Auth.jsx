@@ -272,8 +272,8 @@ const Auth = () => {
   // Password Reset Form
   if (showReset) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0f0f1a] p-4">
-        <div className="glass-card p-8 max-w-md w-full">
+      <div className="min-h-screen w-full flex items-center justify-center bg-[#0f0f1a] px-3 py-6 sm:px-4 sm:py-8">
+        <div className="glass-card p-4 sm:p-6 md:p-8 max-w-md w-full">
           <button
             onClick={() => setShowReset(false)}
             className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
@@ -329,9 +329,9 @@ const Auth = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="min-h-screen flex items-center justify-center bg-[#0f0f1a] p-4"
+      className="min-h-screen w-full flex items-center justify-center bg-[#0f0f1a] px-3 py-6 sm:px-4 sm:py-8"
     >
-      <div className="glass-card p-8 max-w-md w-full">
+      <div className="glass-card p-4 sm:p-6 md:p-8 max-w-md w-full">
         <div className="text-center mb-8">
           <div className="inline-block p-3 bg-[#7c3aed]/20 rounded-full mb-4">
             <Brain className="w-12 h-12 text-[#a78bfa]" />
