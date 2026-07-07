@@ -105,7 +105,6 @@ const Profile = () => {
     avatar_id: 1,
     bio: "",
     location: "",
-    website: "",
   });
   const [stats, setStats] = useState({
     totalQuizzes: 0,
@@ -151,7 +150,6 @@ const Profile = () => {
         avatar_id: userMeta.avatar_id || 1,
         bio: userMeta.bio || getDefaultBio(name),
         location: userMeta.location || getDefaultLocation(),
-        website: userMeta.website || "",
       });
 
       const { data: profileData, error: profileError } = await supabase
@@ -286,25 +284,25 @@ const Profile = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
+      // ✅ Save bio and all fields to auth metadata
       const { error: updateError } = await supabase.auth.updateUser({
         data: {
           name: formData.name,
           avatar_id: formData.avatar_id,
           bio: formData.bio,
           location: formData.location,
-          website: formData.website,
         },
       });
 
       if (updateError) throw updateError;
 
+      // ✅ Save to users table
       const userData = {
         name: formData.name,
         email: formData.email,
         avatar_id: formData.avatar_id,
         bio: formData.bio,
         location: formData.location,
-        website: formData.website,
         updated_at: new Date().toISOString(),
       };
 
@@ -420,7 +418,7 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Profile Card - With Default Bio */}
+      {/* Profile Card */}
       <div className="glass-card p-4 sm:p-6 md:p-8">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
           <div className="relative group flex-shrink-0">
@@ -494,10 +492,7 @@ const Profile = () => {
                     <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
                     <input
                       type="url"
-                      name="website"
-                      value={formData.website}
                       onChange={handleChange}
-                      placeholder="Website"
                       className="input-theme pl-9 sm:pl-10 w-full text-sm sm:text-base"
                     />
                   </div>

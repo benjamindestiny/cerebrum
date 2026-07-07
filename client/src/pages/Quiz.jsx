@@ -82,6 +82,64 @@ const Quiz = () => {
     });
   }, []);
 
+  // ✅ Streak update function
+  const updateStreak = async (userId) => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("stats, last_quiz_date")
+        .eq("id", userId)
+        .single();
+
+      if (userError) throw userError;
+
+      const stats = userData?.stats || {};
+      const lastQuizDate = userData?.last_quiz_date
+        ? new Date(userData.last_quiz_date)
+        : null;
+      const currentStreak = stats.streak || 0;
+
+      let newStreak = 1;
+
+      if (lastQuizDate) {
+        const lastDate = new Date(lastQuizDate);
+        lastDate.setHours(0, 0, 0, 0);
+
+        if (lastDate.getTime() === yesterday.getTime()) {
+          newStreak = currentStreak + 1;
+        } else if (lastDate.getTime() === today.getTime()) {
+          newStreak = currentStreak;
+        } else {
+          newStreak = 1;
+        }
+      }
+
+      const { error: updateError } = await supabase
+        .from("users")
+        .update({
+          stats: {
+            ...stats,
+            streak: newStreak,
+            total_quizzes: (stats.total_quizzes || 0) + 1,
+          },
+          last_quiz_date: new Date().toISOString(),
+        })
+        .eq("id", userId);
+
+      if (updateError) throw updateError;
+
+      return newStreak;
+    } catch (error) {
+      console.error("Error updating streak:", error);
+      return 0;
+    }
+  };
+
   const loadQuestions = async (diff) => {
     setLoading(true);
     setError(null);
@@ -108,7 +166,6 @@ const Quiz = () => {
 
       let fetchedQuestions = [];
 
-      // Check if it's a custom category
       if (typeof categoryId === "string") {
         const customQ = getCustomQuestions(categoryId, count);
         if (customQ.length > 0) {
@@ -123,7 +180,6 @@ const Quiz = () => {
         }
       }
 
-      // If no custom questions, try API
       if (fetchedQuestions.length === 0) {
         try {
           const apiQuestions = await fetchQuestions(
@@ -146,7 +202,6 @@ const Quiz = () => {
         }
       }
 
-      // If still no questions, use fallback
       if (fetchedQuestions.length === 0) {
         const fallback = FALLBACK_QUESTIONS.slice(
           0,
@@ -161,7 +216,6 @@ const Quiz = () => {
         }));
       }
 
-      // Always have questions
       if (fetchedQuestions.length === 0) {
         fetchedQuestions = [
           {
@@ -287,6 +341,21 @@ const Quiz = () => {
     }
   };
 
+  const handleGoBack = () => {
+    navigate("/categories");
+  };
+
+  const handleRetry = () => {
+    setShowDifficultySelect(true);
+    setError(null);
+    setQuestions([]);
+    setCurrentIndex(0);
+    setAnswers({});
+    setQuizComplete(false);
+    setSelectedDifficulty(null);
+  };
+
+  // ✅ CORRECTED finishQuiz with streak tracking
   const finishQuiz = async () => {
     let correct = 0;
     questions.forEach((q, i) => {
@@ -333,6 +402,11 @@ const Quiz = () => {
         console.log("✅ Quiz saved with score:", percentage);
         toast.success("Results saved! 🎉");
 
+        // ✅ Update streak
+        const newStreak = await updateStreak(user.id);
+        console.log("📊 Current streak:", newStreak);
+
+        // ✅ Update leaderboard
         try {
           const username =
             user.user_metadata?.name ||
@@ -362,11 +436,9 @@ const Quiz = () => {
                 console.error("❌ Leaderboard update error:", updateError);
               } else {
                 console.log("✅ Leaderboard updated to:", percentage);
-                toast.success("Leaderboard updated! 🏆");
               }
             } else {
               console.log("📊 Keeping best score:", existingEntry.score);
-              toast.info("Your best score is already higher! 💪");
             }
           } else {
             const { data: insertData, error: insertError } = await supabase
@@ -383,7 +455,6 @@ const Quiz = () => {
               console.error("❌ Leaderboard insert error:", insertError);
             } else {
               console.log("✅ Leaderboard inserted with score:", percentage);
-              toast.success("Leaderboard updated! 🏆");
             }
           }
         } catch (lbError) {
@@ -415,22 +486,8 @@ const Quiz = () => {
     setTimeout(() => navigate("/results"), 1200);
   };
 
-  const handleGoBack = () => {
-    navigate('/categories');
-  };
-
-  const handleRetry = () => {
-    setShowDifficultySelect(true);
-    setError(null);
-    setQuestions([]);
-    setCurrentIndex(0);
-    setAnswers({});
-    setQuizComplete(false);
-    setSelectedDifficulty(null);
-  };
-
   // ============================================
-  // DIFFICULTY SELECTION SCREEN - RESPONSIVE
+  // DIFFICULTY SELECTION SCREEN - Responsive
   // ============================================
   if (showDifficultySelect) {
     const difficulties = [
@@ -476,7 +533,9 @@ const Quiz = () => {
             <h2 className="text-xl sm:text-2xl font-bold text-white">
               {categoryInfo?.name || "General Knowledge"}
             </h2>
-            <p className="text-xs sm:text-sm text-gray-400 mt-1">Choose your difficulty</p>
+            <p className="text-xs sm:text-sm text-gray-400 mt-1">
+              Choose your difficulty
+            </p>
             <p className="text-xs text-gray-500 mt-1">
               {selectedCount} questions
             </p>
@@ -497,10 +556,14 @@ const Quiz = () => {
                 <div className="flex items-center gap-2 sm:gap-3">
                   <span className="text-xl sm:text-2xl">{diff.icon}</span>
                   <div className="text-left">
-                    <div className={`font-semibold text-sm sm:text-base ${diff.color}`}>
+                    <div
+                      className={`font-semibold text-sm sm:text-base ${diff.color}`}
+                    >
                       {diff.label}
                     </div>
-                    <div className="text-[10px] sm:text-xs text-gray-500">{diff.desc}</div>
+                    <div className="text-[10px] sm:text-xs text-gray-500">
+                      {diff.desc}
+                    </div>
                   </div>
                 </div>
                 <div className="text-right">
@@ -541,14 +604,18 @@ const Quiz = () => {
   }
 
   // ============================================
-  // QUIZ ACTIVE - RESPONSIVE
+  // QUIZ ACTIVE - Responsive
   // ============================================
   if (questions.length === 0) {
     return (
       <div className="text-center py-8 sm:py-12 max-w-md mx-auto px-4">
         <AlertCircle className="w-12 h-12 sm:w-16 sm:h-16 text-yellow-400 mx-auto mb-4" />
-        <h2 className="text-xl sm:text-2xl font-bold text-white">No Questions</h2>
-        <p className="text-gray-400 text-sm sm:text-base mt-2">Please try again.</p>
+        <h2 className="text-xl sm:text-2xl font-bold text-white">
+          No Questions
+        </h2>
+        <p className="text-gray-400 text-sm sm:text-base mt-2">
+          Please try again.
+        </p>
         <button
           onClick={handleRetry}
           className="btn-primary mt-4 sm:mt-6 flex items-center gap-2 mx-auto text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
@@ -565,7 +632,6 @@ const Quiz = () => {
 
   return (
     <div className="max-w-3xl mx-auto px-3 sm:px-4">
-      {/* Header - Responsive */}
       <div className="flex items-center justify-between mb-3 sm:mb-4 flex-wrap gap-2">
         <button
           onClick={handleGoBack}
@@ -594,7 +660,6 @@ const Quiz = () => {
         </div>
       </div>
 
-      {/* Progress Card - Responsive */}
       <div className="glass-card p-3 sm:p-4 mb-4 sm:mb-6">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs sm:text-sm text-gray-400">
@@ -619,7 +684,6 @@ const Quiz = () => {
         </div>
       </div>
 
-      {/* Question Card - Responsive */}
       <motion.div
         key={currentIndex}
         initial={{ opacity: 0, x: 20 }}
@@ -654,7 +718,9 @@ const Quiz = () => {
                 `}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs sm:text-sm break-words">{decodeHTML(answer)}</span>
+                  <span className="text-xs sm:text-sm break-words">
+                    {decodeHTML(answer)}
+                  </span>
                   {isAnswered && (
                     <span className="flex-shrink-0">
                       {isCorrect && (
@@ -672,7 +738,6 @@ const Quiz = () => {
         </div>
       </motion.div>
 
-      {/* Navigation - Responsive */}
       <div className="flex justify-between gap-3 sm:gap-4">
         <button
           onClick={handlePrevious}
