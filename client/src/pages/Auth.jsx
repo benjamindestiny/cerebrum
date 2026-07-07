@@ -1,9 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { toast } from 'react-toastify';
-import { Brain, Mail, Lock, User, LogIn, Loader2, Chrome, Github, ArrowLeft } from 'lucide-react';
-import { supabase } from '../services/supabase';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import { toast } from "react-toastify";
+import {
+  Brain,
+  Mail,
+  Lock,
+  User,
+  LogIn,
+  Loader2,
+  Chrome,
+  Github,
+  ArrowLeft,
+} from "lucide-react";
+import { supabase } from "../services/supabase";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -13,50 +23,76 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [githubLoading, setGithubLoading] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
+  const [resetEmail, setResetEmail] = useState("");
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
 
-  // ✅ THIS HANDLES THE VERIFICATION CODE FROM THE URL
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        navigate("/dashboard");
+      }
+    };
+    checkUser();
+  }, [navigate]);
+
+  // ✅ HANDLES THE VERIFICATION CODE FROM THE URL
   useEffect(() => {
     const handleVerification = async () => {
       const params = new URLSearchParams(location.search);
-      const code = params.get('code');
-      
-      console.log('🔍 Checking for verification code...', code);
-      
+      const code = params.get("code");
+
+      console.log("🔍 Checking for verification code...", code);
+
       if (code) {
-        console.log('✅ Verification code found:', code);
+        console.log("✅ Verification code found:", code);
         setLoading(true);
-        
+
         try {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-          
+          const { data, error } =
+            await supabase.auth.exchangeCodeForSession(code);
+
           if (error) {
-            console.error('❌ Verification error:', error);
-            toast.error('Verification link expired or invalid.');
+            console.error("❌ Verification error:", error);
+            toast.error("Verification link expired or invalid.");
             // Remove the code from URL
-            window.history.replaceState({}, document.title, window.location.pathname);
+            window.history.replaceState(
+              {},
+              document.title,
+              window.location.pathname,
+            );
             setLoading(false);
             return;
           }
-          
+
           if (data?.session) {
-            console.log('✅ Verification successful!', data);
-            toast.success('Email verified! Welcome! 🎉');
+            console.log("✅ Verification successful!", data);
+            toast.success("Email verified! Welcome to Cerebrum! 🎉");
             // Remove the code from URL
-            window.history.replaceState({}, document.title, window.location.pathname);
+            window.history.replaceState(
+              {},
+              document.title,
+              window.location.pathname,
+            );
             // Redirect to dashboard
-            navigate('/dashboard');
+            navigate("/dashboard");
           }
         } catch (error) {
-          console.error('❌ Verification error:', error);
-          toast.error('Verification failed. Please try again.');
-          window.history.replaceState({}, document.title, window.location.pathname);
+          console.error("❌ Verification error:", error);
+          toast.error("Verification failed. Please try again.");
+          window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname,
+          );
         } finally {
           setLoading(false);
         }
@@ -69,7 +105,7 @@ const Auth = () => {
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -79,26 +115,39 @@ const Auth = () => {
 
     try {
       if (isLogin) {
+        // ✅ SIGN IN - Redirect to dashboard
         const { data, error } = await supabase.auth.signInWithPassword({
           email: formData.email,
-          password: formData.password
+          password: formData.password,
         });
 
         if (error) {
-          if (error.message.includes('Email not confirmed')) {
-            toast.error('Please confirm your email first. Check your inbox!');
+          if (error.message.includes("Email not confirmed")) {
+            toast.error("Please confirm your email first. Check your inbox!");
+          } else if (error.message.includes("Invalid login credentials")) {
+            toast.error("Invalid email or password. Please try again.");
           } else {
             toast.error(error.message);
           }
           setLoading(false);
           return;
         }
-        
-        toast.success('Welcome back! 🎉');
-        navigate('/dashboard');
+
+        if (data?.user) {
+          toast.success("Welcome back! 🎉");
+          // ✅ Redirect to dashboard immediately after sign in
+          navigate("/dashboard");
+        }
       } else {
+        // ✅ SIGN UP - Redirect to dashboard
         if (formData.password !== formData.confirmPassword) {
-          toast.error('Passwords do not match');
+          toast.error("Passwords do not match");
+          setLoading(false);
+          return;
+        }
+
+        if (formData.password.length < 6) {
+          toast.error("Password must be at least 6 characters");
           setLoading(false);
           return;
         }
@@ -108,14 +157,15 @@ const Auth = () => {
           password: formData.password,
           options: {
             data: {
-              name: formData.name || formData.email.split('@')[0]
-            }
-          }
+              name: formData.name || formData.email.split("@")[0],
+              full_name: formData.name || formData.email.split("@")[0],
+            },
+          },
         });
 
         if (error) {
-          if (error.message.includes('already registered')) {
-            toast.info('Account already exists. Please sign in.');
+          if (error.message.includes("already registered")) {
+            toast.info("Account already exists. Please sign in.");
           } else {
             toast.error(error.message);
           }
@@ -124,18 +174,18 @@ const Auth = () => {
         }
 
         if (data.user?.identities?.length === 0) {
-          toast.info('Account already exists. Please sign in.');
+          toast.info("Account already exists. Please sign in.");
           setLoading(false);
           return;
         }
 
-        // Since email confirmation is disabled, go straight to dashboard
-        toast.success('Account created! Welcome to Cerebrum! 🎉');
-        navigate('/dashboard');
+        // ✅ User created successfully - redirect to dashboard
+        toast.success("Account created! Welcome to Cerebrum! 🎉");
+        navigate("/dashboard");
       }
     } catch (error) {
-      console.error('Auth error:', error);
-      toast.error(error.message || 'Something went wrong');
+      console.error("Auth error:", error);
+      toast.error(error.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -144,24 +194,24 @@ const Auth = () => {
   const handleResetPassword = async (e) => {
     e.preventDefault();
     if (!resetEmail) {
-      toast.error('Please enter your email address');
+      toast.error("Please enter your email address");
       return;
     }
 
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${window.location.origin}/auth`,
       });
 
       if (error) throw error;
-      
-      toast.success('Password reset email sent! Check your inbox.');
+
+      toast.success("Password reset email sent! Check your inbox. 📧");
       setShowReset(false);
-      setResetEmail('');
+      setResetEmail("");
     } catch (error) {
-      console.error('Reset error:', error);
-      toast.error(error.message || 'Failed to send reset email');
+      console.error("Reset error:", error);
+      toast.error(error.message || "Failed to send reset email");
     } finally {
       setLoading(false);
     }
@@ -171,10 +221,10 @@ const Auth = () => {
     setGoogleLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: "google",
         options: {
-          redirectTo: window.location.origin
-        }
+          redirectTo: `${window.location.origin}/auth`,
+        },
       });
 
       if (error) {
@@ -182,13 +232,13 @@ const Auth = () => {
         setGoogleLoading(false);
         return;
       }
-      
+
       if (data?.url) {
         window.location.href = data.url;
       }
     } catch (error) {
-      console.error('Google login error:', error);
-      toast.error('Google login failed. Please try again.');
+      console.error("Google login error:", error);
+      toast.error("Google login failed. Please try again.");
       setGoogleLoading(false);
     }
   };
@@ -197,10 +247,10 @@ const Auth = () => {
     setGithubLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'github',
+        provider: "github",
         options: {
-          redirectTo: window.location.origin
-        }
+          redirectTo: `${window.location.origin}/auth`,
+        },
       });
 
       if (error) {
@@ -208,13 +258,13 @@ const Auth = () => {
         setGithubLoading(false);
         return;
       }
-      
+
       if (data?.url) {
         window.location.href = data.url;
       }
     } catch (error) {
-      console.error('GitHub login error:', error);
-      toast.error('GitHub login failed. Please try again.');
+      console.error("GitHub login error:", error);
+      toast.error("GitHub login failed. Please try again.");
       setGithubLoading(false);
     }
   };
@@ -238,7 +288,8 @@ const Auth = () => {
             </div>
             <h2 className="text-2xl font-bold text-white">Reset Password</h2>
             <p className="text-gray-400 text-sm mt-2">
-              Enter your email address and we'll send you a link to reset your password.
+              Enter your email address and we'll send you a link to reset your
+              password.
             </p>
           </div>
 
@@ -261,7 +312,11 @@ const Auth = () => {
               disabled={loading}
               className="w-full btn-primary flex items-center justify-center gap-2 py-3"
             >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Send Reset Email'}
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                "Send Reset Email"
+              )}
             </motion.button>
           </form>
         </div>
@@ -270,7 +325,7 @@ const Auth = () => {
   }
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
@@ -282,7 +337,9 @@ const Auth = () => {
             <Brain className="w-12 h-12 text-[#a78bfa]" />
           </div>
           <h1 className="text-2xl font-bold text-white">Cerebrum</h1>
-          <p className="text-gray-400 text-sm">{isLogin ? 'Welcome back!' : 'Create your account'}</p>
+          <p className="text-gray-400 text-sm">
+            {isLogin ? "Welcome back!" : "Create your account"}
+          </p>
           {loading && (
             <div className="mt-2 flex items-center justify-center gap-2 text-[#a78bfa] text-sm">
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -357,14 +414,21 @@ const Auth = () => {
             </div>
           )}
 
-          <motion.button 
-            whileHover={{ scale: 1.02 }} 
-            whileTap={{ scale: 0.98 }} 
-            type="submit" 
-            disabled={loading} 
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            type="submit"
+            disabled={loading}
             className="w-full btn-primary flex items-center justify-center gap-2 py-3"
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><LogIn className="w-4 h-4" /> {isLogin ? 'Sign In' : 'Create Account'}</>}
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <>
+                <LogIn className="w-4 h-4" />{" "}
+                {isLogin ? "Sign In" : "Create Account"}
+              </>
+            )}
           </motion.button>
         </form>
 
@@ -392,7 +456,7 @@ const Auth = () => {
             ) : (
               <Github className="w-5 h-5" />
             )}
-            {githubLoading ? 'Connecting...' : 'Continue with GitHub'}
+            {githubLoading ? "Connecting..." : "Continue with GitHub"}
           </motion.button>
 
           <motion.button
@@ -407,22 +471,33 @@ const Auth = () => {
             ) : (
               <Chrome className="w-5 h-5" />
             )}
-            {googleLoading ? 'Connecting...' : 'Continue with Google'}
+            {googleLoading ? "Connecting..." : "Continue with Google"}
           </motion.button>
         </div>
 
         <div className="mt-6 text-center">
-          <button 
+          <button
             onClick={() => {
               setIsLogin(!isLogin);
-              setFormData({ name: '', email: '', password: '', confirmPassword: '' });
-            }} 
+              setFormData({
+                name: "",
+                email: "",
+                password: "",
+                confirmPassword: "",
+              });
+            }}
             className="text-sm text-gray-400 hover:text-[#a78bfa] transition-colors"
           >
             {isLogin ? (
-              <span>Don't have an account? <span className="text-[#a78bfa] font-medium">Sign Up</span></span>
+              <span>
+                Don't have an account?{" "}
+                <span className="text-[#a78bfa] font-medium">Sign Up</span>
+              </span>
             ) : (
-              <span>Already have an account? <span className="text-[#a78bfa] font-medium">Sign In</span></span>
+              <span>
+                Already have an account?{" "}
+                <span className="text-[#a78bfa] font-medium">Sign In</span>
+              </span>
             )}
           </button>
         </div>
