@@ -34,6 +34,7 @@ import {
   Sparkles,
   List,
   Plus,
+  RefreshCw,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
 import { toast } from "react-toastify";
@@ -54,17 +55,155 @@ const PREDEFINED_BIOS = [
   { id: 10, text: "🎓 Always learning, always growing", emoji: "🎓" },
 ];
 
+// Achievement definitions
+const ACHIEVEMENT_DEFINITIONS = [
+  {
+    id: "first_quiz",
+    name: "First Quiz",
+    description: "Completed your first quiz",
+    icon: "🎯",
+    check: (stats) => stats.totalQuizzes >= 1,
+  },
+  {
+    id: "quiz_enthusiast",
+    name: "Quiz Enthusiast",
+    description: "Completed 10+ quizzes",
+    icon: "📚",
+    check: (stats) => stats.totalQuizzes >= 10,
+  },
+  {
+    id: "quiz_master",
+    name: "Quiz Master",
+    description: "Completed 50+ quizzes",
+    icon: "👑",
+    check: (stats) => stats.totalQuizzes >= 50,
+  },
+  {
+    id: "quiz_legend",
+    name: "Quiz Legend",
+    description: "Completed 100+ quizzes",
+    icon: "🏆",
+    check: (stats) => stats.totalQuizzes >= 100,
+  },
+  {
+    id: "perfect_score",
+    name: "Perfect Score",
+    description: "Scored 100% on a quiz",
+    icon: "⭐",
+    check: (stats) => stats.bestScore === 100,
+  },
+  {
+    id: "perfect_score_5",
+    name: "Perfect Streak",
+    description: "Got 5 perfect scores",
+    icon: "🌟",
+    check: (stats) => stats.perfectScores >= 5,
+  },
+  {
+    id: "on_fire",
+    name: "On Fire!",
+    description: "5+ day streak",
+    icon: "🔥",
+    check: (stats) => stats.streak >= 5,
+  },
+  {
+    id: "dedicated_learner",
+    name: "Dedicated Learner",
+    description: "30+ day streak",
+    icon: "🌟",
+    check: (stats) => stats.streak >= 30,
+  },
+  {
+    id: "learning_monster",
+    name: "Learning Monster",
+    description: "100+ day streak",
+    icon: "💪",
+    check: (stats) => stats.streak >= 100,
+  },
+  {
+    id: "riddle_master",
+    name: "Riddle Master",
+    description: "Solved 5+ riddles",
+    icon: "🧩",
+    check: (stats) => stats.riddlesSolved >= 5,
+  },
+  {
+    id: "riddle_legend",
+    name: "Riddle Legend",
+    description: "Solved 25+ riddles",
+    icon: "🧠",
+    check: (stats) => stats.riddlesSolved >= 25,
+  },
+  {
+    id: "avid_reader",
+    name: "Avid Reader",
+    description: "Read 10+ articles",
+    icon: "📖",
+    check: (stats) => stats.readArticles >= 10,
+  },
+  {
+    id: "bookworm",
+    name: "Bookworm",
+    description: "Read 50+ articles",
+    icon: "📚",
+    check: (stats) => stats.readArticles >= 50,
+  },
+  {
+    id: "point_collector",
+    name: "Point Collector",
+    description: "Earned 1000+ points",
+    icon: "💎",
+    check: (stats) => stats.totalPoints >= 1000,
+  },
+  {
+    id: "point_millionaire",
+    name: "Point Millionaire",
+    description: "Earned 10,000+ points",
+    icon: "💰",
+    check: (stats) => stats.totalPoints >= 10000,
+  },
+  {
+    id: "category_master",
+    name: "Category Master",
+    description: "Played quizzes in 5+ categories",
+    icon: "🎯",
+    check: (stats) => Object.keys(stats.quizzesByCategory || {}).length >= 5,
+  },
+  {
+    id: "all_rounder",
+    name: "All Rounder",
+    description: "Played quizzes in 10+ categories",
+    icon: "🌟",
+    check: (stats) => Object.keys(stats.quizzesByCategory || {}).length >= 10,
+  },
+  {
+    id: "high_scorer",
+    name: "High Scorer",
+    description: "Average score above 80%",
+    icon: "📈",
+    check: (stats) => stats.averageScore >= 80 && stats.totalQuizzes >= 5,
+  },
+  {
+    id: "genius",
+    name: "Genius",
+    description: "Average score above 90%",
+    icon: "🧠",
+    check: (stats) => stats.averageScore >= 90 && stats.totalQuizzes >= 10,
+  },
+];
+
 const Profile = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
   const [showBioSelector, setShowBioSelector] = useState(false);
   const [customBio, setCustomBio] = useState("");
-  const [selectedBioType, setSelectedBioType] = useState("predefined"); // 'predefined' or 'custom'
+  const [selectedBioType, setSelectedBioType] = useState("predefined");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -91,10 +230,18 @@ const Profile = () => {
     quizzesByCategory: {},
     achievements: [],
   });
+  const [achievements, setAchievements] = useState([]);
 
   useEffect(() => {
     loadProfile();
   }, []);
+
+  // Recalculate achievements whenever stats change
+  useEffect(() => {
+    if (stats) {
+      calculateAchievements();
+    }
+  }, [stats]);
 
   const loadProfile = async () => {
     setLoading(true);
@@ -150,7 +297,9 @@ const Profile = () => {
       if (profileData) {
         setProfile(profileData);
         const statsData = profileData.stats || {};
-        setStats({
+
+        // Merge with existing stats to preserve achievements
+        const newStats = {
           totalQuizzes: statsData.total_quizzes || 0,
           bestScore: statsData.best_score || 0,
           averageScore: statsData.average_score || 0,
@@ -166,13 +315,264 @@ const Profile = () => {
           lastQuizDate: statsData.last_quiz_date || null,
           quizzesByCategory: statsData.quizzes_by_category || {},
           achievements: statsData.achievements || [],
-        });
+        };
+
+        setStats(newStats);
       }
     } catch (error) {
       console.error("Error loading profile:", error);
       toast.error("Failed to load profile");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const calculateAchievements = () => {
+    const unlockedAchievements = [];
+
+    ACHIEVEMENT_DEFINITIONS.forEach((def) => {
+      if (def.check(stats)) {
+        unlockedAchievements.push({
+          id: def.id,
+          name: def.name,
+          description: def.description,
+          icon: def.icon,
+          unlocked: true,
+        });
+      }
+    });
+
+    setAchievements(unlockedAchievements);
+
+    // Update stats with achievements if changed
+    if (unlockedAchievements.length !== (stats.achievements || []).length) {
+      const achievementIds = unlockedAchievements.map((a) => a.id);
+      setStats((prev) => ({
+        ...prev,
+        achievements: achievementIds,
+      }));
+
+      // Save achievements to database
+      if (user) {
+        saveAchievements(user.id, achievementIds);
+      }
+    }
+  };
+
+  const saveAchievements = async (userId, achievementIds) => {
+    try {
+      const { error } = await supabase
+        .from("users")
+        .update({
+          stats: {
+            ...stats,
+            achievements: achievementIds,
+          },
+        })
+        .eq("id", userId);
+
+      if (error) {
+        console.error("Error saving achievements:", error);
+      }
+    } catch (error) {
+      console.error("Error saving achievements:", error);
+    }
+  };
+
+  const refreshStats = async () => {
+    setRefreshing(true);
+    try {
+      // Get latest quiz data
+      const { data: quizData, error: quizError } = await supabase
+        .from("quiz_history")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (quizError) throw quizError;
+
+      // Recalculate stats from quiz history
+      let totalQuizzes = 0;
+      let totalCorrect = 0;
+      let totalIncorrect = 0;
+      let totalPoints = 0;
+      let bestScore = 0;
+      let perfectScores = 0;
+      let totalTime = 0;
+      const categoryCount = {};
+
+      if (quizData && quizData.length > 0) {
+        totalQuizzes = quizData.length;
+
+        quizData.forEach((quiz) => {
+          totalCorrect += quiz.correct_answers || 0;
+          totalIncorrect += quiz.incorrect_answers || 0;
+          totalPoints += quiz.points || 0;
+          totalTime += quiz.time_taken || 0;
+
+          const score = quiz.score || 0;
+          if (score > bestScore) bestScore = score;
+          if (score === 100) perfectScores++;
+
+          // Count by category
+          const category = quiz.category || "Uncategorized";
+          categoryCount[category] = (categoryCount[category] || 0) + 1;
+        });
+      }
+
+      // Calculate average score
+      const totalQuestions = totalCorrect + totalIncorrect;
+      const averageScore =
+        totalQuestions > 0
+          ? Math.round((totalCorrect / totalQuestions) * 100)
+          : 0;
+
+      // Calculate streak
+      let streak = 0;
+      let longestStreak = 0;
+      let currentStreak = 0;
+      let lastDate = null;
+
+      if (quizData && quizData.length > 0) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Get unique dates
+        const dates = quizData.map((q) => {
+          const d = new Date(q.created_at);
+          d.setHours(0, 0, 0, 0);
+          return d;
+        });
+
+        // Remove duplicates and sort
+        const uniqueDates = [...new Set(dates.map((d) => d.getTime()))]
+          .map((t) => new Date(t))
+          .sort((a, b) => b - a);
+
+        if (uniqueDates.length > 0) {
+          // Check if last quiz was today or yesterday
+          const lastQuizDate = uniqueDates[0];
+          const daysDiff = Math.floor(
+            (today - lastQuizDate) / (1000 * 60 * 60 * 24),
+          );
+
+          if (daysDiff <= 1) {
+            // Calculate streak
+            currentStreak = 1;
+            for (let i = 1; i < uniqueDates.length; i++) {
+              const prevDate = uniqueDates[i - 1];
+              const currDate = uniqueDates[i];
+              const diff = Math.floor(
+                (prevDate - currDate) / (1000 * 60 * 60 * 24),
+              );
+
+              if (diff === 1) {
+                currentStreak++;
+              } else {
+                break;
+              }
+            }
+            streak = currentStreak;
+
+            // Calculate longest streak from all data
+            let tempStreak = 0;
+            let tempLongest = 0;
+            let prevDate = null;
+
+            for (const date of uniqueDates) {
+              if (!prevDate) {
+                tempStreak = 1;
+              } else {
+                const diff = Math.floor(
+                  (prevDate - date) / (1000 * 60 * 60 * 24),
+                );
+                if (diff === 1) {
+                  tempStreak++;
+                } else {
+                  tempStreak = 1;
+                }
+              }
+              tempLongest = Math.max(tempLongest, tempStreak);
+              prevDate = date;
+            }
+            longestStreak = tempLongest;
+          }
+        }
+      }
+
+      // Get riddles solved
+      const { data: riddlesData, error: riddlesError } = await supabase
+        .from("riddle_history")
+        .select("*")
+        .eq("user_id", user.id);
+
+      const riddlesSolved = riddlesError ? 0 : riddlesData?.length || 0;
+
+      // Get articles read
+      const { data: articlesData, error: articlesError } = await supabase
+        .from("article_history")
+        .select("*")
+        .eq("user_id", user.id);
+
+      const readArticles = articlesError ? 0 : articlesData?.length || 0;
+
+      // Update stats
+      const updatedStats = {
+        totalQuizzes,
+        totalCorrect,
+        totalIncorrect,
+        totalPoints,
+        bestScore,
+        averageScore,
+        perfectScores,
+        totalTime,
+        streak,
+        longestStreak,
+        riddlesSolved,
+        readArticles,
+        lastQuizDate:
+          quizData && quizData.length > 0 ? quizData[0].created_at : null,
+        quizzesByCategory: categoryCount,
+        achievements: stats.achievements || [],
+      };
+
+      setStats(updatedStats);
+
+      // Save to database
+      const { error: updateError } = await supabase
+        .from("users")
+        .update({
+          stats: {
+            total_quizzes: totalQuizzes,
+            total_correct: totalCorrect,
+            total_incorrect: totalIncorrect,
+            total_points: totalPoints,
+            best_score: bestScore,
+            average_score: averageScore,
+            perfect_scores: perfectScores,
+            total_time: totalTime,
+            streak: streak,
+            longest_streak: longestStreak,
+            riddles_solved: riddlesSolved,
+            read_articles: readArticles,
+            last_quiz_date:
+              quizData && quizData.length > 0 ? quizData[0].created_at : null,
+            quizzes_by_category: categoryCount,
+            achievements: stats.achievements || [],
+          },
+        })
+        .eq("id", user.id);
+
+      if (updateError) {
+        console.error("Error updating stats:", updateError);
+      }
+
+      toast.success("Stats refreshed successfully! 🔄");
+    } catch (error) {
+      console.error("Error refreshing stats:", error);
+      toast.error("Failed to refresh stats");
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -296,105 +696,6 @@ const Profile = () => {
 
   const currentAvatar = getAvatar();
 
-  // Get achievements based on stats
-  const getAchievements = () => {
-    const achievements = [];
-
-    if (stats.totalQuizzes >= 1) {
-      achievements.push({
-        id: "first_quiz",
-        name: "First Quiz",
-        description: "Completed your first quiz",
-        icon: "🎯",
-        unlocked: true,
-      });
-    }
-
-    if (stats.totalQuizzes >= 10) {
-      achievements.push({
-        id: "quiz_enthusiast",
-        name: "Quiz Enthusiast",
-        description: "Completed 10+ quizzes",
-        icon: "📚",
-        unlocked: true,
-      });
-    }
-
-    if (stats.totalQuizzes >= 50) {
-      achievements.push({
-        id: "quiz_master",
-        name: "Quiz Master",
-        description: "Completed 50+ quizzes",
-        icon: "👑",
-        unlocked: true,
-      });
-    }
-
-    if (stats.bestScore === 100) {
-      achievements.push({
-        id: "perfect_score",
-        name: "Perfect Score",
-        description: "Scored 100% on a quiz",
-        icon: "⭐",
-        unlocked: true,
-      });
-    }
-
-    if (stats.streak >= 5) {
-      achievements.push({
-        id: "on_fire",
-        name: "On Fire!",
-        description: "5+ day streak",
-        icon: "🔥",
-        unlocked: true,
-      });
-    }
-
-    if (stats.streak >= 30) {
-      achievements.push({
-        id: "dedicated_learner",
-        name: "Dedicated Learner",
-        description: "30+ day streak",
-        icon: "🌟",
-        unlocked: true,
-      });
-    }
-
-    if (stats.riddlesSolved >= 5) {
-      achievements.push({
-        id: "riddle_master",
-        name: "Riddle Master",
-        description: "Solved 5+ riddles",
-        icon: "🧩",
-        unlocked: true,
-      });
-    }
-
-    if (stats.readArticles >= 10) {
-      achievements.push({
-        id: "avid_reader",
-        name: "Avid Reader",
-        description: "Read 10+ articles",
-        icon: "📖",
-        unlocked: true,
-      });
-    }
-
-    if (stats.totalPoints >= 1000) {
-      achievements.push({
-        id: "point_collector",
-        name: "Point Collector",
-        description: "Earned 1000+ points",
-        icon: "💎",
-        unlocked: true,
-      });
-    }
-
-    return achievements;
-  };
-
-  const achievements = getAchievements();
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -423,6 +724,16 @@ const Profile = () => {
           </h1>
         </div>
         <div className="flex gap-3">
+          <button
+            onClick={refreshStats}
+            disabled={refreshing}
+            className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm flex items-center gap-2"
+          >
+            <RefreshCw
+              className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+            />
+            {refreshing ? "Refreshing..." : "Refresh Stats"}
+          </button>
           {editing ? (
             <>
               <button
@@ -723,10 +1034,22 @@ const Profile = () => {
 
       {/* Achievements */}
       <div className="bg-[#1a1a2e] rounded-2xl p-6 border border-white/5">
-        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-          <Medal className="w-5 h-5 text-yellow-400" />
-          Achievements ({achievements.length})
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            <Medal className="w-5 h-5 text-yellow-400" />
+            Achievements ({achievements.length})
+          </h3>
+          <button
+            onClick={refreshStats}
+            disabled={refreshing}
+            className="text-xs text-[#a78bfa] hover:text-white transition-colors flex items-center gap-1"
+          >
+            <RefreshCw
+              className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`}
+            />
+            Refresh
+          </button>
+        </div>
         {achievements.length === 0 ? (
           <div className="text-center py-8">
             <div className="text-4xl mb-3">🏆</div>
@@ -745,9 +1068,11 @@ const Profile = () => {
             {achievements.map((achievement) => (
               <div
                 key={achievement.id}
-                className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5"
+                className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5 hover:bg-white/10 transition-all duration-300 group"
               >
-                <span className="text-2xl">{achievement.icon}</span>
+                <span className="text-2xl group-hover:scale-110 transition-transform">
+                  {achievement.icon}
+                </span>
                 <div>
                   <div className="text-white text-sm font-medium">
                     {achievement.name}
@@ -756,6 +1081,7 @@ const Profile = () => {
                     {achievement.description}
                   </div>
                 </div>
+                <CheckCircle className="w-4 h-4 text-green-400 ml-auto" />
               </div>
             ))}
           </div>

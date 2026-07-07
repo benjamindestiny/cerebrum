@@ -26,6 +26,7 @@ import {
   Gift,
   Rocket,
   Shield,
+  RefreshCw,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
 import { toast } from "react-toastify";
@@ -33,6 +34,7 @@ import { toast } from "react-toastify";
 const Achievements = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState({
     totalQuizzes: 0,
@@ -46,6 +48,7 @@ const Achievements = () => {
     perfectScores: 0,
   });
   const [recentAchievements, setRecentAchievements] = useState([]);
+  const [earnedAchievementIds, setEarnedAchievementIds] = useState([]);
 
   // ✅ Define all achievements with requirements
   const allAchievements = [
@@ -349,7 +352,7 @@ const Achievements = () => {
       icon: "🌈",
       category: "Special",
       points: 30,
-      requirement: (stats) => stats.totalQuizzes >= 3, // Simplified for now
+      requirement: (stats) => stats.totalQuizzes >= 3,
       getProgress: (stats) => Math.min(stats.totalQuizzes, 3),
       maxProgress: 3,
       color: "from-fuchsia-400 to-pink-500",
@@ -360,7 +363,52 @@ const Achievements = () => {
 
   useEffect(() => {
     loadAchievements();
+
+    // Set up real-time subscription for user stats
+    const subscription = supabase
+      .channel("user_stats_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "users",
+          filter: `id=eq.${user?.id}`,
+        },
+        (payload) => {
+          // When stats update in database, refresh achievements
+          if (payload.new?.stats) {
+            const newStats = payload.new.stats;
+            setStats({
+              totalQuizzes: newStats.total_quizzes || 0,
+              bestScore: newStats.best_score || 0,
+              averageScore: newStats.average_score || 0,
+              totalPoints: newStats.total_points || 0,
+              streak: newStats.streak || 0,
+              riddlesSolved: newStats.riddles_solved || 0,
+              readArticles: newStats.read_articles || 0,
+              totalTime: newStats.total_time || 0,
+              perfectScores: newStats.perfect_scores || 0,
+            });
+            // Recalculate achievements with new stats
+            updateAchievements(newStats);
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
+
+  // Update achievements based on stats
+  const updateAchievements = (statsData) => {
+    const earned = allAchievements.filter((a) => a.requirement(statsData));
+    const earnedIds = earned.map((a) => a.id);
+    setEarnedAchievementIds(earnedIds);
+    setRecentAchievements(earned.slice(0, 5));
+  };
 
   const loadAchievements = async () => {
     setLoading(true);
@@ -379,7 +427,7 @@ const Achievements = () => {
 
       setUser(user);
 
-      // Get user stats
+      // Get user stats from database
       const { data: profileData, error: profileError } = await supabase
         .from("users")
         .select("stats")
@@ -391,7 +439,9 @@ const Achievements = () => {
       }
 
       const statsData = profileData?.stats || {};
-      setStats({
+
+      // Set stats with proper mapping
+      const mappedStats = {
         totalQuizzes: statsData.total_quizzes || 0,
         bestScore: statsData.best_score || 0,
         averageScore: statsData.average_score || 0,
@@ -401,16 +451,57 @@ const Achievements = () => {
         readArticles: statsData.read_articles || 0,
         totalTime: statsData.total_time || 0,
         perfectScores: statsData.perfect_scores || 0,
-      });
+      };
 
-      // Check which achievements are earned
-      const earned = allAchievements.filter((a) => a.requirement(statsData));
-      setRecentAchievements(earned.slice(0, 5));
+      setStats(mappedStats);
+
+      // Calculate achievements
+      updateAchievements(mappedStats);
     } catch (error) {
       console.error("Error loading achievements:", error);
       toast.error("Failed to load achievements");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const refreshAchievements = async () => {
+    setRefreshing(true);
+    try {
+      // Force refresh from database
+      const { data: profileData, error: profileError } = await supabase
+        .from("users")
+        .select("stats")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error("Error fetching stats:", profileError);
+      }
+
+      const statsData = profileData?.stats || {};
+
+      const mappedStats = {
+        totalQuizzes: statsData.total_quizzes || 0,
+        bestScore: statsData.best_score || 0,
+        averageScore: statsData.average_score || 0,
+        totalPoints: statsData.total_points || 0,
+        streak: statsData.streak || 0,
+        riddlesSolved: statsData.riddles_solved || 0,
+        readArticles: statsData.read_articles || 0,
+        totalTime: statsData.total_time || 0,
+        perfectScores: statsData.perfect_scores || 0,
+      };
+
+      setStats(mappedStats);
+      updateAchievements(mappedStats);
+
+      toast.success("Achievements refreshed! 🔄");
+    } catch (error) {
+      console.error("Error refreshing:", error);
+      toast.error("Failed to refresh achievements");
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -493,6 +584,16 @@ const Achievements = () => {
           </h1>
         </div>
         <div className="flex gap-2 sm:gap-3">
+          <button
+            onClick={refreshAchievements}
+            disabled={refreshing}
+            className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-xs sm:text-sm flex items-center gap-2"
+          >
+            <RefreshCw
+              className={`w-3 h-3 sm:w-4 sm:h-4 ${refreshing ? "animate-spin" : ""}`}
+            />
+            {refreshing ? "Refreshing..." : "Refresh"}
+          </button>
           <div className="glass-card px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2">
             <Star className="w-4 h-4 text-yellow-400" />
             <span className="text-xs sm:text-sm text-white">
