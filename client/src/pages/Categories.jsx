@@ -1,129 +1,147 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  FolderTree, ChevronDown, ChevronRight, Search,
-  Brain, Trophy, Sparkles, TrendingUp, 
-  Zap, ArrowRight, Layers, 
-  Gamepad2, Code, Cloud, Database, 
-  FlaskConical, Atom, Dna, BookOpen,
-  Landmark, Building2, Shield, Users,
-  DollarSign, Heart, Music, Palette,
-  Settings, Sliders, CheckCircle, Play, X,
-  Crown, Star, Lock
-} from 'lucide-react';
-import { toast } from 'react-toastify';
-import categoryHierarchy from '../data/categoryData';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  FolderTree,
+  ChevronDown,
+  ChevronRight,
+  Search,
+  Brain,
+  Trophy,
+  Sparkles,
+  TrendingUp,
+  Zap,
+  ArrowRight,
+  Layers,
+  Gamepad2,
+  Code,
+  Cloud,
+  Database,
+  FlaskConical,
+  Atom,
+  Dna,
+  BookOpen,
+  Landmark,
+  Building2,
+  Shield,
+  Users,
+  DollarSign,
+  Heart,
+  Music,
+  Palette,
+  Settings,
+  Sliders,
+  CheckCircle,
+  Play,
+  X,
+  Crown,
+  Star,
+  Lock,
+} from "lucide-react";
+import { toast } from "react-toastify";
+import categoryHierarchy from "../data/categoryData";
 
 const Categories = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [expandedItems, setExpandedItems] = useState({});
-  const [questionCount, setQuestionCount] = useState(10);
+  const [questionCount, setQuestionCount] = useState(15); // ✅ Changed default to 15
   const [showCountSelector, setShowCountSelector] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
 
-  // FREE USER QUESTION COUNTS - Only 5, 10, 15
   const questionCounts = [
-    { value: 5, label: '5', free: true },
-    { value: 10, label: '10', free: true },
-    { value: 15, label: '15', free: true },
-    // 20-50 COMMENTED OUT FOR FREE USERS
-    // { value: 20, label: '20', free: false, premium: true },
-    // { value: 25, label: '25', free: false, premium: true },
-    // { value: 30, label: '30', free: false, premium: true },
-    // { value: 35, label: '35', free: false, premium: true },
-    // { value: 40, label: '40', free: false, premium: true },
-    // { value: 45, label: '45', free: false, premium: true },
-    // { value: 50, label: '50', free: false, premium: true },
+    { value: 5, label: "5", free: true },
+    { value: 10, label: "10", free: true },
+    { value: 15, label: "15", free: true },
   ];
 
   const toggleExpand = (id) => {
-    setExpandedItems(prev => ({
+    setExpandedItems((prev) => ({
       ...prev,
-      [id]: !prev[id]
+      [id]: !prev[id],
     }));
   };
 
-  // Search filter function - FIXED
   const matchesSearch = (item, term) => {
     if (!term) return true;
     const lowerTerm = term.toLowerCase();
     if (item.name.toLowerCase().includes(lowerTerm)) return true;
-    if (item.description && item.description.toLowerCase().includes(lowerTerm)) return true;
+    if (item.description && item.description.toLowerCase().includes(lowerTerm))
+      return true;
     return false;
   };
 
-  // Filter tree based on search term - FIXED
   const filterTree = (items, term) => {
     if (!term) return items;
-    
+
     const filtered = [];
-    
-    items.forEach(item => {
-      // Check if current item matches
-      const itemMatches = item.name.toLowerCase().includes(term.toLowerCase()) ||
-                         (item.description && item.description.toLowerCase().includes(term.toLowerCase()));
-      
-      // Filter children
+
+    items.forEach((item) => {
+      const itemMatches =
+        item.name.toLowerCase().includes(term.toLowerCase()) ||
+        (item.description &&
+          item.description.toLowerCase().includes(term.toLowerCase()));
+
       let filteredChildren = [];
       if (item.children) {
         filteredChildren = filterTree(item.children, term);
       }
-      
-      // Include item if it matches OR has matching children
+
       if (itemMatches || filteredChildren.length > 0) {
         filtered.push({
           ...item,
-          children: filteredChildren.length > 0 ? filteredChildren : item.children
+          children:
+            filteredChildren.length > 0 ? filteredChildren : item.children,
         });
       }
     });
-    
+
     return filtered;
   };
 
   const handleCategoryClick = (category) => {
-    
     let questionId = category.id;
-    if (category.source === 'api' && category.apiId) {
+    if (category.source === "api" && category.apiId) {
       questionId = category.apiId;
     } else if (category.customQuestionId) {
       questionId = category.customQuestionId;
     }
-    
+
     setSelectedCategory({
       ...category,
-      questionId: questionId
+      questionId: questionId,
     });
-    setQuestionCount(10);
+    // ✅ Set to 15 by default
+    setQuestionCount(15);
     setShowCountSelector(true);
   };
 
   const startQuiz = () => {
     if (!selectedCategory) {
-      toast.error('No category selected');
+      toast.error("No category selected");
       return;
     }
-    
+
     const category = selectedCategory;
     const questionId = category.questionId;
+    // ✅ Use the selected questionCount
     const count = questionCount;
-    
-    
-    sessionStorage.setItem('selectedCategory', JSON.stringify({
-      id: questionId,
-      name: category.name,
-      count: count,
-      source: category.source || 'api'
-    }));
-    
+
+    sessionStorage.setItem(
+      "selectedCategory",
+      JSON.stringify({
+        id: questionId,
+        name: category.name,
+        count: count,
+        source: category.source || "api",
+      }),
+    );
+
     setShowCountSelector(false);
     setSelectedCategory(null);
-    navigate('/quiz');
+    navigate("/quiz");
   };
 
-  // Get filtered tree based on search
   const getFilteredTree = () => {
     if (!searchTerm) return categoryHierarchy;
     return filterTree(categoryHierarchy, searchTerm);
@@ -131,10 +149,9 @@ const Categories = () => {
 
   const filteredTree = getFilteredTree();
 
-  // Count visible categories
   const countVisibleCategories = (items) => {
     let count = 0;
-    items.forEach(item => {
+    items.forEach((item) => {
       count++;
       if (item.children && item.children.length > 0) {
         count += countVisibleCategories(item.children);
@@ -150,15 +167,17 @@ const Categories = () => {
       const hasChildren = item.children && item.children.length > 0;
       const isExpanded = expandedItems[item.id] || false;
       const Icon = item.icon;
-      
+
       return (
         <div key={item.id} className="mb-2">
-          <motion.div 
+          <motion.div
             whileHover={{ x: hasChildren ? 0 : 5 }}
-            className={`flex items-center gap-3 p-4 rounded-xl cursor-pointer transition-all duration-200 ${
-              isExpanded ? 'bg-white/5 border-l-4 border-[#6C2BD9]' : 'hover:bg-white/5'
-            } ${!hasChildren ? 'hover:border-l-4 hover:border-[#6C2BD9]/50' : ''}`}
-            style={{ paddingLeft: `${depth * 24 + 16}px` }}
+            className={`flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl cursor-pointer transition-all duration-200 ${
+              isExpanded
+                ? "bg-white/5 border-l-4 border-[#6C2BD9]"
+                : "hover:bg-white/5"
+            } ${!hasChildren ? "hover:border-l-4 hover:border-[#6C2BD9]/50" : ""}`}
+            style={{ paddingLeft: `${depth * 16 + 12}px` }}
             onClick={() => {
               if (hasChildren) {
                 toggleExpand(item.id);
@@ -168,43 +187,52 @@ const Categories = () => {
             }}
           >
             {hasChildren && (
-              <button 
-                className="text-gray-400 hover:text-white transition-transform duration-200 p-1"
-                onClick={(e) => { e.stopPropagation(); toggleExpand(item.id); }}
+              <button
+                className="text-gray-400 hover:text-white transition-transform duration-200 p-1 flex-shrink-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleExpand(item.id);
+                }}
               >
-                {isExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                {isExpanded ? (
+                  <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                )}
               </button>
             )}
-            <span className="text-2xl">{Icon}</span>
-            <span className={`text-white font-semibold text-base ${item.color || 'text-gray-300'}`}>
+            <span className="text-xl sm:text-2xl flex-shrink-0">{Icon}</span>
+            <span
+              className={`text-white font-semibold text-sm sm:text-base ${item.color || "text-gray-300"} truncate`}
+            >
               {item.name}
             </span>
             {hasChildren && (
-              <span className="ml-auto text-xs text-gray-500 bg-white/5 px-3 py-1 rounded-full">
+              <span className="ml-auto text-[10px] sm:text-xs text-gray-500 bg-white/5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full flex-shrink-0 hidden sm:inline">
                 {item.children.length} sub-categories
               </span>
             )}
             {!hasChildren && (
-              <span className="ml-auto text-xs bg-yellow-400/20 text-yellow-400 px-3 py-1 rounded-full flex items-center gap-1">
-                <Trophy className="w-3 h-3" /> Quiz
+              <span className="ml-auto text-[10px] sm:text-xs bg-yellow-400/20 text-yellow-400 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full flex items-center gap-1 flex-shrink-0">
+                <Trophy className="w-2 h-2 sm:w-3 sm:h-3" /> Quiz
               </span>
             )}
             {searchTerm && matchesSearch(item, searchTerm) && (
-              <span className="ml-2 text-xs text-[#6C2BD9] bg-[#6C2BD9]/20 px-2 py-0.5 rounded-full">
+              <span className="ml-2 text-[10px] sm:text-xs text-[#6C2BD9] bg-[#6C2BD9]/20 px-1.5 sm:px-2 py-0.5 rounded-full flex-shrink-0">
                 Match
               </span>
             )}
           </motion.div>
-          
+
           {hasChildren && (
             <AnimatePresence>
               {isExpanded && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
+                  animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="ml-6 border-l-2 border-[#6C2BD9]/30 pl-4 overflow-hidden"
+                  className="ml-4 sm:ml-6 border-l-2 border-[#6C2BD9]/30 pl-2 sm:pl-4 overflow-hidden"
                 >
                   {renderCategoryTree(item.children, depth + 1)}
                 </motion.div>
@@ -216,7 +244,6 @@ const Categories = () => {
     });
   };
 
-  // Count total categories
   const totalCategories = categoryHierarchy.reduce((acc, cat) => {
     let count = 1;
     if (cat.children) {
@@ -236,7 +263,7 @@ const Categories = () => {
   const totalTopics = categoryHierarchy.reduce((acc, cat) => {
     let count = 0;
     if (cat.children) {
-      cat.children.forEach(child => {
+      cat.children.forEach((child) => {
         if (child.children) count += child.children.length;
       });
     }
@@ -244,21 +271,22 @@ const Categories = () => {
   }, 0);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8 px-3 sm:px-4 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-white flex items-center gap-3">
-            <FolderTree className="w-9 h-9 text-[#6C2BD9]" />
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white flex items-center gap-2 sm:gap-3">
+            <FolderTree className="w-6 h-6 sm:w-7 sm:h-7 md:w-9 md:h-9 text-[#6C2BD9]" />
             Category Explorer
           </h1>
-          <p className="text-gray-400 text-base mt-1">
-            Browse {totalCategories} categories across {categoryHierarchy.length} main topics
+          <p className="text-gray-400 text-xs sm:text-sm md:text-base mt-1">
+            Browse {totalCategories} categories across{" "}
+            {categoryHierarchy.length} main topics
           </p>
         </div>
-        <div className="glass-card px-5 py-3 flex items-center gap-2">
-          <Layers className="w-5 h-5 text-[#6C2BD9]" />
-          <span className="text-sm text-gray-300">
+        <div className="glass-card px-3 sm:px-5 py-2 sm:py-3 flex items-center gap-2">
+          <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-[#6C2BD9]" />
+          <span className="text-[10px] sm:text-xs md:text-sm text-gray-300">
             {totalSubCategories} sub-categories • {totalTopics} topics
           </span>
         </div>
@@ -266,19 +294,18 @@ const Categories = () => {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
+        <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
         <input
           type="text"
           placeholder="Search categories..."
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value);
-            // Auto-expand all when searching
             if (e.target.value) {
               const expandAll = (items) => {
-                items.forEach(item => {
+                items.forEach((item) => {
                   if (item.children && item.children.length > 0) {
-                    setExpandedItems(prev => ({ ...prev, [item.id]: true }));
+                    setExpandedItems((prev) => ({ ...prev, [item.id]: true }));
                     expandAll(item.children);
                   }
                 });
@@ -288,40 +315,39 @@ const Categories = () => {
               setExpandedItems({});
             }
           }}
-          className="w-full pl-12 pr-4 py-4 bg-[#2D2D5E] rounded-xl border border-white/10 text-white placeholder-gray-500 focus:border-[#6C2BD9] focus:outline-none focus:ring-2 focus:ring-[#6C2BD9]/20 transition-all text-base"
+          className="w-full pl-9 sm:pl-12 pr-8 sm:pr-10 py-3 sm:py-4 bg-[#2D2D5E] rounded-xl border border-white/10 text-white placeholder-gray-500 focus:border-[#6C2BD9] focus:outline-none focus:ring-2 focus:ring-[#6C2BD9]/20 transition-all text-sm sm:text-base"
         />
         {searchTerm && (
           <button
             onClick={() => {
-              setSearchTerm('');
+              setSearchTerm("");
               setExpandedItems({});
             }}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+            className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         )}
       </div>
 
-      {/* Search Results Count */}
       {searchTerm && (
-        <div className="text-sm text-gray-400">
-          Found <span className="text-white font-bold">{visibleCount}</span> categories matching "{searchTerm}"
+        <div className="text-xs sm:text-sm text-gray-400">
+          Found <span className="text-white font-bold">{visibleCount}</span>{" "}
+          categories matching "{searchTerm}"
         </div>
       )}
 
-      {/* Category Tree */}
-      <div className="glass-card p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <FolderTree className="w-5 h-5 text-[#6C2BD9]" />
-            {searchTerm ? 'Search Results' : 'All Categories'}
+      <div className="glass-card p-3 sm:p-4 md:p-6">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <h2 className="text-base sm:text-lg md:text-xl font-bold text-white flex items-center gap-2">
+            <FolderTree className="w-4 h-4 sm:w-5 sm:h-5 text-[#6C2BD9]" />
+            {searchTerm ? "Search Results" : "All Categories"}
           </h2>
-          <span className="text-xs text-gray-500">
-            {searchTerm ? `${visibleCount} categories` : 'Click ▶ to expand sub-categories'}
+          <span className="text-[10px] sm:text-xs text-gray-500">
+            {searchTerm ? `${visibleCount} categories` : "Tap ▶ to expand"}
           </span>
         </div>
-        <div className="max-h-[700px] overflow-y-auto custom-scrollbar pr-2">
+        <div className="max-h-[500px] sm:max-h-[600px] md:max-h-[700px] overflow-y-auto custom-scrollbar pr-1 sm:pr-2">
           {renderCategoryTree(filteredTree)}
         </div>
       </div>
@@ -333,7 +359,7 @@ const Categories = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-3 sm:p-4"
             onClick={() => {
               setShowCountSelector(false);
               setSelectedCategory(null);
@@ -343,7 +369,7 @@ const Categories = () => {
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className="glass-card p-8 max-w-md w-full relative"
+              className="glass-card p-6 sm:p-8 max-w-md w-full relative mx-3 sm:mx-0"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -351,29 +377,37 @@ const Categories = () => {
                   setShowCountSelector(false);
                   setSelectedCategory(null);
                 }}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                className="absolute top-3 sm:top-4 right-3 sm:right-4 text-gray-400 hover:text-white transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
 
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-[#6C2BD9]/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Brain className="w-8 h-8 text-[#6C2BD9]" />
+              <div className="text-center mb-4 sm:mb-6">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#6C2BD9]/20 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3">
+                  <Brain className="w-6 h-6 sm:w-8 sm:h-8 text-[#6C2BD9]" />
                 </div>
-                <h2 className="text-2xl font-bold text-white">{selectedCategory.name}</h2>
-                <p className="text-gray-400 text-sm mt-1">How many questions do you want to answer?</p>
-                <p className="text-xs text-gray-500 mt-1">Selected: <span className="text-white font-bold">{questionCount}</span> questions</p>
+                <h2 className="text-lg sm:text-2xl font-bold text-white">
+                  {selectedCategory.name}
+                </h2>
+                <p className="text-gray-400 text-xs sm:text-sm mt-1">
+                  How many questions do you want to answer?
+                </p>
+                <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
+                  Selected:{" "}
+                  <span className="text-white font-bold">{questionCount}</span>{" "}
+                  questions
+                </p>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 mb-6 max-w-xs mx-auto">
+              <div className="grid grid-cols-3 gap-2 mb-4 sm:mb-6 max-w-xs mx-auto">
                 {questionCounts.map((item) => (
                   <button
                     key={item.value}
                     onClick={() => setQuestionCount(item.value)}
-                    className={`p-3 rounded-lg transition-all ${
+                    className={`p-2 sm:p-3 rounded-lg transition-all text-sm sm:text-base ${
                       questionCount === item.value
-                        ? 'bg-[#6C2BD9] text-white border border-[#6C2BD9] shadow-lg shadow-[#6C2BD9]/20'
-                        : 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10'
+                        ? "bg-[#6C2BD9] text-white border border-[#6C2BD9] shadow-lg shadow-[#6C2BD9]/20"
+                        : "bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10"
                     }`}
                   >
                     {item.value}
@@ -381,21 +415,21 @@ const Categories = () => {
                 ))}
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-2 sm:gap-3">
                 <button
                   onClick={() => {
                     setShowCountSelector(false);
                     setSelectedCategory(null);
                   }}
-                  className="flex-1 btn-secondary py-3"
+                  className="flex-1 btn-secondary py-2 sm:py-3 text-sm sm:text-base"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={startQuiz}
-                  className="flex-1 btn-primary py-3 flex items-center justify-center gap-2"
+                  className="flex-1 btn-primary py-2 sm:py-3 flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
-                  <Play className="w-4 h-4" />
+                  <Play className="w-3 h-3 sm:w-4 sm:h-4" />
                   Start {questionCount} Questions
                 </button>
               </div>
@@ -405,48 +439,66 @@ const Categories = () => {
       </AnimatePresence>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="glass-card p-5 text-center">
-          <div className="text-3xl font-bold text-[#6C2BD9]">{categoryHierarchy.length}</div>
-          <div className="text-sm text-gray-400">Main Categories</div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+        <div className="glass-card p-3 sm:p-4 md:p-5 text-center">
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-[#6C2BD9]">
+            {categoryHierarchy.length}
+          </div>
+          <div className="text-[10px] sm:text-xs md:text-sm text-gray-400">
+            Main Categories
+          </div>
         </div>
-        <div className="glass-card p-5 text-center">
-          <div className="text-3xl font-bold text-blue-400">{totalSubCategories}</div>
-          <div className="text-sm text-gray-400">Sub-Categories</div>
+        <div className="glass-card p-3 sm:p-4 md:p-5 text-center">
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-400">
+            {totalSubCategories}
+          </div>
+          <div className="text-[10px] sm:text-xs md:text-sm text-gray-400">
+            Sub-Categories
+          </div>
         </div>
-        <div className="glass-card p-5 text-center">
-          <div className="text-3xl font-bold text-yellow-400">{totalTopics}</div>
-          <div className="text-sm text-gray-400">Topics</div>
+        <div className="glass-card p-3 sm:p-4 md:p-5 text-center">
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-yellow-400">
+            {totalTopics}
+          </div>
+          <div className="text-[10px] sm:text-xs md:text-sm text-gray-400">
+            Topics
+          </div>
         </div>
-        <div className="glass-card p-5 text-center">
-          <div className="text-3xl font-bold text-[#00C9A7]">3</div>
-          <div className="text-sm text-gray-400">Difficulties</div>
+        <div className="glass-card p-3 sm:p-4 md:p-5 text-center">
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-[#00C9A7]">
+            3
+          </div>
+          <div className="text-[10px] sm:text-xs md:text-sm text-gray-400">
+            Difficulties
+          </div>
         </div>
       </div>
 
       {/* Quick Start */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="glass-card p-6 bg-gradient-to-r from-[#6C2BD9]/10 to-[#8B5CF6]/10 border border-[#6C2BD9]/20"
+        className="glass-card p-4 sm:p-5 md:p-6 bg-gradient-to-r from-[#6C2BD9]/10 to-[#8B5CF6]/10 border border-[#6C2BD9]/20"
       >
-        <div className="flex items-center gap-4 flex-wrap">
-          <Sparkles className="w-8 h-8 text-[#6C2BD9]" />
-          <div className="flex-1">
-            <h3 className="text-white font-semibold text-lg">Ready to Test Your Knowledge?</h3>
-            <p className="text-sm text-gray-400">
-              Click any sub-category to start a quiz! 🚀
+        <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
+          <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-[#6C2BD9]" />
+          <div className="flex-1 text-center sm:text-left">
+            <h3 className="text-white font-semibold text-sm sm:text-base md:text-lg">
+              Ready to Test Your Knowledge?
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-400">
+              Tap any sub-category to start a quiz! 🚀
             </p>
           </div>
-          <button 
+          <button
             onClick={() => {
               const allSubs = [];
-              categoryHierarchy.forEach(cat => {
+              categoryHierarchy.forEach((cat) => {
                 if (cat.children) {
-                  cat.children.forEach(child => {
+                  cat.children.forEach((child) => {
                     if (child.children) {
-                      child.children.forEach(sub => {
+                      child.children.forEach((sub) => {
                         allSubs.push(sub);
                       });
                     } else {
@@ -455,12 +507,13 @@ const Categories = () => {
                   });
                 }
               });
-              const random = allSubs[Math.floor(Math.random() * allSubs.length)];
+              const random =
+                allSubs[Math.floor(Math.random() * allSubs.length)];
               if (random) handleCategoryClick(random);
             }}
-            className="btn-secondary flex items-center gap-2 text-sm px-5 py-3"
+            className="btn-secondary flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-3 sm:px-5 py-2 sm:py-3 w-full sm:w-auto justify-center"
           >
-            <Zap className="w-4 h-4" /> Random Quiz
+            <Zap className="w-3 h-3 sm:w-4 sm:h-4" /> Random Quiz
           </button>
         </div>
       </motion.div>
