@@ -233,6 +233,7 @@ const Quiz = () => {
     }
   };
 
+  // ✅ CORRECTED finishQuiz function - matches database schema
   const finishQuiz = async () => {
     let correct = 0;
     questions.forEach((q, i) => {
@@ -242,30 +243,19 @@ const Quiz = () => {
     const score = Math.round((correct / questions.length) * 100);
     const timeTaken = Math.floor((Date.now() - quizStartTime) / 1000);
     
-    // Show result toast
     toast.success(`🎉 Score: ${score}%`, { position: 'top-right', autoClose: 1500 });
     
     // Save to Supabase if logged in
     if (user) {
       try {
+        // ✅ MATCH YOUR DATABASE SCHEMA
         const quizData = {
           user_id: user.id,
-          user_name: user.user_metadata?.name || user.email || 'User',
-          category: { 
-            id: categoryInfo?.id || 9, 
-            name: categoryInfo?.name || 'General Knowledge' 
-          },
-          difficulty: difficulty || 'medium',
-          score: score,
-          correct_answers: correct,
+          category: categoryInfo?.name || 'General Knowledge',
+          score: correct,
           total_questions: questions.length,
+          percentage: parseFloat((correct / questions.length).toFixed(4)),
           time_taken: timeTaken,
-          points: Math.floor(score / 10),
-          questions: questions.map(q => ({
-            question: q.question,
-            correct_answer: q.correct_answer,
-            incorrect_answers: q.incorrect_answers || []
-          })),
           answers: answers
         };
         
@@ -277,13 +267,29 @@ const Quiz = () => {
         
         if (error) {
           console.error('❌ Error saving quiz:', error);
-          toast.error('Failed to save results');
+          toast.error('Failed to save results: ' + error.message);
         } else {
-          console.log('✅ Quiz saved to Supabase!', data);
-          toast.success('Results saved! 🎉', { position: 'top-right', autoClose: 1500 });
+          console.log('✅ Quiz saved!', data);
+          toast.success('Results saved! 🎉');
+          
+          // ✅ Also update leaderboard
+          try {
+            await supabase
+              .from('leaderboard')
+              .insert({
+                user_id: user.id,
+                username: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+                score: score,
+                category: categoryInfo?.name || 'General Knowledge'
+              });
+            console.log('✅ Leaderboard updated!');
+          } catch (lbError) {
+            console.error('Leaderboard error:', lbError);
+          }
         }
       } catch (error) {
         console.error('❌ Save error:', error);
+        toast.error('Error saving results');
       }
     } else {
       console.log('⚠️ User not logged in, results not saved');

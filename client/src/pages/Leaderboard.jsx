@@ -24,12 +24,13 @@ const Leaderboard = () => {
     setCurrentUser(user);
   };
 
+  // ✅ CORRECTED loadLeaderboard function - matches actual database schema
   const loadLeaderboard = async () => {
     setLoading(true);
     try {
       let query = supabase
         .from('quiz_results')
-        .select('user_id, user_name, score, points, created_at');
+        .select('user_id, category, score, total_questions, percentage, time_taken, answers, created_at');
 
       // Time filter
       if (timeFilter !== 'all') {
@@ -55,7 +56,19 @@ const Leaderboard = () => {
 
       const { data, error } = await query;
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching quiz results:', error);
+        setPlayers([]);
+        setLoading(false);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        console.log('No quiz results found');
+        setPlayers([]);
+        setLoading(false);
+        return;
+      }
 
       // Aggregate scores by user
       const userScores = {};
@@ -63,52 +76,102 @@ const Leaderboard = () => {
         if (!userScores[record.user_id]) {
           userScores[record.user_id] = {
             userId: record.user_id,
-            userName: record.user_name,
+            userName: 'Player', // Will be updated from users table
             totalScore: 0,
             quizCount: 0,
             bestScore: 0,
-            totalPoints: 0,
-            recentScore: 0
+            averageScore: 0,
+            recentScore: 0,
+            category: record.category || 'General',
+            rank: 0
           };
         }
         const user = userScores[record.user_id];
+        const scorePercentage = record.percentage || (record.score / record.total_questions) * 100;
         user.totalScore += record.score;
         user.quizCount += 1;
-        user.bestScore = Math.max(user.bestScore, record.score);
-        user.totalPoints += (record.points || 0);
-        user.recentScore = record.score;
+        user.bestScore = Math.max(user.bestScore, Math.round(scorePercentage));
+        user.recentScore = Math.round(scorePercentage);
+        user.category = record.category || user.category;
       });
 
-      // Calculate averages and sort
+      // Calculate averages
       const leaderboard = Object.values(userScores).map(user => ({
         ...user,
         averageScore: Math.round(user.totalScore / user.quizCount)
       }));
 
+      // Sort by average score (highest first)
       leaderboard.sort((a, b) => b.averageScore - a.averageScore);
 
-      // Get user avatars from users table
-      const userIds = leaderboard.slice(0, 20).map(u => u.userId);
-      if (userIds.length > 0) {
-        const { data: users, error: usersError } = await supabase
-          .from('users')
-          .select('id, avatar_id')
-          .in('id', userIds);
+      // Add rank
+      leaderboard.forEach((user, index) => {
+        user.rank = index + 1;
+      });
 
-        if (!usersError) {
-          const userMap = {};
-          users.forEach(u => {
-            userMap[u.id] = u.avatar_id || 1;
-          });
-          
-          const avatarMap = {
-            1: '🧠', 2: '🚀', 3: '🌟', 4: '🎯', 5: '💪',
-            6: '🧙', 7: '🦊', 8: '🐉', 9: '🦅', 10: '🐺',
-            11: '🦄', 12: '🐼', 13: '🦁', 14: '🐧', 15: '🐱', 16: '🐶'
-          };
-          
+      // Get user names from auth.users
+      const userIds = leaderboard.map(u => u.userId);
+      if (userIds.length > 0) {
+        try {
+          // Get user metadata from auth.users
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('id, name, email, avatar_id')
+            .in('id', userIds);
+
+          if (!userError && userData) {
+            const userMap = {};
+            userData.forEach(u => {
+              userMap[u.id] = {
+                name: u.name || u.email?.split('@')[0] || 'Player',
+                avatar: u.avatar_id || 1
+              };
+            });
+            
+            const avatarMap = {
+              1: '🧠', 2: '🚀', 3: '🌟', 4: '🎯', 5: '💪',
+              6: '🧙', 7: '🦊', 8: '🐉', 9: '🦅', 10: '🐺',
+              11: '🦄', 12: '🐼', 13: '🦁', 14: '🐧', 15: '🐱', 16: '🐶'
+            };
+            
+            leaderboard.forEach(u => {
+              const userInfo = userMap[u.userId];
+              if (userInfo) {
+                u.userName = userInfo.name;
+                u.avatar = avatarMap[userInfo.avatar] || '🧠';
+              } else {
+                u.userName = 'Player';
+                u.avatar = '🧠';
+              }
+            });
+          } else {
+            // If users table doesn't exist, use email from auth
+            try {
+              const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+              if (!authError && authUsers) {
+                const authMap = {};
+                authUsers.users.forEach(u => {
+                  authMap[u.id] = u.email?.split('@')[0] || 'Player';
+                });
+                leaderboard.forEach(u => {
+                  u.userName = authMap[u.userId] || 'Player';
+                  u.avatar = '🧠';
+                });
+              }
+            } catch (authErr) {
+              // Fallback: use user_id as name
+              leaderboard.forEach(u => {
+                u.userName = 'Player_' + u.userId.slice(0, 6);
+                u.avatar = '🧠';
+              });
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching user data:', err);
+          // Fallback: use user_id as name
           leaderboard.forEach(u => {
-            u.avatar = avatarMap[userMap[u.userId]] || '🧠';
+            u.userName = 'Player_' + u.userId.slice(0, 6);
+            u.avatar = '🧠';
           });
         }
       }
@@ -117,6 +180,7 @@ const Leaderboard = () => {
       
     } catch (error) {
       console.error('Error loading leaderboard:', error);
+      setPlayers([]);
     } finally {
       setLoading(false);
     }
@@ -222,7 +286,7 @@ const Leaderboard = () => {
                 <span>{player.quizCount} quizzes</span>
                 <span className="flex items-center gap-1">
                   <Star className="w-3 h-3 text-yellow-400" />
-                  {player.totalPoints} pts
+                  {player.totalScore} pts
                 </span>
               </div>
               <div className="mt-2 flex items-center justify-center gap-1">
@@ -247,7 +311,7 @@ const Leaderboard = () => {
               key={player.userId}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: player.rank * 0.02 }}
+              transition={{ delay: (player.rank || 0) * 0.02 }}
               className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
                 currentUser?.id === player.userId ? 'bg-[#7c3aed]/10 border border-[#7c3aed]/30' : 'hover:bg-white/5'
               }`}
@@ -271,7 +335,7 @@ const Leaderboard = () => {
                 </div>
                 <div className="hidden sm:flex items-center gap-2 text-sm text-gray-400">
                   <Star className="w-3 h-3 text-yellow-400" />
-                  {player.totalPoints} pts
+                  {player.totalScore} pts
                 </div>
                 <div className="text-right">
                   <div className={`text-lg font-bold ${getScoreColor(player.averageScore)}`}>
