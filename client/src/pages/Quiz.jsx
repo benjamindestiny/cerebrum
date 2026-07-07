@@ -233,7 +233,7 @@ const Quiz = () => {
     }
   };
 
-  // ✅ CORRECTED finishQuiz function - matches database schema
+  // ✅ CORRECTED finishQuiz function - matches database schema with percentage as 0-100
   const finishQuiz = async () => {
     let correct = 0;
     questions.forEach((q, i) => {
@@ -248,13 +248,13 @@ const Quiz = () => {
     // Save to Supabase if logged in
     if (user) {
       try {
-        // ✅ MATCH YOUR DATABASE SCHEMA
+        // ✅ MATCH YOUR DATABASE SCHEMA - percentage as DECIMAL(5,2) from 0.00 to 100.00
         const quizData = {
           user_id: user.id,
           category: categoryInfo?.name || 'General Knowledge',
           score: correct,
           total_questions: questions.length,
-          percentage: parseFloat((correct / questions.length).toFixed(4)),
+          percentage: parseFloat(((correct / questions.length) * 100).toFixed(2)),
           time_taken: timeTaken,
           answers: answers
         };
