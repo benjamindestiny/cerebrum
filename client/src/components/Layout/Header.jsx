@@ -64,6 +64,7 @@ const Header = () => {
     { path: "/categories", icon: FolderTree, label: "Categories" },
     { path: "/leaderboard", icon: Trophy, label: "Leaderboard" },
     { path: "/riddles", icon: Puzzle, label: "Riddles" },
+    { path: "/achievements", icon: Trophy, label: "Achievements" },
     { path: "/read-and-test", icon: BookOpen, label: "Read & Test" },
   ];
 

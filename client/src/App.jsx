@@ -17,6 +17,7 @@ import Dashboard from "./pages/Dashboard";
 import Leaderboard from "./pages/Leaderboard";
 import Riddles from "./pages/Riddles";
 import Categories from "./pages/Categories";
+import Achievements from "./pages/Achievements";
 import ReadAndTest from "./pages/ReadAndTest";
 import ReadAndTestResults from "./pages/ReadAndTestResults";
 import Multiplayer from "./pages/Multiplayer";
@@ -66,6 +67,7 @@ function App() {
             <Route path="categories" element={<Categories />} />
             <Route path="leaderboard" element={<Leaderboard />} />
             <Route path="riddles" element={<Riddles />} />
+            <Route path="achievements" element={<Achievements />} />
             <Route path="read-and-test" element={<ReadAndTest />} />
             <Route
               path="read-and-test-results"
