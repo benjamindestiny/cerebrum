@@ -30,8 +30,8 @@ const Leaderboard = () => {
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentUserRank, setCurrentUserRank] = useState(null);
-  const [filter, setFilter] = useState("points"); // points, quizzes, streak
-  const [timeFrame, setTimeFrame] = useState("all"); // all, weekly, monthly
+  const [filter, setFilter] = useState("points");
+  const [timeFrame, setTimeFrame] = useState("all");
 
   useEffect(() => {
     loadLeaderboard();
@@ -55,37 +55,46 @@ const Leaderboard = () => {
 
       setCurrentUser(user);
 
-      // Get all users with stats
-      const { data: usersData, error: usersError } = await supabase
+      // Get ALL users from the users table
+      let { data: usersData, error: usersError } = await supabase
         .from("users")
-        .select("*")
-        .order("stats->total_points", { ascending: false })
-        .limit(100);
+        .select("*");
 
       if (usersError) {
         console.error("Error fetching users:", usersError);
-        // Try alternative query
-        const { data: altData, error: altError } = await supabase
-          .from("users")
-          .select("*");
-
-        if (altError) throw altError;
-
-        // Sort manually
-        const sorted = altData.sort((a, b) => {
-          const aPoints = a.stats?.total_points || 0;
-          const bPoints = b.stats?.total_points || 0;
-          return bPoints - aPoints;
-        });
-
-        setUsers(sorted);
-        findUserRank(sorted, user.id);
-        setLoading(false);
-        return;
+        // If table doesn't exist or error, try to get from auth
+        const authUsers = await getAuthUsers();
+        if (authUsers.length > 0) {
+          // Create user entries for auth users
+          await ensureUsersInTable(authUsers);
+          // Reload
+          const { data: newData, error: newError } = await supabase
+            .from("users")
+            .select("*");
+          if (!newError) {
+            usersData = newData;
+          }
+        }
       }
 
-      setUsers(usersData || []);
-      findUserRank(usersData || [], user.id);
+      // If still no data, try to get from auth
+      if (!usersData || usersData.length === 0) {
+        const authUsers = await getAuthUsers();
+        if (authUsers.length > 0) {
+          await ensureUsersInTable(authUsers);
+          const { data: newData, error: newError } = await supabase
+            .from("users")
+            .select("*");
+          if (!newError) {
+            usersData = newData;
+          }
+        }
+      }
+
+      // Process users
+      const processedUsers = processUsers(usersData || []);
+      setUsers(processedUsers);
+      findUserRank(processedUsers, user.id);
     } catch (error) {
       console.error("Error loading leaderboard:", error);
       toast.error("Failed to load leaderboard");
@@ -94,30 +103,152 @@ const Leaderboard = () => {
     }
   };
 
+  const getAuthUsers = async () => {
+    try {
+      // Get all users from auth (this requires admin access)
+      const { data, error } = await supabase.auth.admin.listUsers();
+      if (error) {
+        console.error("Error fetching auth users:", error);
+        return [];
+      }
+      return data?.users || [];
+    } catch (error) {
+      console.error("Error:", error);
+      return [];
+    }
+  };
+
+  const ensureUsersInTable = async (authUsers) => {
+    try {
+      for (const authUser of authUsers) {
+        // Check if user exists in users table
+        const { data: existing, error: checkError } = await supabase
+          .from("users")
+          .select("id")
+          .eq("id", authUser.id)
+          .maybeSingle();
+
+        if (checkError && checkError.code !== "PGRST116") {
+          console.error("Check error:", checkError);
+          continue;
+        }
+
+        if (!existing) {
+          // Create user in users table
+          const { error: insertError } = await supabase.from("users").insert({
+            id: authUser.id,
+            name:
+              authUser.user_metadata?.name ||
+              authUser.email?.split("@")[0] ||
+              "Anonymous",
+            email: authUser.email,
+            avatar_id: 1,
+            stats: {
+              total_quizzes: 0,
+              total_points: 0,
+              average_score: 0,
+              best_score: 0,
+              streak: 0,
+              longest_streak: 0,
+              riddles_solved: 0,
+              read_articles: 0,
+              total_time: 0,
+              perfect_scores: 0,
+              total_correct: 0,
+              total_incorrect: 0,
+              last_quiz_date: null,
+              quizzes_by_category: {},
+              achievements: [],
+            },
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+
+          if (insertError) {
+            console.error("Error inserting user:", insertError);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error ensuring users in table:", error);
+    }
+  };
+
+  const processUsers = (usersData) => {
+    return usersData.map((user) => {
+      const stats = user.stats || {};
+
+      // Avatar mapping
+      const avatarMap = {
+        1: "🧠",
+        2: "🚀",
+        3: "🌟",
+        4: "🎯",
+        5: "💪",
+        6: "🧙",
+        7: "🦊",
+        8: "🐉",
+        9: "🦅",
+        10: "🐺",
+        11: "🦄",
+        12: "🐼",
+        13: "🦁",
+        14: "🐧",
+        15: "🐱",
+        16: "🐶",
+      };
+
+      return {
+        ...user,
+        displayName: user.name || user.email?.split("@")[0] || "Anonymous",
+        avatar: avatarMap[user.avatar_id] || "🧠",
+        totalQuizzes: stats.total_quizzes || 0,
+        totalPoints: stats.total_points || 0,
+        averageScore: stats.average_score || 0,
+        bestScore: stats.best_score || 0,
+        streak: stats.streak || 0,
+        longestStreak: stats.longest_streak || 0,
+        riddlesSolved: stats.riddles_solved || 0,
+        readArticles: stats.read_articles || 0,
+        perfectScores: stats.perfect_scores || 0,
+      };
+    });
+  };
+
   const findUserRank = (usersList, userId) => {
-    const index = usersList.findIndex((u) => u.id === userId);
+    const sorted = getSortedUsers(usersList);
+    const index = sorted.findIndex((u) => u.id === userId);
     if (index !== -1) {
       setCurrentUserRank(index + 1);
     } else {
       setCurrentUserRank(null);
     }
+    setUsers(sorted);
+  };
+
+  const getSortedUsers = (usersList) => {
+    let sorted = [...usersList];
+
+    switch (filter) {
+      case "quizzes":
+        sorted.sort((a, b) => (b.totalQuizzes || 0) - (a.totalQuizzes || 0));
+        break;
+      case "streak":
+        sorted.sort((a, b) => (b.streak || 0) - (a.streak || 0));
+        break;
+      case "points":
+      default:
+        sorted.sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0));
+        break;
+    }
+
+    return sorted;
   };
 
   const refreshLeaderboard = async () => {
     setRefreshing(true);
     try {
-      const { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .order("stats->total_points", { ascending: false })
-        .limit(100);
-
-      if (error) throw error;
-
-      setUsers(data || []);
-      if (currentUser) {
-        findUserRank(data || [], currentUser.id);
-      }
+      await loadLeaderboard();
       toast.success("Leaderboard refreshed! 🔄");
     } catch (error) {
       console.error("Error refreshing:", error);
@@ -150,33 +281,7 @@ const Leaderboard = () => {
     return `#${index + 1}`;
   };
 
-  const getFilteredUsers = () => {
-    let sorted = [...users];
-
-    switch (filter) {
-      case "quizzes":
-        sorted.sort(
-          (a, b) =>
-            (b.stats?.total_quizzes || 0) - (a.stats?.total_quizzes || 0),
-        );
-        break;
-      case "streak":
-        sorted.sort((a, b) => (b.stats?.streak || 0) - (a.stats?.streak || 0));
-        break;
-      case "points":
-      default:
-        sorted.sort(
-          (a, b) => (b.stats?.total_points || 0) - (a.stats?.total_points || 0),
-        );
-        break;
-    }
-
-    return sorted;
-  };
-
-  const filteredUsers = getFilteredUsers();
-
-  // Check if user is in the list
+  const filteredUsers = getSortedUsers(users);
   const userInList = filteredUsers.some((u) => u.id === currentUser?.id);
 
   if (loading) {
@@ -218,7 +323,7 @@ const Leaderboard = () => {
         </button>
       </div>
 
-      {/* User Stats Summary - Mobile Friendly */}
+      {/* User Stats Summary */}
       <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4 sm:mb-6">
         <div className="glass-card p-2 sm:p-3 text-center">
           <div className="text-lg sm:text-xl font-bold text-white">
@@ -244,23 +349,20 @@ const Leaderboard = () => {
         </div>
       </div>
 
-      {/* Filter Tabs - Scrollable on Mobile */}
+      {/* Filter Tabs */}
       <div className="flex gap-1 sm:gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide">
         {[
           {
             id: "points",
             label: "🏆 Points",
-            icon: <Trophy className="w-3 h-3" />,
           },
           {
             id: "quizzes",
             label: "📚 Quizzes",
-            icon: <Target className="w-3 h-3" />,
           },
           {
             id: "streak",
             label: "🔥 Streak",
-            icon: <Flame className="w-3 h-3" />,
           },
         ].map((tab) => (
           <button
@@ -272,7 +374,6 @@ const Leaderboard = () => {
                 : "bg-white/5 text-gray-400 hover:bg-white/10"
             }`}
           >
-            <span className="hidden sm:inline">{tab.icon}</span>
             <span>{tab.label}</span>
           </button>
         ))}
@@ -286,10 +387,8 @@ const Leaderboard = () => {
             <p className="text-gray-400">No users found</p>
           </div>
         ) : (
-          filteredUsers.slice(0, 50).map((user, index) => {
+          filteredUsers.slice(0, 100).map((user, index) => {
             const isCurrentUser = user.id === currentUser?.id;
-            const stats = user.stats || {};
-            const rank = index + 1;
 
             return (
               <motion.div
@@ -311,14 +410,10 @@ const Leaderboard = () => {
                     </div>
                   </div>
 
-                  {/* Avatar/Icon */}
+                  {/* Avatar */}
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-base sm:text-xl bg-white/5 border border-white/10">
-                      {user.avatar_id ? (
-                        <span>{user.avatar_id}</span>
-                      ) : (
-                        <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
-                      )}
+                      {user.avatar || "🧠"}
                     </div>
                   </div>
 
@@ -330,7 +425,7 @@ const Leaderboard = () => {
                           isCurrentUser ? "text-[#a78bfa]" : "text-white"
                         }`}
                       >
-                        {user.name || user.email?.split("@")[0] || "Anonymous"}
+                        {user.displayName}
                       </p>
                       {isCurrentUser && (
                         <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 bg-[#7c3aed] rounded-full text-white flex-shrink-0">
@@ -341,15 +436,15 @@ const Leaderboard = () => {
                     <div className="flex items-center gap-2 sm:gap-3 text-[8px] sm:text-xs text-gray-400">
                       <span className="flex items-center gap-0.5">
                         <Trophy className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                        {stats.total_points || 0} pts
+                        {user.totalPoints || 0} pts
                       </span>
                       <span className="flex items-center gap-0.5">
                         <Target className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                        {stats.total_quizzes || 0}
+                        {user.totalQuizzes || 0}
                       </span>
                       <span className="flex items-center gap-0.5">
                         <Flame className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                        {stats.streak || 0}
+                        {user.streak || 0}
                       </span>
                     </div>
                   </div>
@@ -357,9 +452,9 @@ const Leaderboard = () => {
                   {/* Score/Value based on filter */}
                   <div className="flex-shrink-0 text-right">
                     <div className="text-xs sm:text-sm font-bold text-white">
-                      {filter === "quizzes" && (stats.total_quizzes || 0)}
-                      {filter === "streak" && (stats.streak || 0)}
-                      {filter === "points" && (stats.total_points || 0)}
+                      {filter === "quizzes" && (user.totalQuizzes || 0)}
+                      {filter === "streak" && (user.streak || 0)}
+                      {filter === "points" && (user.totalPoints || 0)}
                     </div>
                     <div className="text-[8px] sm:text-[10px] text-gray-500">
                       {filter === "quizzes" && "quizzes"}
@@ -389,9 +484,7 @@ const Leaderboard = () => {
           <div className="text-xs text-gray-400">Top Player</div>
           <div className="text-sm font-bold text-white truncate">
             {filteredUsers.length > 0
-              ? filteredUsers[0]?.name ||
-                filteredUsers[0]?.email?.split("@")[0] ||
-                "Anonymous"
+              ? filteredUsers[0]?.displayName || "Anonymous"
               : "-"}
           </div>
         </div>
