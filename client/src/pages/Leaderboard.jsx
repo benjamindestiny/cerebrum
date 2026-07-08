@@ -1,194 +1,123 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Trophy,
-  Crown,
   Medal,
-  Award,
-  Users,
-  Search,
-  TrendingUp,
-  Calendar,
-  Zap,
-  Loader2,
-  User,
+  Crown,
   Star,
+  Users,
+  ArrowLeft,
+  Loader2,
+  ChevronUp,
+  ChevronDown,
+  Award,
+  Sparkles,
+  Flame,
+  Target,
+  Brain,
   RefreshCw,
+  User,
+  TrendingUp,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
 import { toast } from "react-toastify";
 
 const Leaderboard = () => {
-  const [players, setPlayers] = useState([]);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
+  const [currentUserRank, setCurrentUserRank] = useState(null);
+  const [filter, setFilter] = useState("points"); // points, quizzes, streak
+  const [timeFrame, setTimeFrame] = useState("all"); // all, weekly, monthly
 
   useEffect(() => {
     loadLeaderboard();
-    getCurrentUser();
-
-    // Set up real-time subscription for user stats updates
-    const subscription = supabase
-      .channel("leaderboard_changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "users",
-        },
-        () => {
-          // When any user stats update, refresh leaderboard
-          refreshLeaderboard();
-        },
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "users",
-        },
-        () => {
-          // When new user joins, refresh leaderboard
-          refreshLeaderboard();
-        },
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const getCurrentUser = async () => {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setCurrentUser(user);
-    } catch (error) {
-      console.error("Error getting current user:", error);
-    }
-  };
+  }, [filter, timeFrame]);
 
   const loadLeaderboard = async () => {
     setLoading(true);
     try {
-      // Get all users with their stats
-      const { data: users, error } = await supabase
+      // Get current user
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) throw userError;
+
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
+
+      setCurrentUser(user);
+
+      // Get all users with stats
+      const { data: usersData, error: usersError } = await supabase
         .from("users")
         .select("*")
         .order("stats->total_points", { ascending: false })
         .limit(100);
 
-      if (error) {
-        // If ordering fails, get all and sort manually
-        const { data: allUsers, error: fetchError } = await supabase
+      if (usersError) {
+        console.error("Error fetching users:", usersError);
+        // Try alternative query
+        const { data: altData, error: altError } = await supabase
           .from("users")
           .select("*");
 
-        if (fetchError) throw fetchError;
+        if (altError) throw altError;
 
-        const sortedUsers = allUsers.sort((a, b) => {
+        // Sort manually
+        const sorted = altData.sort((a, b) => {
           const aPoints = a.stats?.total_points || 0;
           const bPoints = b.stats?.total_points || 0;
           return bPoints - aPoints;
         });
 
-        processUsers(sortedUsers);
+        setUsers(sorted);
+        findUserRank(sorted, user.id);
+        setLoading(false);
         return;
       }
 
-      processUsers(users || []);
+      setUsers(usersData || []);
+      findUserRank(usersData || [], user.id);
     } catch (error) {
       console.error("Error loading leaderboard:", error);
       toast.error("Failed to load leaderboard");
-      setPlayers([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const processUsers = (users) => {
-    // Process users and calculate stats
-    const processed = users.map((user) => {
-      const stats = user.stats || {};
-      const totalQuizzes = stats.total_quizzes || 0;
-      const totalPoints = stats.total_points || 0;
-      const averageScore = stats.average_score || 0;
-      const bestScore = stats.best_score || 0;
-      const streak = stats.streak || 0;
-      const totalCorrect = stats.total_correct || 0;
-      const totalIncorrect = stats.total_incorrect || 0;
-
-      // Calculate accuracy
-      const totalQuestions = totalCorrect + totalIncorrect;
-      const accuracy =
-        totalQuestions > 0
-          ? Math.round((totalCorrect / totalQuestions) * 100)
-          : 0;
-
-      // Avatar mapping
-      const avatarMap = {
-        1: "🧠",
-        2: "🚀",
-        3: "🌟",
-        4: "🎯",
-        5: "💪",
-        6: "🧙",
-        7: "🦊",
-        8: "🐉",
-        9: "🦅",
-        10: "🐺",
-        11: "🦄",
-        12: "🐼",
-        13: "🦁",
-        14: "🐧",
-        15: "🐱",
-        16: "🐶",
-      };
-
-      return {
-        id: user.id,
-        name: user.name || user.email?.split("@")[0] || "Anonymous",
-        email: user.email,
-        avatar: avatarMap[user.avatar_id] || "🧠",
-        totalQuizzes,
-        totalPoints,
-        averageScore,
-        bestScore,
-        streak,
-        accuracy,
-        totalCorrect,
-        totalIncorrect,
-        stats: stats,
-        created_at: user.created_at,
-      };
-    });
-
-    // Sort by total points (or average score if same)
-    processed.sort((a, b) => {
-      if (b.totalPoints !== a.totalPoints) {
-        return b.totalPoints - a.totalPoints;
-      }
-      return b.averageScore - a.averageScore;
-    });
-
-    // Add rank
-    processed.forEach((user, index) => {
-      user.rank = index + 1;
-    });
-
-    setPlayers(processed);
+  const findUserRank = (usersList, userId) => {
+    const index = usersList.findIndex((u) => u.id === userId);
+    if (index !== -1) {
+      setCurrentUserRank(index + 1);
+    } else {
+      setCurrentUserRank(null);
+    }
   };
 
   const refreshLeaderboard = async () => {
     setRefreshing(true);
     try {
-      await loadLeaderboard();
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .order("stats->total_points", { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+
+      setUsers(data || []);
+      if (currentUser) {
+        findUserRank(data || [], currentUser.id);
+      }
       toast.success("Leaderboard refreshed! 🔄");
     } catch (error) {
       console.error("Error refreshing:", error);
@@ -198,261 +127,281 @@ const Leaderboard = () => {
     }
   };
 
-  const getRankIcon = (rank) => {
-    if (rank === 1) return <Crown className="w-6 h-6 text-yellow-400" />;
-    if (rank === 2) return <Medal className="w-6 h-6 text-gray-400" />;
-    if (rank === 3) return <Award className="w-6 h-6 text-amber-600" />;
-    return <span className="text-gray-500 font-medium">#{rank}</span>;
+  const getRankIcon = (index) => {
+    if (index === 0) return <Crown className="w-5 h-5 text-yellow-400" />;
+    if (index === 1) return <Medal className="w-5 h-5 text-gray-300" />;
+    if (index === 2) return <Medal className="w-5 h-5 text-amber-600" />;
+    return (
+      <span className="text-sm text-gray-500 w-5 text-center">{index + 1}</span>
+    );
   };
 
-  const getRankClass = (rank) => {
-    if (rank === 1) return "border-yellow-400/30 bg-yellow-400/5";
-    if (rank === 2) return "border-gray-400/30 bg-gray-400/5";
-    if (rank === 3) return "border-amber-600/30 bg-amber-600/5";
-    return "";
+  const getRankColor = (index) => {
+    if (index === 0) return "bg-yellow-400/20 border-yellow-400/30";
+    if (index === 1) return "bg-gray-400/20 border-gray-400/30";
+    if (index === 2) return "bg-amber-600/20 border-amber-600/30";
+    return "bg-white/5 border-white/5";
   };
 
-  const getScoreColor = (score) => {
-    if (score >= 80) return "text-green-400";
-    if (score >= 50) return "text-yellow-400";
-    return "text-red-400";
+  const getRankBadge = (index) => {
+    if (index === 0) return "🥇";
+    if (index === 1) return "🥈";
+    if (index === 2) return "🥉";
+    return `#${index + 1}`;
   };
 
-  const filteredPlayers = players.filter(
-    (player) =>
-      player.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      player.email?.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const getFilteredUsers = () => {
+    let sorted = [...users];
 
-  // Find current user's rank
-  const currentUserRank =
-    players.findIndex((p) => p.id === currentUser?.id) + 1;
-  const currentUserData = players.find((p) => p.id === currentUser?.id);
+    switch (filter) {
+      case "quizzes":
+        sorted.sort(
+          (a, b) =>
+            (b.stats?.total_quizzes || 0) - (a.stats?.total_quizzes || 0),
+        );
+        break;
+      case "streak":
+        sorted.sort((a, b) => (b.stats?.streak || 0) - (a.stats?.streak || 0));
+        break;
+      case "points":
+      default:
+        sorted.sort(
+          (a, b) => (b.stats?.total_points || 0) - (a.stats?.total_points || 0),
+        );
+        break;
+    }
+
+    return sorted;
+  };
+
+  const filteredUsers = getFilteredUsers();
+
+  // Check if user is in the list
+  const userInList = filteredUsers.some((u) => u.id === currentUser?.id);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-10 h-10 text-[#7c3aed] animate-spin" />
+      <div className="flex items-center justify-center min-h-[300px] px-4">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 sm:w-12 sm:h-12 text-[#7c3aed] animate-spin mx-auto mb-3" />
+          <p className="text-gray-400 text-sm">Loading leaderboard...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 px-3 sm:px-4 pb-12">
+    <div className="max-w-4xl mx-auto px-3 sm:px-4 pb-12">
       {/* Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
-            <Trophy className="w-7 h-7 sm:w-8 sm:h-8 text-yellow-400" />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="p-1.5 sm:p-2 rounded-lg hover:bg-white/5 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+          </button>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
+            <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-400" />
             Leaderboard
           </h1>
-          <p className="text-gray-400 text-sm mt-1">
-            Top performers from around the world
-          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="glass-card px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2">
-            <Users className="w-4 h-4 text-[#7c3aed]" />
-            <span className="text-xs sm:text-sm text-gray-300">
-              {players.length} players
-            </span>
-          </div>
-          <button
-            onClick={refreshLeaderboard}
-            disabled={refreshing}
-            className="p-2 glass-card hover:bg-white/10 transition-colors disabled:opacity-50"
-          >
-            <RefreshCw
-              className={`w-4 h-4 text-gray-400 ${refreshing ? "animate-spin" : ""}`}
-            />
-          </button>
-        </div>
-      </div>
-
-      {/* Current User Rank */}
-      {currentUser && currentUserRank > 0 && currentUserData && (
-        <div className="glass-card p-3 sm:p-4 border-2 border-[#7c3aed] bg-[#7c3aed]/5">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{currentUserData.avatar || "🧠"}</span>
-              <div>
-                <p className="text-white font-medium text-sm sm:text-base">
-                  {currentUserData.name}
-                </p>
-                <p className="text-xs text-gray-400">Your current rank</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-[#7c3aed]">
-                  #{currentUserRank}
-                </div>
-                <div className="text-[10px] text-gray-500">Rank</div>
-              </div>
-              <div className="text-center px-3">
-                <div className="text-xl font-bold text-white">
-                  {currentUserData.averageScore}%
-                </div>
-                <div className="text-[10px] text-gray-500">Avg Score</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl font-bold text-orange-400">
-                  {currentUserData.streak}🔥
-                </div>
-                <div className="text-[10px] text-gray-500">Streak</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Search */}
-      <div className="flex flex-wrap gap-3 items-center justify-between">
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
-          <input
-            type="text"
-            placeholder="Search players..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white placeholder-gray-500 focus:border-[#7c3aed] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 transition-all text-sm"
+        <button
+          onClick={refreshLeaderboard}
+          disabled={refreshing}
+          className="w-full sm:w-auto px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-xs sm:text-sm flex items-center justify-center gap-2"
+        >
+          <RefreshCw
+            className={`w-3 h-3 sm:w-4 sm:h-4 ${refreshing ? "animate-spin" : ""}`}
           />
+          {refreshing ? "Refreshing..." : "Refresh"}
+        </button>
+      </div>
+
+      {/* User Stats Summary - Mobile Friendly */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4 sm:mb-6">
+        <div className="glass-card p-2 sm:p-3 text-center">
+          <div className="text-lg sm:text-xl font-bold text-white">
+            {users.length}
+          </div>
+          <div className="text-[8px] sm:text-[10px] text-gray-400">Players</div>
         </div>
-        <div className="text-xs text-gray-500">
-          Showing {filteredPlayers.length} players
+        <div className="glass-card p-2 sm:p-3 text-center">
+          <div className="text-lg sm:text-xl font-bold text-yellow-400">
+            {currentUserRank || "-"}
+          </div>
+          <div className="text-[8px] sm:text-[10px] text-gray-400">
+            Your Rank
+          </div>
+        </div>
+        <div className="glass-card p-2 sm:p-3 text-center">
+          <div className="text-lg sm:text-xl font-bold text-[#7c3aed]">
+            {currentUser?.user_metadata?.name || "You"}
+          </div>
+          <div className="text-[8px] sm:text-[10px] text-gray-400 truncate">
+            Username
+          </div>
         </div>
       </div>
 
-      {/* Top 3 - Mobile Responsive */}
-      {filteredPlayers.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          {filteredPlayers.slice(0, 3).map((player, index) => (
-            <motion.div
-              key={player.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className={`glass-card p-4 sm:p-6 text-center ${getRankClass(index + 1)}`}
-            >
-              <div className="text-3xl sm:text-4xl mb-1 sm:mb-2">
-                {player.avatar || "🧠"}
-              </div>
-              <div className="text-base sm:text-xl font-bold text-white truncate">
-                {player.name}
-              </div>
-              <div className="text-2xl sm:text-3xl font-bold text-[#7c3aed] mt-1">
-                {player.averageScore}%
-              </div>
-              <div className="flex items-center justify-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-gray-400 flex-wrap">
-                <span>{player.totalQuizzes} quizzes</span>
-                <span className="flex items-center gap-1">
-                  <Star className="w-3 h-3 text-yellow-400" />
-                  {player.totalPoints} pts
-                </span>
-                {player.streak > 0 && (
-                  <span className="flex items-center gap-1 text-orange-400">
-                    <Zap className="w-3 h-3" />
-                    {player.streak}d
-                  </span>
-                )}
-              </div>
-              <div className="mt-2 flex items-center justify-center gap-1">
-                {getRankIcon(index + 1)}
-                <span className="text-xs text-gray-500">Rank #{index + 1}</span>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      )}
+      {/* Filter Tabs - Scrollable on Mobile */}
+      <div className="flex gap-1 sm:gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide">
+        {[
+          {
+            id: "points",
+            label: "🏆 Points",
+            icon: <Trophy className="w-3 h-3" />,
+          },
+          {
+            id: "quizzes",
+            label: "📚 Quizzes",
+            icon: <Target className="w-3 h-3" />,
+          },
+          {
+            id: "streak",
+            label: "🔥 Streak",
+            icon: <Flame className="w-3 h-3" />,
+          },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setFilter(tab.id)}
+            className={`flex items-center gap-1 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-sm whitespace-nowrap transition-all ${
+              filter === tab.id
+                ? "bg-[#7c3aed] text-white"
+                : "bg-white/5 text-gray-400 hover:bg-white/10"
+            }`}
+          >
+            <span className="hidden sm:inline">{tab.icon}</span>
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </div>
 
-      {/* Full List */}
-      <div className="glass-card p-3 sm:p-6">
-        <h3 className="text-white font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-          <Trophy className="w-4 h-4 text-yellow-400" />
-          All Players
-          <span className="text-xs text-gray-500 ml-2">
-            ({filteredPlayers.length} players)
-          </span>
-        </h3>
-        <div className="space-y-1.5 sm:space-y-2 max-h-[400px] overflow-y-auto pr-1 sm:pr-2">
-          {filteredPlayers.map((player) => {
-            const isCurrentUser = currentUser?.id === player.id;
+      {/* Leaderboard List */}
+      <div className="space-y-1.5 sm:space-y-2">
+        {filteredUsers.length === 0 ? (
+          <div className="glass-card p-8 text-center">
+            <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <p className="text-gray-400">No users found</p>
+          </div>
+        ) : (
+          filteredUsers.slice(0, 50).map((user, index) => {
+            const isCurrentUser = user.id === currentUser?.id;
+            const stats = user.stats || {};
+            const rank = index + 1;
+
             return (
               <motion.div
-                key={player.id}
+                key={user.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: (player.rank || 0) * 0.02 }}
-                className={`flex items-center justify-between p-2 sm:p-3 rounded-lg transition-colors ${
+                transition={{ delay: index * 0.02 }}
+                className={`glass-card p-2 sm:p-3 transition-all ${
                   isCurrentUser
-                    ? "bg-[#7c3aed]/10 border border-[#7c3aed]/30"
-                    : "hover:bg-white/5"
-                }`}
+                    ? "border-2 border-[#7c3aed] bg-[#7c3aed]/10"
+                    : "border border-white/5"
+                } ${getRankColor(index)}`}
               >
-                <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-                  <div className="w-6 sm:w-8 text-center flex-shrink-0">
-                    {getRankIcon(player.rank)}
+                <div className="flex items-center gap-2 sm:gap-4">
+                  {/* Rank */}
+                  <div className="w-8 sm:w-10 flex-shrink-0 text-center">
+                    <div className="text-lg sm:text-xl">
+                      {getRankBadge(index)}
+                    </div>
                   </div>
-                  <span className="text-xl sm:text-2xl flex-shrink-0">
-                    {player.avatar || "🧠"}
-                  </span>
-                  <span className="text-white font-medium text-sm sm:text-base truncate">
-                    {player.name}
-                    {isCurrentUser && (
-                      <span className="ml-1 sm:ml-2 text-[10px] sm:text-xs text-[#a78bfa]">
-                        (You)
+
+                  {/* Avatar/Icon */}
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-base sm:text-xl bg-white/5 border border-white/10">
+                      {user.avatar_id ? (
+                        <span>{user.avatar_id}</span>
+                      ) : (
+                        <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Name and Stats */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p
+                        className={`text-xs sm:text-sm font-semibold truncate ${
+                          isCurrentUser ? "text-[#a78bfa]" : "text-white"
+                        }`}
+                      >
+                        {user.name || user.email?.split("@")[0] || "Anonymous"}
+                      </p>
+                      {isCurrentUser && (
+                        <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 bg-[#7c3aed] rounded-full text-white flex-shrink-0">
+                          You
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 sm:gap-3 text-[8px] sm:text-xs text-gray-400">
+                      <span className="flex items-center gap-0.5">
+                        <Trophy className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                        {stats.total_points || 0} pts
                       </span>
-                    )}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-                  <div className="hidden sm:flex items-center gap-2 text-xs text-gray-400">
-                    <Calendar className="w-3 h-3" />
-                    {player.totalQuizzes}
-                  </div>
-                  <div className="hidden sm:flex items-center gap-2 text-xs text-gray-400">
-                    <Star className="w-3 h-3 text-yellow-400" />
-                    {player.totalPoints}
-                  </div>
-                  {player.streak > 0 && (
-                    <div className="flex items-center gap-1 text-xs text-orange-400">
-                      <Zap className="w-3 h-3" />
-                      <span className="hidden sm:inline">{player.streak}d</span>
+                      <span className="flex items-center gap-0.5">
+                        <Target className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                        {stats.total_quizzes || 0}
+                      </span>
+                      <span className="flex items-center gap-0.5">
+                        <Flame className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                        {stats.streak || 0}
+                      </span>
                     </div>
-                  )}
-                  <div className="text-right">
-                    <div
-                      className={`text-sm sm:text-lg font-bold ${getScoreColor(player.averageScore)}`}
-                    >
-                      {player.averageScore}%
+                  </div>
+
+                  {/* Score/Value based on filter */}
+                  <div className="flex-shrink-0 text-right">
+                    <div className="text-xs sm:text-sm font-bold text-white">
+                      {filter === "quizzes" && (stats.total_quizzes || 0)}
+                      {filter === "streak" && (stats.streak || 0)}
+                      {filter === "points" && (stats.total_points || 0)}
                     </div>
-                    <div className="text-[8px] sm:text-xs text-gray-500">
-                      Avg
+                    <div className="text-[8px] sm:text-[10px] text-gray-500">
+                      {filter === "quizzes" && "quizzes"}
+                      {filter === "streak" && "days"}
+                      {filter === "points" && "pts"}
                     </div>
                   </div>
                 </div>
               </motion.div>
             );
-          })}
-        </div>
+          })
+        )}
       </div>
 
-      {filteredPlayers.length === 0 && (
-        <div className="glass-card p-8 sm:p-12 text-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#7c3aed]/10 flex items-center justify-center">
-              <Users className="w-8 h-8 sm:w-10 sm:h-10 text-[#7c3aed]" />
-            </div>
-            <h3 className="text-lg sm:text-xl font-bold text-white">
-              No Players Yet
-            </h3>
-            <p className="text-gray-400 text-sm sm:text-base max-w-md">
-              Be the first to take a quiz and claim your spot on the
-              leaderboard! 🏆
-            </p>
-          </div>
+      {/* User not in top list */}
+      {!userInList && currentUser && (
+        <div className="mt-4 p-3 glass-card border-2 border-[#7c3aed] bg-[#7c3aed]/5">
+          <p className="text-center text-sm text-gray-400">
+            You're not in the top list yet. Keep learning to climb the ranks! 🚀
+          </p>
         </div>
       )}
+
+      {/* Footer Stats */}
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="glass-card p-2 text-center">
+          <div className="text-xs text-gray-400">Top Player</div>
+          <div className="text-sm font-bold text-white truncate">
+            {filteredUsers.length > 0
+              ? filteredUsers[0]?.name ||
+                filteredUsers[0]?.email?.split("@")[0] ||
+                "Anonymous"
+              : "-"}
+          </div>
+        </div>
+        <div className="glass-card p-2 text-center">
+          <div className="text-xs text-gray-400">Total Players</div>
+          <div className="text-sm font-bold text-white">
+            {filteredUsers.length}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
