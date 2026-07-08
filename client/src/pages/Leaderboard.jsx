@@ -6,7 +6,6 @@ import {
   Medal,
   Award,
   Users,
-  Filter,
   Search,
   TrendingUp,
   Calendar,
@@ -14,7 +13,6 @@ import {
   Loader2,
   User,
   Star,
-  Clock,
   RefreshCw,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
@@ -24,7 +22,6 @@ const Leaderboard = () => {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [timeFilter, setTimeFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
 
@@ -42,11 +39,9 @@ const Leaderboard = () => {
           schema: "public",
           table: "users",
         },
-        (payload) => {
+        () => {
           // When any user stats update, refresh leaderboard
-          if (payload.new?.stats) {
-            refreshLeaderboard();
-          }
+          refreshLeaderboard();
         },
       )
       .on(
@@ -54,28 +49,10 @@ const Leaderboard = () => {
         {
           event: "INSERT",
           schema: "public",
-          table: "quiz_results",
-        },
-        () => {
-          // When new quiz result is added, refresh leaderboard
-          refreshLeaderboard();
-        },
-      )
-      .subscribe();
-
-    // Also listen for user profile updates
-    const profileSubscription = supabase
-      .channel("profile_changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
           table: "users",
-          filter: `id=eq.${currentUser?.id}`,
         },
         () => {
-          // Refresh when current user updates profile
+          // When new user joins, refresh leaderboard
           refreshLeaderboard();
         },
       )
@@ -83,155 +60,129 @@ const Leaderboard = () => {
 
     return () => {
       subscription.unsubscribe();
-      profileSubscription.unsubscribe();
     };
-  }, [timeFilter]);
+  }, []);
 
   const getCurrentUser = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    setCurrentUser(user);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setCurrentUser(user);
+    } catch (error) {
+      console.error("Error getting current user:", error);
+    }
   };
 
   const loadLeaderboard = async () => {
     setLoading(true);
     try {
-      let query = supabase
-        .from("quiz_results")
-        .select("user_id, user_name, score, points, created_at");
+      // Get all users with their stats
+      const { data: users, error } = await supabase
+        .from("users")
+        .select("*")
+        .order("stats->total_points", { ascending: false })
+        .limit(100);
 
-      // Time filter
-      if (timeFilter !== "all") {
-        const now = new Date();
-        let startDate;
-        switch (timeFilter) {
-          case "today":
-            startDate = new Date(now.setHours(0, 0, 0, 0));
-            break;
-          case "week":
-            startDate = new Date(now.setDate(now.getDate() - 7));
-            break;
-          case "month":
-            startDate = new Date(now.setMonth(now.getMonth() - 1));
-            break;
-          default:
-            break;
-        }
-        if (startDate) {
-          query = query.gte("created_at", startDate.toISOString());
-        }
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      // Aggregate scores by user
-      const userScores = {};
-      data.forEach((record) => {
-        if (!userScores[record.user_id]) {
-          userScores[record.user_id] = {
-            userId: record.user_id,
-            userName: record.user_name,
-            totalScore: 0,
-            quizCount: 0,
-            bestScore: 0,
-            totalPoints: 0,
-            recentScore: 0,
-            recentDate: record.created_at,
-          };
-        }
-        const user = userScores[record.user_id];
-        user.totalScore += record.score;
-        user.quizCount += 1;
-        user.bestScore = Math.max(user.bestScore, record.score);
-        user.totalPoints += record.points || 0;
-        user.recentScore = record.score;
-        if (record.created_at > user.recentDate) {
-          user.recentDate = record.created_at;
-        }
-      });
-
-      // Calculate averages and sort
-      const leaderboard = Object.values(userScores).map((user) => ({
-        ...user,
-        averageScore: Math.round(user.totalScore / user.quizCount),
-      }));
-
-      leaderboard.sort((a, b) => {
-        // Sort by average score, then by total points, then by quiz count
-        if (b.averageScore !== a.averageScore) {
-          return b.averageScore - a.averageScore;
-        }
-        if (b.totalPoints !== a.totalPoints) {
-          return b.totalPoints - a.totalPoints;
-        }
-        return b.quizCount - a.quizCount;
-      });
-
-      // Add rank
-      leaderboard.forEach((user, index) => {
-        user.rank = index + 1;
-      });
-
-      // Get user avatars from users table
-      const userIds = leaderboard.map((u) => u.userId);
-      if (userIds.length > 0) {
-        const { data: users, error: usersError } = await supabase
+      if (error) {
+        // If ordering fails, get all and sort manually
+        const { data: allUsers, error: fetchError } = await supabase
           .from("users")
-          .select("id, avatar_id, name, stats")
-          .in("id", userIds);
+          .select("*");
 
-        if (!usersError) {
-          const userMap = {};
-          users.forEach((u) => {
-            userMap[u.id] = {
-              avatarId: u.avatar_id || 1,
-              name: u.name || u.userName,
-              stats: u.stats || {},
-            };
-          });
+        if (fetchError) throw fetchError;
 
-          const avatarMap = {
-            1: "🧠",
-            2: "🚀",
-            3: "🌟",
-            4: "🎯",
-            5: "💪",
-            6: "🧙",
-            7: "🦊",
-            8: "🐉",
-            9: "🦅",
-            10: "🐺",
-            11: "🦄",
-            12: "🐼",
-            13: "🦁",
-            14: "🐧",
-            15: "🐱",
-            16: "🐶",
-          };
+        const sortedUsers = allUsers.sort((a, b) => {
+          const aPoints = a.stats?.total_points || 0;
+          const bPoints = b.stats?.total_points || 0;
+          return bPoints - aPoints;
+        });
 
-          leaderboard.forEach((u) => {
-            const userData = userMap[u.userId];
-            if (userData) {
-              u.avatar = avatarMap[userData.avatarId] || "🧠";
-              u.displayName = userData.name || u.userName;
-              u.streak = userData.stats?.streak || 0;
-              u.totalQuizzes = userData.stats?.total_quizzes || u.quizCount;
-              u.totalPoints = userData.stats?.total_points || u.totalPoints;
-            }
-          });
-        }
+        processUsers(sortedUsers);
+        return;
       }
 
-      setPlayers(leaderboard);
+      processUsers(users || []);
     } catch (error) {
       console.error("Error loading leaderboard:", error);
       toast.error("Failed to load leaderboard");
+      setPlayers([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const processUsers = (users) => {
+    // Process users and calculate stats
+    const processed = users.map((user) => {
+      const stats = user.stats || {};
+      const totalQuizzes = stats.total_quizzes || 0;
+      const totalPoints = stats.total_points || 0;
+      const averageScore = stats.average_score || 0;
+      const bestScore = stats.best_score || 0;
+      const streak = stats.streak || 0;
+      const totalCorrect = stats.total_correct || 0;
+      const totalIncorrect = stats.total_incorrect || 0;
+
+      // Calculate accuracy
+      const totalQuestions = totalCorrect + totalIncorrect;
+      const accuracy =
+        totalQuestions > 0
+          ? Math.round((totalCorrect / totalQuestions) * 100)
+          : 0;
+
+      // Avatar mapping
+      const avatarMap = {
+        1: "🧠",
+        2: "🚀",
+        3: "🌟",
+        4: "🎯",
+        5: "💪",
+        6: "🧙",
+        7: "🦊",
+        8: "🐉",
+        9: "🦅",
+        10: "🐺",
+        11: "🦄",
+        12: "🐼",
+        13: "🦁",
+        14: "🐧",
+        15: "🐱",
+        16: "🐶",
+      };
+
+      return {
+        id: user.id,
+        name: user.name || user.email?.split("@")[0] || "Anonymous",
+        email: user.email,
+        avatar: avatarMap[user.avatar_id] || "🧠",
+        totalQuizzes,
+        totalPoints,
+        averageScore,
+        bestScore,
+        streak,
+        accuracy,
+        totalCorrect,
+        totalIncorrect,
+        stats: stats,
+        created_at: user.created_at,
+      };
+    });
+
+    // Sort by total points (or average score if same)
+    processed.sort((a, b) => {
+      if (b.totalPoints !== a.totalPoints) {
+        return b.totalPoints - a.totalPoints;
+      }
+      return b.averageScore - a.averageScore;
+    });
+
+    // Add rank
+    processed.forEach((user, index) => {
+      user.rank = index + 1;
+    });
+
+    setPlayers(processed);
   };
 
   const refreshLeaderboard = async () => {
@@ -269,13 +220,14 @@ const Leaderboard = () => {
 
   const filteredPlayers = players.filter(
     (player) =>
-      player.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      player.userName?.toLowerCase().includes(searchTerm.toLowerCase()),
+      player.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      player.email?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   // Find current user's rank
   const currentUserRank =
-    players.findIndex((p) => p.userId === currentUser?.id) + 1;
+    players.findIndex((p) => p.id === currentUser?.id) + 1;
+  const currentUserData = players.find((p) => p.id === currentUser?.id);
 
   if (loading) {
     return (
@@ -318,14 +270,14 @@ const Leaderboard = () => {
       </div>
 
       {/* Current User Rank */}
-      {currentUser && currentUserRank > 0 && (
+      {currentUser && currentUserRank > 0 && currentUserData && (
         <div className="glass-card p-3 sm:p-4 border-2 border-[#7c3aed] bg-[#7c3aed]/5">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">🎯</span>
+              <span className="text-2xl">{currentUserData.avatar || "🧠"}</span>
               <div>
                 <p className="text-white font-medium text-sm sm:text-base">
-                  {currentUser.user_metadata?.name || "You"}
+                  {currentUserData.name}
                 </p>
                 <p className="text-xs text-gray-400">Your current rank</p>
               </div>
@@ -339,43 +291,35 @@ const Leaderboard = () => {
               </div>
               <div className="text-center px-3">
                 <div className="text-xl font-bold text-white">
-                  {players.find((p) => p.userId === currentUser.id)
-                    ?.averageScore || 0}
-                  %
+                  {currentUserData.averageScore}%
                 </div>
                 <div className="text-[10px] text-gray-500">Avg Score</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl font-bold text-orange-400">
+                  {currentUserData.streak}🔥
+                </div>
+                <div className="text-[10px] text-gray-500">Streak</div>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Filters */}
+      {/* Search */}
       <div className="flex flex-wrap gap-3 items-center justify-between">
-        <div className="flex gap-1 sm:gap-2 overflow-x-auto pb-1 w-full sm:w-auto">
-          {["all", "month", "week", "today"].map((filter) => (
-            <button
-              key={filter}
-              onClick={() => setTimeFilter(filter)}
-              className={`px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm transition-all whitespace-nowrap ${
-                timeFilter === filter
-                  ? "bg-[#7c3aed]/20 text-[#a78bfa] border border-[#7c3aed]/30"
-                  : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              {filter.charAt(0).toUpperCase() + filter.slice(1)}
-            </button>
-          ))}
-        </div>
-        <div className="relative w-full sm:w-auto">
+        <div className="relative w-full sm:w-64">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
           <input
             type="text"
             placeholder="Search players..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full sm:w-48 pl-9 pr-4 py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white placeholder-gray-500 focus:border-[#7c3aed] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 transition-all text-sm"
+            className="w-full pl-9 pr-4 py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white placeholder-gray-500 focus:border-[#7c3aed] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 transition-all text-sm"
           />
+        </div>
+        <div className="text-xs text-gray-500">
+          Showing {filteredPlayers.length} players
         </div>
       </div>
 
@@ -384,7 +328,7 @@ const Leaderboard = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           {filteredPlayers.slice(0, 3).map((player, index) => (
             <motion.div
-              key={player.userId}
+              key={player.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
@@ -394,13 +338,13 @@ const Leaderboard = () => {
                 {player.avatar || "🧠"}
               </div>
               <div className="text-base sm:text-xl font-bold text-white truncate">
-                {player.displayName || player.userName}
+                {player.name}
               </div>
               <div className="text-2xl sm:text-3xl font-bold text-[#7c3aed] mt-1">
                 {player.averageScore}%
               </div>
               <div className="flex items-center justify-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-gray-400 flex-wrap">
-                <span>{player.quizCount} quizzes</span>
+                <span>{player.totalQuizzes} quizzes</span>
                 <span className="flex items-center gap-1">
                   <Star className="w-3 h-3 text-yellow-400" />
                   {player.totalPoints} pts
@@ -432,10 +376,10 @@ const Leaderboard = () => {
         </h3>
         <div className="space-y-1.5 sm:space-y-2 max-h-[400px] overflow-y-auto pr-1 sm:pr-2">
           {filteredPlayers.map((player) => {
-            const isCurrentUser = currentUser?.id === player.userId;
+            const isCurrentUser = currentUser?.id === player.id;
             return (
               <motion.div
-                key={player.userId}
+                key={player.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: (player.rank || 0) * 0.02 }}
@@ -453,7 +397,7 @@ const Leaderboard = () => {
                     {player.avatar || "🧠"}
                   </span>
                   <span className="text-white font-medium text-sm sm:text-base truncate">
-                    {player.displayName || player.userName}
+                    {player.name}
                     {isCurrentUser && (
                       <span className="ml-1 sm:ml-2 text-[10px] sm:text-xs text-[#a78bfa]">
                         (You)
@@ -464,7 +408,7 @@ const Leaderboard = () => {
                 <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
                   <div className="hidden sm:flex items-center gap-2 text-xs text-gray-400">
                     <Calendar className="w-3 h-3" />
-                    {player.quizCount}
+                    {player.totalQuizzes}
                   </div>
                   <div className="hidden sm:flex items-center gap-2 text-xs text-gray-400">
                     <Star className="w-3 h-3 text-yellow-400" />
