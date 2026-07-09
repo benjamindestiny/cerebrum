@@ -4,7 +4,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { 
   Brain, 
-  Home, 
   Trophy, 
   Users, 
   User, 
@@ -30,12 +29,10 @@ const Layout = () => {
   };
 
   const navItems = [
-    { path: '/', label: 'Home', icon: <Home className="w-4 h-4" /> },
     { path: '/categories', label: 'Categories', icon: <Brain className="w-4 h-4" /> },
     { path: '/leaderboard', label: 'Leaderboard', icon: <Trophy className="w-4 h-4" /> },
     { path: '/riddles', label: 'Riddles', icon: <Puzzle className="w-4 h-4" /> },
     { path: '/read-and-test', label: 'Read & Test', icon: <BookOpen className="w-4 h-4" /> },
-    // { path: '/multiplayer', label: 'Multiplayer', icon: <Users className="w-4 h-4" /> },
   ];
 
   const authNavItems = [
@@ -178,7 +175,7 @@ const Layout = () => {
         )}
       </header>
 
-      {/* Main Content - THIS IS WHERE THE PAGE CONTENT GOES */}
+      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 min-h-[calc(100vh-120px)]">
         <Outlet />
       </main>

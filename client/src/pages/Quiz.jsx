@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { toast } from "react-toastify";
 import {
   Clock,
   ChevronLeft,
@@ -182,11 +181,7 @@ const Quiz = () => {
       }
 
       setQuestions(fetchedQuestions);
-      toast.success(`${fetchedQuestions.length} questions loaded!`, {
-        icon: "✅",
-        position: "top-right",
-        autoClose: 1200,
-      });
+      console.log(`✅ ${fetchedQuestions.length} questions loaded`);
       setTimeLeft(30);
     } catch (error) {
       console.error("Error loading questions:", error);
@@ -202,10 +197,7 @@ const Quiz = () => {
         ]),
       }));
       setQuestions(fallbackQuestions);
-      toast.info("Using general knowledge questions", {
-        position: "top-right",
-        autoClose: 1500,
-      });
+      console.log(`✅ ${fallbackQuestions.length} fallback questions loaded`);
       setTimeLeft(30);
     } finally {
       setLoading(false);
@@ -246,10 +238,7 @@ const Quiz = () => {
   const handleTimeout = () => {
     if (!isAnswered) {
       setIsAnswered(true);
-      toast.warning("⏰ Time's up!", {
-        position: "top-right",
-        autoClose: 1000,
-      });
+      console.log("⏰ Time's up!");
       setTimeout(() => handleNext(), 1200);
     }
   };
@@ -263,12 +252,9 @@ const Quiz = () => {
 
     const isCorrect = answer === questions[currentIndex].correct_answer;
     if (isCorrect) {
-      toast.success("✅ Correct!", { position: "top-right", autoClose: 800 });
+      console.log("✅ Correct!");
     } else {
-      toast.error(`❌ Answer: ${questions[currentIndex].correct_answer}`, {
-        position: "top-right",
-        autoClose: 1200,
-      });
+      console.log("❌ Wrong answer");
     }
 
     setTimeout(() => handleNext(), 1200);
@@ -308,7 +294,6 @@ const Quiz = () => {
     setSelectedDifficulty(null);
   };
 
-  // ✅ UPDATED finishQuiz - properly updates stats and achievements
   const finishQuiz = async () => {
     let correct = 0;
     questions.forEach((q, i) => {
@@ -318,18 +303,11 @@ const Quiz = () => {
     const percentage = Math.round((correct / questions.length) * 100);
     const timeTaken = Math.floor((Date.now() - quizStartTime) / 1000);
 
-    console.log(
-      `📊 Results: ${correct}/${questions.length} correct = ${percentage}%`,
-    );
-
-    toast.success(`🎉 Score: ${percentage}%`, {
-      position: "top-right",
-      autoClose: 1500,
-    });
+    console.log(`📊 Results: ${correct}/${questions.length} correct = ${percentage}%`);
 
     if (user) {
       try {
-        // ✅ Save quiz result
+        // Save quiz result
         const quizData = {
           user_id: user.id,
           category: categoryInfo?.name || "General Knowledge",
@@ -349,14 +327,12 @@ const Quiz = () => {
 
         if (quizError) {
           console.error("❌ Error saving quiz:", quizError);
-          toast.error("Failed to save results: " + quizError.message);
           return;
         }
 
         console.log("✅ Quiz saved with score:", percentage);
-        toast.success("Results saved! 🎉");
 
-        // ✅ Get current user stats
+        // Get current user stats
         const { data: userData, error: userError } = await supabase
           .from("users")
           .select("stats")
@@ -369,7 +345,7 @@ const Quiz = () => {
 
         const currentStats = userData?.stats || {};
 
-        // ✅ Calculate new stats
+        // Calculate new stats
         const totalQuizzes = (currentStats.total_quizzes || 0) + 1;
         const totalScore = (currentStats.total_score || 0) + percentage;
         const bestScore = Math.max(currentStats.best_score || 0, percentage);
@@ -379,7 +355,7 @@ const Quiz = () => {
         const perfectScores =
           (currentStats.perfect_scores || 0) + (percentage === 100 ? 1 : 0);
 
-        // ✅ Update streak
+        // Update streak
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const yesterday = new Date(today);
@@ -405,7 +381,7 @@ const Quiz = () => {
           streak = 1;
         }
 
-        // ✅ Update users table with all stats
+        // Update users table with all stats
         const updatedStats = {
           total_quizzes: totalQuizzes,
           best_score: bestScore,
@@ -433,7 +409,7 @@ const Quiz = () => {
           console.log("✅ Stats updated:", updatedStats);
         }
 
-        // ✅ Update leaderboard
+        // Update leaderboard
         try {
           const username =
             user.user_metadata?.name ||
@@ -470,7 +446,7 @@ const Quiz = () => {
           console.error("❌ Leaderboard error:", lbError);
         }
 
-        // ✅ Update local stats state
+        // Update local stats state
         setStats({
           totalQuizzes: totalQuizzes,
           bestScore: bestScore,
@@ -484,11 +460,9 @@ const Quiz = () => {
         });
       } catch (error) {
         console.error("❌ Save error:", error);
-        toast.error("Error saving results");
       }
     } else {
       console.log("⚠️ User not logged in, results not saved");
-      toast.warning("Please log in to save results");
     }
 
     const resultData = {
@@ -509,7 +483,7 @@ const Quiz = () => {
   };
 
   // ============================================
-  // DIFFICULTY SELECTION SCREEN - Responsive
+  // DIFFICULTY SELECTION SCREEN
   // ============================================
   if (showDifficultySelect) {
     const difficulties = [
@@ -626,7 +600,7 @@ const Quiz = () => {
   }
 
   // ============================================
-  // QUIZ ACTIVE - Responsive
+  // QUIZ ACTIVE
   // ============================================
   if (questions.length === 0) {
     return (

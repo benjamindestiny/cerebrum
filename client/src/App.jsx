@@ -5,11 +5,8 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import Layout from "./components/Layout/Layout";
 import Home from "./pages/Home";
-import PublicDashboard from "./pages/PublicDashboard";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Quiz from "./pages/Quiz";
@@ -21,7 +18,6 @@ import Categories from "./pages/Categories";
 import Achievements from "./pages/Achievements";
 import ReadAndTest from "./pages/ReadAndTest";
 import ReadAndTestResults from "./pages/ReadAndTestResults";
-import Multiplayer from "./pages/Multiplayer";
 import Privacy from "./pages/Privacy";
 import About from "./pages/About";
 import Terms from "./pages/Terms";
@@ -62,26 +58,17 @@ function App() {
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<Layout />}>
-            {/* Home redirects based on auth status */}
             <Route index element={<Home />} />
-
-            {/* Public routes - accessible to everyone */}
-            <Route path="home" element={<Home />} />
             <Route path="categories" element={<Categories />} />
             <Route path="leaderboard" element={<Leaderboard />} />
             <Route path="riddles" element={<Riddles />} />
             <Route path="achievements" element={<Achievements />} />
             <Route path="read-and-test" element={<ReadAndTest />} />
-            <Route
-              path="read-and-test-results"
-              element={<ReadAndTestResults />}
-            />
-            <Route path="multiplayer" element={<Multiplayer />} />
+            <Route path="read-and-test-results" element={<ReadAndTestResults />} />
             <Route path="privacy" element={<Privacy />} />
             <Route path="about" element={<About />} />
             <Route path="terms" element={<Terms />} />
-
-            {/* Protected routes - require login */}
+            
             <Route
               path="dashboard"
               element={
@@ -116,18 +103,6 @@ function App() {
             />
           </Route>
         </Routes>
-        <ToastContainer
-          position="top-right"
-          autoClose={2000}
-          hideProgressBar={false}
-          newestOnTop={true}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss={false}
-          draggable={false}
-          pauseOnHover={false}
-          limit={3}
-        />
         <CookieConsent />
       </div>
     </Router>

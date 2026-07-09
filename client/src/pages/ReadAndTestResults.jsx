@@ -107,7 +107,7 @@ const ReadAndTestResults = () => {
       }).catch(() => {});
     } else {
       navigator.clipboard.writeText(shareText).then(() => {
-        toast.success('Results copied to clipboard!');
+        // toast.'Results copied to clipboard!');
       }).catch(() => {});
     }
   };

@@ -25,7 +25,7 @@ import {
   Settings,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
-import { toast } from "react-toastify";
+
 import { useAuth } from "../context/AuthContext";
 
 const Dashboard = () => {

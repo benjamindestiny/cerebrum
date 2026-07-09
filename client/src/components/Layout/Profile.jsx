@@ -95,7 +95,7 @@ const Profile = () => {
       
     } catch (error) {
       console.error('Error loading profile:', error);
-      toast.error('Failed to load profile');
+      // toast.'Failed to load profile');
     } finally {
       setLoading(false);
     }
@@ -142,13 +142,13 @@ const Profile = () => {
 
       if (upsertError) throw upsertError;
 
-      toast.success('Profile updated successfully! 🎉');
+      // toast.'Profile updated successfully! 🎉');
       setEditing(false);
       loadProfile();
       
     } catch (error) {
       console.error('Error saving profile:', error);
-      toast.error(error.message || 'Failed to update profile');
+      // toast.error.message || 'Failed to update profile');
     } finally {
       setSaving(false);
     }

@@ -16,12 +16,12 @@ const ResetPassword = () => {
     e.preventDefault();
     
     if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
+      // toast.'Passwords do not match');
       return;
     }
 
     if (password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+      // toast.'Password must be at least 6 characters');
       return;
     }
 
@@ -34,11 +34,11 @@ const ResetPassword = () => {
       if (error) throw error;
 
       setSuccess(true);
-      toast.success('Password updated successfully! 🎉');
+      // toast.'Password updated successfully! 🎉');
       setTimeout(() => navigate('/auth'), 2000);
     } catch (error) {
       console.error('Reset error:', error);
-      toast.error(error.message || 'Failed to reset password');
+      // toast.error.message || 'Failed to reset password');
     } finally {
       setLoading(false);
     }

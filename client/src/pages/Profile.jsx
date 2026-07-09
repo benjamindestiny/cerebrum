@@ -37,7 +37,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
-import { toast } from "react-toastify";
+
 import AvatarSelector from "../components/Common/AvatarSelector";
 import { defaultAvatars, getAvatarById } from "../data/avatars";
 
@@ -321,7 +321,7 @@ const Profile = () => {
       }
     } catch (error) {
       console.error("Error loading profile:", error);
-      toast.error("Failed to load profile");
+      // toast."Failed to load profile");
     } finally {
       setLoading(false);
     }
@@ -567,10 +567,10 @@ const Profile = () => {
         console.error("Error updating stats:", updateError);
       }
 
-      toast.success("Stats refreshed successfully! 🔄");
+      // toast."Stats refreshed successfully! 🔄");
     } catch (error) {
       console.error("Error refreshing stats:", error);
-      toast.error("Failed to refresh stats");
+      // toast."Failed to refresh stats");
     } finally {
       setRefreshing(false);
     }
@@ -679,12 +679,12 @@ const Profile = () => {
 
       if (upsertError) throw upsertError;
 
-      toast.success("Profile updated successfully! 🎉");
+      // toast."Profile updated successfully! 🎉");
       setEditing(false);
       loadProfile();
     } catch (error) {
       console.error("Error saving profile:", error);
-      toast.error(error.message || "Failed to update profile");
+      // toast.error.message || "Failed to update profile");
     } finally {
       setSaving(false);
     }

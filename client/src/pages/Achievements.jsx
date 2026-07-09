@@ -29,7 +29,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
-import { toast } from "react-toastify";
+
 
 const Achievements = () => {
   const navigate = useNavigate();
@@ -459,7 +459,7 @@ const Achievements = () => {
       updateAchievements(mappedStats);
     } catch (error) {
       console.error("Error loading achievements:", error);
-      toast.error("Failed to load achievements");
+      // toast."Failed to load achievements");
     } finally {
       setLoading(false);
     }
@@ -496,10 +496,10 @@ const Achievements = () => {
       setStats(mappedStats);
       updateAchievements(mappedStats);
 
-      toast.success("Achievements refreshed! 🔄");
+      // toast."Achievements refreshed! 🔄");
     } catch (error) {
       console.error("Error refreshing:", error);
-      toast.error("Failed to refresh achievements");
+      // toast."Failed to refresh achievements");
     } finally {
       setRefreshing(false);
     }

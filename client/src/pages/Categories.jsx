@@ -38,7 +38,7 @@ import {
   Star,
   Lock,
 } from "lucide-react";
-import { toast } from "react-toastify";
+
 import categoryHierarchy from "../data/categoryData";
 
 const Categories = () => {
@@ -118,7 +118,7 @@ const Categories = () => {
 
   const startQuiz = () => {
     if (!selectedCategory) {
-      toast.error("No category selected");
+      // toast."No category selected");
       return;
     }
 

@@ -14,7 +14,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
-import { toast } from "react-toastify";
+
 
 const Leaderboard = () => {
   const [players, setPlayers] = useState([]);
@@ -240,10 +240,10 @@ const Leaderboard = () => {
     setRefreshing(true);
     try {
       await loadLeaderboard();
-      toast.success("Leaderboard updated! 🔄");
+      // toast."Leaderboard updated! 🔄");
     } catch (error) {
       console.error("Error refreshing:", error);
-      toast.error("Failed to refresh leaderboard");
+      // toast."Failed to refresh leaderboard");
     } finally {
       setRefreshing(false);
     }

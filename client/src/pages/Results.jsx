@@ -85,10 +85,10 @@ const Results = () => {
       try {
         await navigator.clipboard.writeText(shareText);
         setShareCopied(true);
-        toast.success('Results copied!', { position: 'top-right', autoClose: 1500 });
+        // toast.'Results copied!', { position: 'top-right', autoClose: 1500 });
         setTimeout(() => setShareCopied(false), 3000);
       } catch {
-        toast.error('Failed to copy.', { position: 'top-right' });
+        // toast.'Failed to copy.', { position: 'top-right' });
       }
     }
   };

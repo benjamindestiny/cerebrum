@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { toast } from "react-toastify";
+
 import {
   Brain,
   Mail,
@@ -62,7 +62,7 @@ const Auth = () => {
 
           if (error) {
             console.error("❌ Verification error:", error);
-            toast.error("Verification link expired or invalid.");
+            // toast."Verification link expired or invalid.");
             window.history.replaceState(
               {},
               document.title,
@@ -74,7 +74,7 @@ const Auth = () => {
 
           if (data?.session) {
             console.log("✅ Verification successful!", data);
-            toast.success("Email verified! Welcome to Cerebrum! 🎉");
+            // toast."Email verified! Welcome to Cerebrum! 🎉");
             window.history.replaceState(
               {},
               document.title,
@@ -84,7 +84,7 @@ const Auth = () => {
           }
         } catch (error) {
           console.error("❌ Verification error:", error);
-          toast.error("Verification failed. Please try again.");
+          // toast."Verification failed. Please try again.");
           window.history.replaceState(
             {},
             document.title,
@@ -119,29 +119,29 @@ const Auth = () => {
 
         if (error) {
           if (error.message.includes("Email not confirmed")) {
-            toast.error("Please confirm your email first. Check your inbox!");
+            // toast."Please confirm your email first. Check your inbox!");
           } else if (error.message.includes("Invalid login credentials")) {
-            toast.error("Invalid email or password. Please try again.");
+            // toast."Invalid email or password. Please try again.");
           } else {
-            toast.error(error.message);
+            // toast.error.message);
           }
           setLoading(false);
           return;
         }
 
         if (data?.user) {
-          toast.success("Welcome back! 🎉");
+          // toast."Welcome back! 🎉");
           navigate("/dashboard");
         }
       } else {
         if (formData.password !== formData.confirmPassword) {
-          toast.error("Passwords do not match");
+          // toast."Passwords do not match");
           setLoading(false);
           return;
         }
 
         if (formData.password.length < 6) {
-          toast.error("Password must be at least 6 characters");
+          // toast."Password must be at least 6 characters");
           setLoading(false);
           return;
         }
@@ -159,26 +159,26 @@ const Auth = () => {
 
         if (error) {
           if (error.message.includes("already registered")) {
-            toast.info("Account already exists. Please sign in.");
+            // toast."Account already exists. Please sign in.");
           } else {
-            toast.error(error.message);
+            // toast.error.message);
           }
           setLoading(false);
           return;
         }
 
         if (data.user?.identities?.length === 0) {
-          toast.info("Account already exists. Please sign in.");
+          // toast."Account already exists. Please sign in.");
           setLoading(false);
           return;
         }
 
-        toast.success("Account created! Welcome to Cerebrum! 🎉");
+        // toast."Account created! Welcome to Cerebrum! 🎉");
         navigate("/dashboard");
       }
     } catch (error) {
       console.error("Auth error:", error);
-      toast.error(error.message || "Something went wrong");
+      // toast.error.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -187,7 +187,7 @@ const Auth = () => {
   const handleResetPassword = async (e) => {
     e.preventDefault();
     if (!resetEmail) {
-      toast.error("Please enter your email address");
+      // toast."Please enter your email address");
       return;
     }
 
@@ -199,12 +199,12 @@ const Auth = () => {
 
       if (error) throw error;
 
-      toast.success("Password reset email sent! Check your inbox. 📧");
+      // toast."Password reset email sent! Check your inbox. 📧");
       setShowReset(false);
       setResetEmail("");
     } catch (error) {
       console.error("Reset error:", error);
-      toast.error(error.message || "Failed to send reset email");
+      // toast.error.message || "Failed to send reset email");
     } finally {
       setLoading(false);
     }
@@ -221,7 +221,7 @@ const Auth = () => {
       });
 
       if (error) {
-        toast.error(error.message);
+        // toast.error.message);
         setGoogleLoading(false);
         return;
       }
@@ -231,7 +231,7 @@ const Auth = () => {
       }
     } catch (error) {
       console.error("Google login error:", error);
-      toast.error("Google login failed. Please try again.");
+      // toast."Google login failed. Please try again.");
       setGoogleLoading(false);
     }
   };
@@ -247,7 +247,7 @@ const Auth = () => {
       });
 
       if (error) {
-        toast.error(error.message);
+        // toast.error.message);
         setGithubLoading(false);
         return;
       }
@@ -257,7 +257,7 @@ const Auth = () => {
       }
     } catch (error) {
       console.error("GitHub login error:", error);
-      toast.error("GitHub login failed. Please try again.");
+      // toast."GitHub login failed. Please try again.");
       setGithubLoading(false);
     }
   };

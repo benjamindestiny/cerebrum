@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "react-toastify";
+
 import {
   BookOpen,
   Brain,
@@ -83,14 +83,14 @@ const ReadAndTest = () => {
     setAnswers({});
     setCurrentQuestion(0);
     setShowResults(false);
-    toast.info(`📖 Reading: ${material.title}`);
+    // toast.`📖 Reading: ${material.title}`);
   };
 
   const startQuiz = () => {
     setCurrentView("quiz");
     setCurrentQuestion(0);
     setAnswers({});
-    toast.info("📝 Starting comprehension quiz!");
+    // toast."📝 Starting comprehension quiz!");
   };
 
   const handleAnswer = (questionIndex, answerIndex) => {
@@ -132,7 +132,7 @@ const ReadAndTest = () => {
 
     sessionStorage.setItem("readTestResults", JSON.stringify(resultsData));
 
-    toast.success(`🎉 Quiz Complete! Score: ${finalScore}%`);
+    // toast.`🎉 Quiz Complete! Score: ${finalScore}%`);
 
     setTimeout(() => {
       navigate("/read-and-test-results");

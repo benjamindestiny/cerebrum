@@ -148,7 +148,7 @@ const SchoolSignup = () => {
     // Simulate API call
     setTimeout(() => {
       setLoading(false);
-      toast.success('🎉 School account created successfully!');
+      // toast.'🎉 School account created successfully!');
       navigate('/dashboard');
     }, 2000);
   };

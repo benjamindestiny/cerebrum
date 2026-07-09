@@ -86,7 +86,7 @@ const Multiplayer = () => {
   const copyRoomCode = () => {
     navigator.clipboard.writeText(roomCode);
     setCopied(true);
-    toast.success('Room code copied!');
+    // toast.'Room code copied!');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -116,7 +116,7 @@ const Multiplayer = () => {
     setScore(0);
     setTimeLeft(15);
     setLoading(false);
-    toast.info('🎮 Game started! Good luck everyone!');
+    // toast.'🎮 Game started! Good luck everyone!');
   };
 
   const handleAnswer = (index) => {
@@ -130,9 +130,9 @@ const Multiplayer = () => {
     const isCorrect = index === questions[currentQuestion].correct;
     if (isCorrect) {
       setScore(prev => prev + 10);
-      toast.success('✅ Correct! +10 points');
+      // toast.'✅ Correct! +10 points');
     } else {
-      toast.error(`❌ Wrong! The answer was: ${questions[currentQuestion].options[questions[currentQuestion].correct]}`);
+      // toast.`❌ Wrong! The answer was: ${questions[currentQuestion].options[questions[currentQuestion].correct]}`);
     }
     
     // Auto advance after 1.5 seconds
@@ -148,7 +148,7 @@ const Multiplayer = () => {
 
   const finishGame = () => {
     setGameState('results');
-    toast.success('🎉 Game complete!');
+    // toast.'🎉 Game complete!');
   };
 
   const handleLeaveRoom = () => {
