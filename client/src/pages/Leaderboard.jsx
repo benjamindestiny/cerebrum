@@ -7,7 +7,6 @@ import {
   Award,
   Users,
   Search,
-  TrendingUp,
   Calendar,
   Zap,
   Loader2,
@@ -29,26 +28,14 @@ const Leaderboard = () => {
     loadLeaderboard();
     getCurrentUser();
 
-    // Set up real-time subscription
     const subscription = supabase
       .channel("leaderboard_updates")
       .on(
         "postgres_changes",
         {
-          event: "*",
+          event: "INSERT",
           schema: "public",
           table: "quiz_results",
-        },
-        () => {
-          refreshLeaderboard();
-        },
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "users",
         },
         () => {
           refreshLeaderboard();
@@ -71,99 +58,155 @@ const Leaderboard = () => {
   const loadLeaderboard = async () => {
     setLoading(true);
     try {
-      // Step 1: Get ALL users from the users table
+      // Try to use the leaderboard view
+      const { data: viewData, error: viewError } = await supabase
+        .from("leaderboard_view")
+        .select("*");
+
+      if (!viewError && viewData && viewData.length > 0) {
+        console.log("Leaderboard view data:", viewData);
+
+        const processedPlayers = viewData.map((player, index) => {
+          const avatarMap = {
+            1: "🧠",
+            2: "🚀",
+            3: "🌟",
+            4: "🎯",
+            5: "💪",
+            6: "🧙",
+            7: "🦊",
+            8: "🐉",
+            9: "🦅",
+            10: "🐺",
+            11: "🦄",
+            12: "🐼",
+            13: "🦁",
+            14: "🐧",
+            15: "🐱",
+            16: "🐶",
+          };
+
+          return {
+            userId: player.user_id,
+            userName: player.user_name || "Anonymous",
+            avatar: avatarMap[player.avatar_id] || "🧠",
+            avatarId: player.avatar_id || 1,
+            quizCount: parseInt(player.quiz_count) || 0,
+            averageScore: parseInt(player.average_score) || 0,
+            bestScore: parseInt(player.best_score) || 0,
+            streak: player.stats?.streak || 0,
+            totalPoints: player.stats?.total_points || 0,
+            lastPlayed: player.last_played,
+            rank: index + 1,
+          };
+        });
+
+        setPlayers(processedPlayers);
+        setLoading(false);
+        return;
+      }
+
+      // Fallback: Manual query without view
+      await loadLeaderboardManual();
+    } catch (error) {
+      console.error("Error loading leaderboard:", error);
+      await loadLeaderboardManual();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadLeaderboardManual = async () => {
+    try {
+      // Get all quiz results
+      const { data: quizData, error: quizError } = await supabase
+        .from("quiz_results")
+        .select("*");
+
+      if (quizError || !quizData || quizData.length === 0) {
+        setPlayers([]);
+        return;
+      }
+
+      // Get all user IDs
+      const userIds = [...new Set(quizData.map((q) => q.user_id))];
+
+      // Get user info
       const { data: usersData, error: usersError } = await supabase
         .from("users")
-        .select("id, name, avatar_id, email, stats, created_at, updated_at");
+        .select("id, name, avatar_id, email, stats")
+        .in("id", userIds);
 
-      if (usersError) {
-        console.error("Error fetching users:", usersError);
-        toast.error("Failed to load leaderboard");
-        setPlayers([]);
-        setLoading(false);
-        return;
-      }
-
-      if (!usersData || usersData.length === 0) {
-        setPlayers([]);
-        setLoading(false);
-        return;
-      }
-
-      // Step 2: Get all quiz results
-      let query = supabase
-        .from("quiz_results")
-        .select("user_id, percentage, category, created_at, score");
-
-      // Time filter
-      if (timeFilter !== "all") {
-        const now = new Date();
-        let startDate;
-        switch (timeFilter) {
-          case "today":
-            startDate = new Date(now.setHours(0, 0, 0, 0));
-            break;
-          case "week":
-            startDate = new Date(now.setDate(now.getDate() - 7));
-            break;
-          case "month":
-            startDate = new Date(now.setMonth(now.getMonth() - 1));
-            break;
-          default:
-            break;
-        }
-        if (startDate) {
-          query = query.gte("created_at", startDate.toISOString());
-        }
-      }
-
-      const { data: quizData, error: quizError } = await query;
-
-      if (quizError) {
-        console.error("Error fetching quiz results:", quizError);
-        // Still show users even if quiz results fail
-      }
-
-      // Step 3: Create a map of quiz results by user
-      const quizMap = {};
-      if (quizData) {
-        quizData.forEach((record) => {
-          if (!quizMap[record.user_id]) {
-            quizMap[record.user_id] = {
-              totalScore: 0,
-              totalPercentage: 0,
-              quizCount: 0,
-              bestScore: 0,
-              bestPercentage: 0,
-              categoryCount: {},
-              recentScore: 0,
-              recentDate: record.created_at,
-            };
-          }
-          const user = quizMap[record.user_id];
-          const percentage = parseFloat(record.percentage) || 0;
-          const score = record.score || 0;
-
-          user.totalScore += score;
-          user.totalPercentage += percentage;
-          user.quizCount += 1;
-          user.bestScore = Math.max(user.bestScore, score);
-          user.bestPercentage = Math.max(user.bestPercentage, percentage);
-          user.recentScore = percentage || score;
-
-          // Count categories
-          if (record.category) {
-            user.categoryCount[record.category] =
-              (user.categoryCount[record.category] || 0) + 1;
-          }
-
-          if (record.created_at > user.recentDate) {
-            user.recentDate = record.created_at;
-          }
+      // Create user map
+      const userMap = {};
+      if (usersData) {
+        usersData.forEach((u) => {
+          userMap[u.id] = {
+            name: u.name || u.email?.split("@")[0] || "Anonymous",
+            avatarId: u.avatar_id || 1,
+            stats: u.stats || {},
+          };
         });
       }
 
-      // Step 4: Combine user data with quiz data
+      // Aggregate data
+      const playerMap = {};
+      quizData.forEach((record) => {
+        const userId = record.user_id;
+        const userInfo = userMap[userId] || {
+          name: "Anonymous",
+          avatarId: 1,
+          stats: {},
+        };
+        const percentage = parseFloat(record.percentage) || 0;
+
+        if (!playerMap[userId]) {
+          playerMap[userId] = {
+            userId: userId,
+            userName: userInfo.name,
+            avatarId: userInfo.avatarId,
+            totalScore: 0,
+            quizCount: 0,
+            bestScore: 0,
+            streak: userInfo.stats?.streak || 0,
+            totalPoints: userInfo.stats?.total_points || 0,
+            lastPlayed: record.created_at,
+          };
+        }
+
+        const player = playerMap[userId];
+        player.totalScore += percentage;
+        player.quizCount += 1;
+        player.bestScore = Math.max(player.bestScore, percentage);
+
+        if (record.created_at > player.lastPlayed) {
+          player.lastPlayed = record.created_at;
+        }
+      });
+
+      // Convert to array and calculate averages
+      const leaderboard = Object.values(playerMap).map((player) => ({
+        ...player,
+        averageScore:
+          player.quizCount > 0
+            ? Math.round(player.totalScore / player.quizCount)
+            : 0,
+      }));
+
+      // Sort by average score descending
+      leaderboard.sort((a, b) => {
+        if (b.averageScore !== a.averageScore) {
+          return b.averageScore - a.averageScore;
+        }
+        return b.quizCount - a.quizCount;
+      });
+
+      // Add ranks
+      leaderboard.forEach((player, index) => {
+        player.rank = index + 1;
+      });
+
+      // Add avatars
       const avatarMap = {
         1: "🧠",
         2: "🚀",
@@ -182,89 +225,14 @@ const Leaderboard = () => {
         15: "🐱",
         16: "🐶",
       };
-
-      const leaderboard = usersData.map((user) => {
-        const userStats = user.stats || {};
-        const quizStats = quizMap[user.id] || {
-          totalScore: 0,
-          totalPercentage: 0,
-          quizCount: 0,
-          bestScore: 0,
-          bestPercentage: 0,
-          categoryCount: {},
-          recentScore: 0,
-        };
-
-        // Use either from quiz table or stats column
-        const totalQuizzes = Math.max(
-          quizStats.quizCount,
-          userStats.total_quizzes || 0,
-        );
-        const totalScore = Math.max(
-          quizStats.totalScore,
-          userStats.total_score || 0,
-        );
-        const totalPercentage = Math.max(
-          quizStats.totalPercentage,
-          userStats.total_percentage || 0,
-        );
-        const bestScore = Math.max(
-          quizStats.bestScore,
-          userStats.best_score || 0,
-        );
-        const averageScore =
-          totalQuizzes > 0
-            ? Math.round((totalScore / totalQuizzes) * 100)
-            : userStats.average_score || 0;
-
-        return {
-          userId: user.id,
-          userName: user.name || user.email?.split("@")[0] || "Anonymous",
-          avatar: avatarMap[user.avatar_id] || "🧠",
-          totalScore: totalScore,
-          totalPercentage: totalPercentage,
-          totalQuizzes: totalQuizzes,
-          bestScore: bestScore,
-          bestPercentage:
-            quizStats.bestPercentage || userStats.best_percentage || 0,
-          averageScore: averageScore,
-          streak: userStats.streak || 0,
-          longestStreak: userStats.longest_streak || 0,
-          categoryCount: quizStats.categoryCount || {},
-          categoriesPlayed: Object.keys(quizStats.categoryCount || {}).length,
-          recentScore: quizStats.recentScore || 0,
-          recentDate:
-            quizStats.recentDate || user.updated_at || user.created_at,
-          createdAt: user.created_at,
-          updatedAt: user.updated_at,
-          hasPlayed: totalQuizzes > 0,
-        };
-      });
-
-      // Step 5: Sort by average score, then total quizzes
-      leaderboard.sort((a, b) => {
-        // Put users with quizzes first
-        if (a.hasPlayed !== b.hasPlayed) {
-          return a.hasPlayed ? -1 : 1;
-        }
-        if (b.averageScore !== a.averageScore) {
-          return b.averageScore - a.averageScore;
-        }
-        return b.totalQuizzes - a.totalQuizzes;
-      });
-
-      // Add rank
-      leaderboard.forEach((user, index) => {
-        user.rank = index + 1;
+      leaderboard.forEach((player) => {
+        player.avatar = avatarMap[player.avatarId] || "🧠";
       });
 
       setPlayers(leaderboard);
     } catch (error) {
-      console.error("Error loading leaderboard:", error);
-      toast.error("Failed to load leaderboard");
+      console.error("Manual query error:", error);
       setPlayers([]);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -272,7 +240,7 @@ const Leaderboard = () => {
     setRefreshing(true);
     try {
       await loadLeaderboard();
-      toast.success("Leaderboard refreshed! 🔄");
+      toast.success("Leaderboard updated! 🔄");
     } catch (error) {
       console.error("Error refreshing:", error);
       toast.error("Failed to refresh leaderboard");
@@ -305,7 +273,6 @@ const Leaderboard = () => {
     player.userName?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  // Find current user's data
   const currentUserData = players.find((p) => p.userId === currentUser?.id);
   const currentUserRank = currentUserData?.rank || null;
 
@@ -327,7 +294,7 @@ const Leaderboard = () => {
             Leaderboard
           </h1>
           <p className="text-gray-400 text-sm mt-1">
-            Top performers from around the world
+            {players.length} players competing
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -377,7 +344,7 @@ const Leaderboard = () => {
               </div>
               <div className="text-center">
                 <div className="text-xl font-bold text-[#7c3aed]">
-                  {currentUserData.totalQuizzes || 0}
+                  {currentUserData.quizCount || 0}
                 </div>
                 <div className="text-[10px] text-gray-500">Quizzes</div>
               </div>
@@ -423,50 +390,41 @@ const Leaderboard = () => {
         </div>
       </div>
 
-      {/* Top 3 - Only show if there are players with quizzes */}
-      {filteredPlayers.filter((p) => p.hasPlayed).length > 0 && (
+      {/* Top 3 */}
+      {filteredPlayers.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          {filteredPlayers
-            .filter((p) => p.hasPlayed)
-            .slice(0, 3)
-            .map((player, index) => (
-              <motion.div
-                key={player.userId}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className={`glass-card p-4 sm:p-6 text-center ${getRankClass(index + 1)}`}
-              >
-                <div className="text-3xl sm:text-4xl mb-1 sm:mb-2">
-                  {player.avatar || "🧠"}
-                </div>
-                <div className="text-base sm:text-xl font-bold text-white truncate">
-                  {player.userName}
-                </div>
-                <div className="text-2xl sm:text-3xl font-bold text-[#7c3aed] mt-1">
-                  {player.averageScore}%
-                </div>
-                <div className="flex items-center justify-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-gray-400 flex-wrap">
-                  <span>{player.totalQuizzes} quizzes</span>
-                  <span className="flex items-center gap-1">
-                    <Star className="w-3 h-3 text-yellow-400" />
-                    {player.categoriesPlayed || 0} categories
+          {filteredPlayers.slice(0, 3).map((player, index) => (
+            <motion.div
+              key={player.userId}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className={`glass-card p-4 sm:p-6 text-center ${getRankClass(index + 1)}`}
+            >
+              <div className="text-3xl sm:text-4xl mb-1 sm:mb-2">
+                {player.avatar || "🧠"}
+              </div>
+              <div className="text-base sm:text-xl font-bold text-white truncate">
+                {player.userName}
+              </div>
+              <div className="text-2xl sm:text-3xl font-bold text-[#7c3aed] mt-1">
+                {player.averageScore}%
+              </div>
+              <div className="flex items-center justify-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-gray-400 flex-wrap">
+                <span>{player.quizCount} quizzes</span>
+                {player.streak > 0 && (
+                  <span className="flex items-center gap-1 text-orange-400">
+                    <Zap className="w-3 h-3" />
+                    {player.streak}d streak
                   </span>
-                  {player.streak > 0 && (
-                    <span className="flex items-center gap-1 text-orange-400">
-                      <Zap className="w-3 h-3" />
-                      {player.streak}d
-                    </span>
-                  )}
-                </div>
-                <div className="mt-2 flex items-center justify-center gap-1">
-                  {getRankIcon(index + 1)}
-                  <span className="text-xs text-gray-500">
-                    Rank #{index + 1}
-                  </span>
-                </div>
-              </motion.div>
-            ))}
+                )}
+              </div>
+              <div className="mt-2 flex items-center justify-center gap-1">
+                {getRankIcon(index + 1)}
+                <span className="text-xs text-gray-500">Rank #{index + 1}</span>
+              </div>
+            </motion.div>
+          ))}
         </div>
       )}
 
@@ -476,78 +434,69 @@ const Leaderboard = () => {
           <Trophy className="w-4 h-4 text-yellow-400" />
           All Players
           <span className="text-xs text-gray-500 ml-2">
-            ({filteredPlayers.filter((p) => p.hasPlayed).length} active)
+            ({filteredPlayers.length} players)
           </span>
         </h3>
         <div className="space-y-1.5 sm:space-y-2 max-h-[400px] overflow-y-auto pr-1 sm:pr-2">
-          {filteredPlayers
-            .filter((p) => p.hasPlayed)
-            .slice(0, 50)
-            .map((player) => {
-              const isCurrentUser = currentUser?.id === player.userId;
-              return (
-                <motion.div
-                  key={player.userId}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: (player.rank || 0) * 0.02 }}
-                  className={`flex items-center justify-between p-2 sm:p-3 rounded-lg transition-colors ${
-                    isCurrentUser
-                      ? "bg-[#7c3aed]/10 border border-[#7c3aed]/30"
-                      : "hover:bg-white/5"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-                    <div className="w-6 sm:w-8 text-center flex-shrink-0">
-                      {getRankIcon(player.rank)}
-                    </div>
-                    <span className="text-xl sm:text-2xl flex-shrink-0">
-                      {player.avatar || "🧠"}
-                    </span>
-                    <span className="text-white font-medium text-sm sm:text-base truncate">
-                      {player.userName}
-                      {isCurrentUser && (
-                        <span className="ml-1 sm:ml-2 text-[10px] sm:text-xs text-[#a78bfa]">
-                          (You)
-                        </span>
-                      )}
-                    </span>
+          {filteredPlayers.slice(0, 50).map((player) => {
+            const isCurrentUser = currentUser?.id === player.userId;
+            return (
+              <motion.div
+                key={player.userId}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: (player.rank || 0) * 0.02 }}
+                className={`flex items-center justify-between p-2 sm:p-3 rounded-lg transition-colors ${
+                  isCurrentUser
+                    ? "bg-[#7c3aed]/10 border border-[#7c3aed]/30"
+                    : "hover:bg-white/5"
+                }`}
+              >
+                <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+                  <div className="w-6 sm:w-8 text-center flex-shrink-0">
+                    {getRankIcon(player.rank)}
                   </div>
-                  <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-                    <div className="hidden sm:flex items-center gap-2 text-xs text-gray-400">
-                      <Calendar className="w-3 h-3" />
-                      {player.totalQuizzes}
-                    </div>
-                    <div className="hidden sm:flex items-center gap-2 text-xs text-gray-400">
-                      <Star className="w-3 h-3 text-yellow-400" />
-                      {player.categoriesPlayed || 0}
-                    </div>
-                    {player.streak > 0 && (
-                      <div className="flex items-center gap-1 text-xs text-orange-400">
-                        <Zap className="w-3 h-3" />
-                        <span className="hidden sm:inline">
-                          {player.streak}d
-                        </span>
-                      </div>
+                  <span className="text-xl sm:text-2xl flex-shrink-0">
+                    {player.avatar || "🧠"}
+                  </span>
+                  <span className="text-white font-medium text-sm sm:text-base truncate">
+                    {player.userName}
+                    {isCurrentUser && (
+                      <span className="ml-1 sm:ml-2 text-[10px] sm:text-xs text-[#a78bfa]">
+                        (You)
+                      </span>
                     )}
-                    <div className="text-right">
-                      <div
-                        className={`text-sm sm:text-lg font-bold ${getScoreColor(player.averageScore || 0)}`}
-                      >
-                        {player.averageScore || 0}%
-                      </div>
-                      <div className="text-[8px] sm:text-xs text-gray-500">
-                        Avg
-                      </div>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+                  <div className="hidden sm:flex items-center gap-2 text-xs text-gray-400">
+                    <Calendar className="w-3 h-3" />
+                    {player.quizCount}
+                  </div>
+                  {player.streak > 0 && (
+                    <div className="flex items-center gap-1 text-xs text-orange-400">
+                      <Zap className="w-3 h-3" />
+                      <span className="hidden sm:inline">{player.streak}d</span>
+                    </div>
+                  )}
+                  <div className="text-right">
+                    <div
+                      className={`text-sm sm:text-lg font-bold ${getScoreColor(player.averageScore || 0)}`}
+                    >
+                      {player.averageScore || 0}%
+                    </div>
+                    <div className="text-[8px] sm:text-xs text-gray-500">
+                      Avg
                     </div>
                   </div>
-                </motion.div>
-              );
-            })}
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
 
-      {filteredPlayers.filter((p) => p.hasPlayed).length === 0 && (
+      {filteredPlayers.length === 0 && (
         <div className="glass-card p-8 sm:p-12 text-center">
           <div className="flex flex-col items-center gap-4">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#7c3aed]/10 flex items-center justify-center">
@@ -560,6 +509,12 @@ const Leaderboard = () => {
               Be the first to take a quiz and claim your spot on the
               leaderboard! 🏆
             </p>
+            <button
+              onClick={() => (window.location.href = "/categories")}
+              className="mt-2 px-6 py-2 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors"
+            >
+              Start a Quiz
+            </button>
           </div>
         </div>
       )}

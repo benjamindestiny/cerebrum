@@ -9,6 +9,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Layout from "./components/Layout/Layout";
 import Home from "./pages/Home";
+import PublicDashboard from "./pages/PublicDashboard";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Quiz from "./pages/Quiz";
@@ -61,19 +62,26 @@ function App() {
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<Layout />}>
+            {/* Home redirects based on auth status */}
             <Route index element={<Home />} />
+
+            {/* Public routes - accessible to everyone */}
             <Route path="home" element={<Home />} />
             <Route path="categories" element={<Categories />} />
             <Route path="leaderboard" element={<Leaderboard />} />
             <Route path="riddles" element={<Riddles />} />
             <Route path="achievements" element={<Achievements />} />
             <Route path="read-and-test" element={<ReadAndTest />} />
-            <Route path="read-and-test-results" element={<ReadAndTestResults />} />
+            <Route
+              path="read-and-test-results"
+              element={<ReadAndTestResults />}
+            />
             <Route path="multiplayer" element={<Multiplayer />} />
             <Route path="privacy" element={<Privacy />} />
             <Route path="about" element={<About />} />
             <Route path="terms" element={<Terms />} />
-            
+
+            {/* Protected routes - require login */}
             <Route
               path="dashboard"
               element={

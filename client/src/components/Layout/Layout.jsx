@@ -35,7 +35,7 @@ const Layout = () => {
     { path: '/leaderboard', label: 'Leaderboard', icon: <Trophy className="w-4 h-4" /> },
     { path: '/riddles', label: 'Riddles', icon: <Puzzle className="w-4 h-4" /> },
     { path: '/read-and-test', label: 'Read & Test', icon: <BookOpen className="w-4 h-4" /> },
-    { path: '/multiplayer', label: 'Multiplayer', icon: <Users className="w-4 h-4" /> },
+    // { path: '/multiplayer', label: 'Multiplayer', icon: <Users className="w-4 h-4" /> },
   ];
 
   const authNavItems = [
