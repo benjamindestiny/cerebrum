@@ -4,7 +4,7 @@ import { Brain, Github, Mail, Heart } from "lucide-react";
 
 const Footer = () => {
   return (
-    <footer className="border-t border-white/10 bg-[#1A1A3E]/50 backdrop-blur-sm mt-auto">
+    <footer className="border-t border-[var(--border)] bg-[var(--surface)]/80 backdrop-blur-sm mt-auto">
       <div className="app-container py-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
           <div className="flex items-center gap-2 text-gray-400 text-sm">

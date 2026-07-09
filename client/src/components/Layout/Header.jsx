@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   Trophy,
   Puzzle,
-  User,
   Menu,
   X,
   FolderTree,
@@ -15,12 +14,16 @@ import {
   LogOut,
   UserCircle,
   Home,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { supabase } from "../../services/supabase";
+import { useTheme } from "../../hooks/useTheme";
 
 const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isDark, toggleTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -72,7 +75,7 @@ const Header = () => {
 
   if (loading) {
     return (
-      <header className="bg-[#1a1a2e] border-b border-gray-800">
+      <header className="bg-[var(--surface)] border-b border-[var(--border)]">
         <div className="app-container">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
@@ -88,7 +91,7 @@ const Header = () => {
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-[#1a1a2e] border-b border-gray-800">
+    <header className="sticky top-0 z-50 bg-[var(--surface)] border-b border-[var(--border)]">
       <div className="app-container">
         <div className="flex items-center justify-between gap-3 h-16">
           {/* Logo - goes to Dashboard if logged in, otherwise Home */}
@@ -127,6 +130,18 @@ const Header = () => {
 
           {/* Right side */}
           <div className="hidden md:flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface-2)]/90 px-3 py-2 text-sm text-[var(--muted)] transition-colors hover:text-[var(--text)]"
+              aria-label="Toggle theme"
+            >
+              {isDark ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+              <span>{isDark ? "Light" : "Dark"}</span>
+            </button>
             {user ? (
               <div className="flex items-center gap-3">
                 <Link
@@ -192,6 +207,19 @@ const Header = () => {
                 </Link>
               ))}
 
+              <button
+                onClick={toggleTheme}
+                className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-2)]/90 px-4 py-3 text-[var(--muted)] transition-colors hover:text-[var(--text)]"
+              >
+                {isDark ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
+                <span className="font-medium">
+                  {isDark ? "Light mode" : "Dark mode"}
+                </span>
+              </button>
               {user ? (
                 <>
                   <Link

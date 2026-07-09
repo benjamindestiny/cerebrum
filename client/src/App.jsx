@@ -8,7 +8,7 @@ import {
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Layout from "./components/Layout/Layout";
-import PublicDashboard from "./pages/PublicDashboard"; // ✅ Import PublicDashboard
+import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Quiz from "./pages/Quiz";
@@ -61,25 +61,19 @@ function App() {
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<Layout />}>
-            {/* Public routes - PublicDashboard is now the landing page */}
-            <Route index element={<PublicDashboard />} />{" "}
-            {/* ✅ Changed from Home to PublicDashboard */}
+            <Route index element={<Home />} />
+            <Route path="home" element={<Home />} />
             <Route path="categories" element={<Categories />} />
             <Route path="leaderboard" element={<Leaderboard />} />
             <Route path="riddles" element={<Riddles />} />
             <Route path="achievements" element={<Achievements />} />
             <Route path="read-and-test" element={<ReadAndTest />} />
-            <Route
-              path="read-and-test-results"
-              element={<ReadAndTestResults />}
-            />
+            <Route path="read-and-test-results" element={<ReadAndTestResults />} />
             <Route path="multiplayer" element={<Multiplayer />} />
             <Route path="privacy" element={<Privacy />} />
             <Route path="about" element={<About />} />
             <Route path="terms" element={<Terms />} />
-            <Route path="home" element={<PublicDashboard />} />{" "}
-            {/* Optional: keep /home as alias */}
-            {/* Protected routes - require login */}
+            
             <Route
               path="dashboard"
               element={

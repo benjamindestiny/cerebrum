@@ -2,6 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: dark;
+  --app-bg: #0f0f1a;
+  --surface: #1a1a2e;
+  --surface-2: #24243d;
+  --card: rgba(26, 26, 46, 0.88);
+  --border: rgba(255, 255, 255, 0.12);
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --muted-strong: #64748b;
+  --accent: #7c3aed;
+  --accent-soft: rgba(124, 58, 237, 0.18);
+}
+
+html.light {
+  color-scheme: light;
+  --app-bg: #f4f1ff;
+  --surface: #ffffff;
+  --surface-2: #f8f7ff;
+  --card: rgba(255, 255, 255, 0.92);
+  --border: rgba(15, 23, 42, 0.12);
+  --text: #111827;
+  --muted: #64748b;
+  --muted-strong: #475569;
+  --accent: #6d28d9;
+  --accent-soft: rgba(109, 40, 217, 0.12);
+}
+
 @layer base {
   * {
     margin: 0;
@@ -20,15 +48,20 @@
       -apple-system,
       BlinkMacSystemFont,
       sans-serif;
-    background-color: #0f0f1a;
-    color: #e2e8f0;
+    background-color: var(--app-bg);
+    color: var(--text);
     min-height: 100vh;
     overflow-x: hidden;
+    transition:
+      background-color 0.25s ease,
+      color 0.25s ease;
   }
 
   #root {
     min-height: 100vh;
     width: 100%;
+    background-color: var(--app-bg);
+    color: var(--text);
   }
 
   img {
@@ -53,7 +86,9 @@
 
 @layer components {
   .glass-card {
-    @apply bg-[#1a1a2e] rounded-2xl border border-gray-800 shadow-xl transition-all duration-300;
+    @apply rounded-2xl border shadow-xl transition-all duration-300;
+    background: var(--card);
+    border-color: var(--border);
   }
 
   .btn-primary {
@@ -72,10 +107,12 @@
   }
 
   .input-theme {
-    @apply w-full px-4 py-3 rounded-xl border border-gray-700 
-           bg-[#1a1a2e] text-gray-200 placeholder-gray-500 text-sm sm:text-base
+    @apply w-full px-4 py-3 rounded-xl border text-sm sm:text-base
            focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/50 
            focus:border-[#7c3aed] transition-all duration-200;
+    background-color: var(--surface-2);
+    color: var(--text);
+    border-color: var(--border);
   }
 
   .text-primary {
@@ -99,6 +136,34 @@
   .app-shell {
     @apply w-full max-w-6xl mx-auto px-3 sm:px-4 lg:px-6;
   }
+}
+
+html.light .text-white {
+  color: var(--text) !important;
+}
+
+html.light .text-gray-200,
+html.light .text-gray-300,
+html.light .text-gray-400,
+html.light .text-gray-500,
+html.light .text-gray-600 {
+  color: var(--muted) !important;
+}
+
+html.light .border-gray-800,
+html.light .border-white\/10 {
+  border-color: var(--border) !important;
+}
+
+html.light .bg-\[\#1a1a2e\],
+html.light .bg-\[\#1A1A3E\],
+html.light .bg-\[\#0f0f1a\] {
+  background-color: var(--surface) !important;
+}
+
+html.light .bg-white\/5,
+html.light .bg-white\/10 {
+  background-color: rgba(15, 23, 42, 0.05) !important;
 }
 
 /* Toast Customization */
@@ -129,4 +194,71 @@
 
 .toastify-info {
   border-left: 4px solid #7c3aed !important;
+}
+
+/* Glass Card Effect */
+.glass-card {
+  background: rgba(26, 26, 46, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(108, 43, 217, 0.3);
+  box-shadow: 0 8px 32px rgba(108, 43, 217, 0.1);
+}
+
+/* Primary Button */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #6C2BD9, #8B5CF6);
+  color: white;
+  border: none;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(108, 43, 217, 0.3);
+}
+
+/* Secondary Button */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Scrollbar Hide */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
