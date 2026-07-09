@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { supabase } from "../services/supabase";
 
-
 const Leaderboard = () => {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +40,17 @@ const Leaderboard = () => {
           refreshLeaderboard();
         },
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "quiz_results",
+        },
+        () => {
+          refreshLeaderboard();
+        },
+      )
       .subscribe();
 
     return () => {
@@ -58,59 +68,10 @@ const Leaderboard = () => {
   const loadLeaderboard = async () => {
     setLoading(true);
     try {
-      // Try to use the leaderboard view
-      const { data: viewData, error: viewError } = await supabase
-        .from("leaderboard_view")
-        .select("*");
-
-      if (!viewError && viewData && viewData.length > 0) {
-        console.log("Leaderboard view data:", viewData);
-
-        const processedPlayers = viewData.map((player, index) => {
-          const avatarMap = {
-            1: "🧠",
-            2: "🚀",
-            3: "🌟",
-            4: "🎯",
-            5: "💪",
-            6: "🧙",
-            7: "🦊",
-            8: "🐉",
-            9: "🦅",
-            10: "🐺",
-            11: "🦄",
-            12: "🐼",
-            13: "🦁",
-            14: "🐧",
-            15: "🐱",
-            16: "🐶",
-          };
-
-          return {
-            userId: player.user_id,
-            userName: player.user_name || "Anonymous",
-            avatar: avatarMap[player.avatar_id] || "🧠",
-            avatarId: player.avatar_id || 1,
-            quizCount: parseInt(player.quiz_count) || 0,
-            averageScore: parseInt(player.average_score) || 0,
-            bestScore: parseInt(player.best_score) || 0,
-            streak: player.stats?.streak || 0,
-            totalPoints: player.stats?.total_points || 0,
-            lastPlayed: player.last_played,
-            rank: index + 1,
-          };
-        });
-
-        setPlayers(processedPlayers);
-        setLoading(false);
-        return;
-      }
-
-      // Fallback: Manual query without view
       await loadLeaderboardManual();
     } catch (error) {
       console.error("Error loading leaderboard:", error);
-      await loadLeaderboardManual();
+      setPlayers([]);
     } finally {
       setLoading(false);
     }
@@ -123,7 +84,13 @@ const Leaderboard = () => {
         .from("quiz_results")
         .select("*");
 
-      if (quizError || !quizData || quizData.length === 0) {
+      if (quizError) {
+        console.error("Error fetching quiz results:", quizError);
+        setPlayers([]);
+        return;
+      }
+
+      if (!quizData || quizData.length === 0) {
         setPlayers([]);
         return;
       }
@@ -149,7 +116,7 @@ const Leaderboard = () => {
         });
       }
 
-      // Aggregate data
+      // Aggregate data by user
       const playerMap = {};
       quizData.forEach((record) => {
         const userId = record.user_id;
@@ -158,7 +125,21 @@ const Leaderboard = () => {
           avatarId: 1,
           stats: {},
         };
-        const percentage = parseFloat(record.percentage) || 0;
+
+        // Get percentage - use the percentage field or calculate from score
+        let percentage = parseFloat(record.percentage) || 0;
+
+        // If percentage is 0 but we have score and total_questions, calculate it
+        if (percentage === 0 && record.score && record.total_questions) {
+          percentage = Math.round(
+            (record.score / record.total_questions) * 100,
+          );
+        }
+
+        // If still 0, use the score directly (fallback)
+        if (percentage === 0 && record.score) {
+          percentage = Math.round(record.score);
+        }
 
         if (!playerMap[userId]) {
           playerMap[userId] = {
@@ -240,10 +221,8 @@ const Leaderboard = () => {
     setRefreshing(true);
     try {
       await loadLeaderboard();
-      // toast."Leaderboard updated! 🔄");
     } catch (error) {
       console.error("Error refreshing:", error);
-      // toast."Failed to refresh leaderboard");
     } finally {
       setRefreshing(false);
     }

@@ -300,19 +300,23 @@ const Quiz = () => {
       if (answers[i] === q.correct_answer) correct++;
     });
 
+    // Calculate percentage correctly
     const percentage = Math.round((correct / questions.length) * 100);
     const timeTaken = Math.floor((Date.now() - quizStartTime) / 1000);
 
-    console.log(`📊 Results: ${correct}/${questions.length} correct = ${percentage}%`);
+    console.log(
+      `📊 Results: ${correct}/${questions.length} correct = ${percentage}%`,
+    );
 
     if (user) {
       try {
-        // Save quiz result
+        // Save quiz result with correct percentage
         const quizData = {
           user_id: user.id,
           category: categoryInfo?.name || "General Knowledge",
-          score: percentage,
+          score: correct, // Store raw correct answers
           total_questions: questions.length,
+          correct_answers: correct,
           percentage: parseFloat(percentage.toFixed(2)),
           time_taken: timeTaken,
           answers: answers,
@@ -327,10 +331,9 @@ const Quiz = () => {
 
         if (quizError) {
           console.error("❌ Error saving quiz:", quizError);
-          return;
+        } else {
+          console.log("✅ Quiz saved with score:", percentage);
         }
-
-        console.log("✅ Quiz saved with score:", percentage);
 
         // Get current user stats
         const { data: userData, error: userError } = await supabase
