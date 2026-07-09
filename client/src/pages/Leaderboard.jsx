@@ -79,7 +79,6 @@ const Leaderboard = () => {
 
   const loadLeaderboardManual = async () => {
     try {
-      // Get all quiz results
       const { data: quizData, error: quizError } = await supabase
         .from("quiz_results")
         .select("*");
@@ -95,16 +94,13 @@ const Leaderboard = () => {
         return;
       }
 
-      // Get all user IDs
       const userIds = [...new Set(quizData.map((q) => q.user_id))];
 
-      // Get user info
       const { data: usersData, error: usersError } = await supabase
         .from("users")
         .select("id, name, avatar_id, email, stats")
         .in("id", userIds);
 
-      // Create user map
       const userMap = {};
       if (usersData) {
         usersData.forEach((u) => {
@@ -116,7 +112,6 @@ const Leaderboard = () => {
         });
       }
 
-      // Aggregate data by user
       const playerMap = {};
       quizData.forEach((record) => {
         const userId = record.user_id;
@@ -126,17 +121,14 @@ const Leaderboard = () => {
           stats: {},
         };
 
-        // Get percentage - use the percentage field or calculate from score
         let percentage = parseFloat(record.percentage) || 0;
 
-        // If percentage is 0 but we have score and total_questions, calculate it
         if (percentage === 0 && record.score && record.total_questions) {
           percentage = Math.round(
             (record.score / record.total_questions) * 100,
           );
         }
 
-        // If still 0, use the score directly (fallback)
         if (percentage === 0 && record.score) {
           percentage = Math.round(record.score);
         }
@@ -165,7 +157,6 @@ const Leaderboard = () => {
         }
       });
 
-      // Convert to array and calculate averages
       const leaderboard = Object.values(playerMap).map((player) => ({
         ...player,
         averageScore:
@@ -174,7 +165,6 @@ const Leaderboard = () => {
             : 0,
       }));
 
-      // Sort by average score descending
       leaderboard.sort((a, b) => {
         if (b.averageScore !== a.averageScore) {
           return b.averageScore - a.averageScore;
@@ -182,12 +172,10 @@ const Leaderboard = () => {
         return b.quizCount - a.quizCount;
       });
 
-      // Add ranks
       leaderboard.forEach((player, index) => {
         player.rank = index + 1;
       });
 
-      // Add avatars
       const avatarMap = {
         1: "🧠",
         2: "🚀",
@@ -229,10 +217,17 @@ const Leaderboard = () => {
   };
 
   const getRankIcon = (rank) => {
-    if (rank === 1) return <Crown className="w-6 h-6 text-yellow-400" />;
-    if (rank === 2) return <Medal className="w-6 h-6 text-gray-400" />;
-    if (rank === 3) return <Award className="w-6 h-6 text-amber-600" />;
-    return <span className="text-gray-500 font-medium">#{rank}</span>;
+    if (rank === 1)
+      return <Crown className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400" />;
+    if (rank === 2)
+      return <Medal className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" />;
+    if (rank === 3)
+      return <Award className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" />;
+    return (
+      <span className="text-gray-500 font-medium text-xs sm:text-sm">
+        #{rank}
+      </span>
+    );
   };
 
   const getRankClass = (rank) => {
@@ -257,82 +252,92 @@ const Leaderboard = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-10 h-10 text-[#7c3aed] animate-spin" />
+      <div className="flex items-center justify-center min-h-[300px] sm:min-h-[400px]">
+        <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 text-[#7c3aed] animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 px-3 sm:px-4 pb-12">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+    <div className="space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
-            <Trophy className="w-7 h-7 sm:w-8 sm:h-8 text-yellow-400" />
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white flex items-center gap-2 sm:gap-3">
+            <Trophy className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-yellow-400" />
             Leaderboard
           </h1>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-gray-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
             {players.length} players competing
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="glass-card px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2">
-            <Users className="w-4 h-4 text-[#7c3aed]" />
-            <span className="text-xs sm:text-sm text-gray-300">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="glass-card px-2.5 sm:px-3 md:px-4 py-1 sm:py-1.5 flex items-center gap-1.5 sm:gap-2">
+            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#7c3aed]" />
+            <span className="text-[10px] sm:text-xs md:text-sm text-gray-300">
               {players.length} players
             </span>
           </div>
           <button
             onClick={refreshLeaderboard}
             disabled={refreshing}
-            className="p-2 glass-card hover:bg-white/10 transition-colors disabled:opacity-50"
+            className="p-1.5 sm:p-2 glass-card hover:bg-white/10 transition-colors disabled:opacity-50"
           >
             <RefreshCw
-              className={`w-4 h-4 text-gray-400 ${refreshing ? "animate-spin" : ""}`}
+              className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 ${refreshing ? "animate-spin" : ""}`}
             />
           </button>
         </div>
       </div>
 
-      {/* Current User Rank */}
       {currentUser && currentUserData && (
         <div className="glass-card p-3 sm:p-4 border-2 border-[#7c3aed] bg-[#7c3aed]/5">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{currentUserData.avatar || "🧠"}</span>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="text-xl sm:text-2xl">
+                {currentUserData.avatar || "🧠"}
+              </span>
               <div>
-                <p className="text-white font-medium text-sm sm:text-base">
+                <p className="text-white font-medium text-xs sm:text-sm md:text-base">
                   {currentUserData.userName}
                 </p>
-                <p className="text-xs text-gray-400">Your current rank</p>
+                <p className="text-[10px] sm:text-xs text-gray-400">
+                  Your current rank
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="text-center">
-                <div className="text-2xl font-bold text-[#7c3aed]">
+                <div className="text-lg sm:text-xl md:text-2xl font-bold text-[#7c3aed]">
                   #{currentUserRank || "-"}
                 </div>
-                <div className="text-[10px] text-gray-500">Rank</div>
+                <div className="text-[8px] sm:text-[10px] text-gray-500">
+                  Rank
+                </div>
               </div>
-              <div className="text-center px-3">
-                <div className="text-xl font-bold text-white">
+              <div className="text-center px-2 sm:px-3">
+                <div className="text-base sm:text-lg md:text-xl font-bold text-white">
                   {currentUserData.averageScore || 0}%
                 </div>
-                <div className="text-[10px] text-gray-500">Avg Score</div>
+                <div className="text-[8px] sm:text-[10px] text-gray-500">
+                  Avg Score
+                </div>
               </div>
               <div className="text-center">
-                <div className="text-xl font-bold text-[#7c3aed]">
+                <div className="text-base sm:text-lg md:text-xl font-bold text-[#7c3aed]">
                   {currentUserData.quizCount || 0}
                 </div>
-                <div className="text-[10px] text-gray-500">Quizzes</div>
+                <div className="text-[8px] sm:text-[10px] text-gray-500">
+                  Quizzes
+                </div>
               </div>
               {currentUserData.streak > 0 && (
                 <div className="text-center">
-                  <div className="text-xl font-bold text-orange-400">
+                  <div className="text-base sm:text-lg md:text-xl font-bold text-orange-400">
                     {currentUserData.streak}🔥
                   </div>
-                  <div className="text-[10px] text-gray-500">Streak</div>
+                  <div className="text-[8px] sm:text-[10px] text-gray-500">
+                    Streak
+                  </div>
                 </div>
               )}
             </div>
@@ -340,14 +345,13 @@ const Leaderboard = () => {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 items-center justify-between">
+      <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-between">
         <div className="flex gap-1 sm:gap-2 overflow-x-auto pb-1 w-full sm:w-auto">
           {["all", "month", "week", "today"].map((filter) => (
             <button
               key={filter}
               onClick={() => setTimeFilter(filter)}
-              className={`px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm transition-all whitespace-nowrap ${
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs md:text-sm transition-all whitespace-nowrap ${
                 timeFilter === filter
                   ? "bg-[#7c3aed]/20 text-[#a78bfa] border border-[#7c3aed]/30"
                   : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
@@ -358,18 +362,17 @@ const Leaderboard = () => {
           ))}
         </div>
         <div className="relative w-full sm:w-auto">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <Search className="absolute left-2.5 sm:left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500" />
           <input
             type="text"
             placeholder="Search players..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full sm:w-48 pl-9 pr-4 py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white placeholder-gray-500 focus:border-[#7c3aed] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 transition-all text-sm"
+            className="w-full sm:w-40 md:w-48 pl-8 sm:pl-9 pr-3 sm:pr-4 py-1.5 sm:py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white placeholder-gray-500 focus:border-[#7c3aed] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 transition-all text-xs sm:text-sm"
           />
         </div>
       </div>
 
-      {/* Top 3 */}
       {filteredPlayers.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           {filteredPlayers.slice(0, 3).map((player, index) => (
@@ -383,13 +386,13 @@ const Leaderboard = () => {
               <div className="text-3xl sm:text-4xl mb-1 sm:mb-2">
                 {player.avatar || "🧠"}
               </div>
-              <div className="text-base sm:text-xl font-bold text-white truncate">
+              <div className="text-sm sm:text-base md:text-xl font-bold text-white truncate">
                 {player.userName}
               </div>
-              <div className="text-2xl sm:text-3xl font-bold text-[#7c3aed] mt-1">
+              <div className="text-xl sm:text-2xl md:text-3xl font-bold text-[#7c3aed] mt-1">
                 {player.averageScore}%
               </div>
-              <div className="flex items-center justify-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-gray-400 flex-wrap">
+              <div className="flex items-center justify-center gap-2 sm:gap-4 mt-2 text-[10px] sm:text-xs md:text-sm text-gray-400 flex-wrap">
                 <span>{player.quizCount} quizzes</span>
                 {player.streak > 0 && (
                   <span className="flex items-center gap-1 text-orange-400">
@@ -400,14 +403,15 @@ const Leaderboard = () => {
               </div>
               <div className="mt-2 flex items-center justify-center gap-1">
                 {getRankIcon(index + 1)}
-                <span className="text-xs text-gray-500">Rank #{index + 1}</span>
+                <span className="text-[10px] sm:text-xs text-gray-500">
+                  Rank #{index + 1}
+                </span>
               </div>
             </motion.div>
           ))}
         </div>
       )}
 
-      {/* Full List */}
       <div className="glass-card p-3 sm:p-6">
         <h3 className="text-white font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
           <Trophy className="w-4 h-4 text-yellow-400" />
@@ -432,13 +436,13 @@ const Leaderboard = () => {
                 }`}
               >
                 <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-                  <div className="w-6 sm:w-8 text-center flex-shrink-0">
+                  <div className="w-5 sm:w-8 text-center flex-shrink-0">
                     {getRankIcon(player.rank)}
                   </div>
-                  <span className="text-xl sm:text-2xl flex-shrink-0">
+                  <span className="text-lg sm:text-xl md:text-2xl flex-shrink-0">
                     {player.avatar || "🧠"}
                   </span>
-                  <span className="text-white font-medium text-sm sm:text-base truncate">
+                  <span className="text-white font-medium text-xs sm:text-sm md:text-base truncate">
                     {player.userName}
                     {isCurrentUser && (
                       <span className="ml-1 sm:ml-2 text-[10px] sm:text-xs text-[#a78bfa]">
@@ -477,7 +481,7 @@ const Leaderboard = () => {
 
       {filteredPlayers.length === 0 && (
         <div className="glass-card p-8 sm:p-12 text-center">
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-3 sm:gap-4">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#7c3aed]/10 flex items-center justify-center">
               <Users className="w-8 h-8 sm:w-10 sm:h-10 text-[#7c3aed]" />
             </div>

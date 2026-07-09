@@ -30,7 +30,6 @@ import {
 } from "lucide-react";
 import { supabase } from "../services/supabase";
 
-
 const Achievements = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -48,11 +47,10 @@ const Achievements = () => {
     perfectScores: 0,
   });
   const [recentAchievements, setRecentAchievements] = useState([]);
-  const [earnedAchievementIds, setEarnedAchievementIds] = useState([]);
 
-  // ✅ Define all achievements with requirements
+  // All achievements with requirements
   const allAchievements = [
-    // ===== QUIZ ACHIEVEMENTS =====
+    // Quiz Achievements
     {
       id: "first_quiz",
       title: "First Steps",
@@ -109,8 +107,7 @@ const Achievements = () => {
       bgColor: "bg-yellow-500/10",
       borderColor: "border-yellow-500/30",
     },
-
-    // ===== SCORE ACHIEVEMENTS =====
+    // Score Achievements
     {
       id: "perfect_score",
       title: "Perfect Score!",
@@ -167,8 +164,7 @@ const Achievements = () => {
       bgColor: "bg-blue-400/10",
       borderColor: "border-blue-400/30",
     },
-
-    // ===== STREAK ACHIEVEMENTS =====
+    // Streak Achievements
     {
       id: "streak_3",
       title: "Getting Started",
@@ -211,8 +207,7 @@ const Achievements = () => {
       bgColor: "bg-purple-500/10",
       borderColor: "border-purple-500/30",
     },
-
-    // ===== RIDDLE ACHIEVEMENTS =====
+    // Riddle Achievements
     {
       id: "riddle_1",
       title: "Riddle Solver",
@@ -255,8 +250,7 @@ const Achievements = () => {
       bgColor: "bg-violet-500/10",
       borderColor: "border-violet-500/30",
     },
-
-    // ===== READING ACHIEVEMENTS =====
+    // Reading Achievements
     {
       id: "read_1",
       title: "Bookworm",
@@ -285,8 +279,7 @@ const Achievements = () => {
       bgColor: "bg-green-500/10",
       borderColor: "border-green-500/30",
     },
-
-    // ===== POINTS ACHIEVEMENTS =====
+    // Points Achievements
     {
       id: "points_100",
       title: "Points Collector",
@@ -329,8 +322,7 @@ const Achievements = () => {
       bgColor: "bg-indigo-500/10",
       borderColor: "border-indigo-500/30",
     },
-
-    // ===== SPECIAL ACHIEVEMENTS =====
+    // Special Achievements
     {
       id: "time_1hour",
       title: "Dedicated Learner",
@@ -363,52 +355,7 @@ const Achievements = () => {
 
   useEffect(() => {
     loadAchievements();
-
-    // Set up real-time subscription for user stats
-    const subscription = supabase
-      .channel("user_stats_changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "users",
-          filter: `id=eq.${user?.id}`,
-        },
-        (payload) => {
-          // When stats update in database, refresh achievements
-          if (payload.new?.stats) {
-            const newStats = payload.new.stats;
-            setStats({
-              totalQuizzes: newStats.total_quizzes || 0,
-              bestScore: newStats.best_score || 0,
-              averageScore: newStats.average_score || 0,
-              totalPoints: newStats.total_points || 0,
-              streak: newStats.streak || 0,
-              riddlesSolved: newStats.riddles_solved || 0,
-              readArticles: newStats.read_articles || 0,
-              totalTime: newStats.total_time || 0,
-              perfectScores: newStats.perfect_scores || 0,
-            });
-            // Recalculate achievements with new stats
-            updateAchievements(newStats);
-          }
-        },
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
-
-  // Update achievements based on stats
-  const updateAchievements = (statsData) => {
-    const earned = allAchievements.filter((a) => a.requirement(statsData));
-    const earnedIds = earned.map((a) => a.id);
-    setEarnedAchievementIds(earnedIds);
-    setRecentAchievements(earned.slice(0, 5));
-  };
 
   const loadAchievements = async () => {
     setLoading(true);
@@ -427,7 +374,6 @@ const Achievements = () => {
 
       setUser(user);
 
-      // Get user stats from database
       const { data: profileData, error: profileError } = await supabase
         .from("users")
         .select("stats")
@@ -439,8 +385,6 @@ const Achievements = () => {
       }
 
       const statsData = profileData?.stats || {};
-
-      // Set stats with proper mapping
       const mappedStats = {
         totalQuizzes: statsData.total_quizzes || 0,
         bestScore: statsData.best_score || 0,
@@ -454,21 +398,22 @@ const Achievements = () => {
       };
 
       setStats(mappedStats);
-
-      // Calculate achievements
       updateAchievements(mappedStats);
     } catch (error) {
       console.error("Error loading achievements:", error);
-      // toast."Failed to load achievements");
     } finally {
       setLoading(false);
     }
   };
 
+  const updateAchievements = (statsData) => {
+    const earned = allAchievements.filter((a) => a.requirement(statsData));
+    setRecentAchievements(earned.slice(0, 5));
+  };
+
   const refreshAchievements = async () => {
     setRefreshing(true);
     try {
-      // Force refresh from database
       const { data: profileData, error: profileError } = await supabase
         .from("users")
         .select("stats")
@@ -480,7 +425,6 @@ const Achievements = () => {
       }
 
       const statsData = profileData?.stats || {};
-
       const mappedStats = {
         totalQuizzes: statsData.total_quizzes || 0,
         bestScore: statsData.best_score || 0,
@@ -495,11 +439,8 @@ const Achievements = () => {
 
       setStats(mappedStats);
       updateAchievements(mappedStats);
-
-      // toast."Achievements refreshed! 🔄");
     } catch (error) {
       console.error("Error refreshing:", error);
-      // toast."Failed to refresh achievements");
     } finally {
       setRefreshing(false);
     }
@@ -546,9 +487,7 @@ const Achievements = () => {
     return colors[category] || "text-gray-400";
   };
 
-  const earnedCount = allAchievements.filter((a) =>
-    a.requirement(stats),
-  ).length;
+  const earnedCount = allAchievements.filter((a) => a.requirement(stats)).length;
   const totalAchievements = allAchievements.length;
   const totalPoints = allAchievements
     .filter((a) => a.requirement(stats))
@@ -556,12 +495,10 @@ const Achievements = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[300px] sm:min-h-[400px] px-4">
+      <div className="flex items-center justify-center min-h-[300px] px-4">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 sm:w-12 sm:h-12 text-[#7c3aed] animate-spin mx-auto mb-3 sm:mb-4" />
-          <p className="text-gray-400 text-sm sm:text-base">
-            Loading achievements...
-          </p>
+          <Loader2 className="w-8 h-8 sm:w-12 sm:h-12 text-[#7c3aed] animate-spin mx-auto mb-3" />
+          <p className="text-gray-400 text-sm">Loading achievements...</p>
         </div>
       </div>
     );
@@ -583,15 +520,13 @@ const Achievements = () => {
             Achievements
           </h1>
         </div>
-        <div className="flex gap-2 sm:gap-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           <button
             onClick={refreshAchievements}
             disabled={refreshing}
             className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-xs sm:text-sm flex items-center gap-2"
           >
-            <RefreshCw
-              className={`w-3 h-3 sm:w-4 sm:h-4 ${refreshing ? "animate-spin" : ""}`}
-            />
+            <RefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 ${refreshing ? "animate-spin" : ""}`} />
             {refreshing ? "Refreshing..." : "Refresh"}
           </button>
           <div className="glass-card px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2">
@@ -610,65 +545,37 @@ const Achievements = () => {
       </div>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="glass-card p-3 sm:p-4 text-center">
-          <div className="text-lg sm:text-xl font-bold text-white">
-            {stats.totalQuizzes}
-          </div>
-          <div className="text-[10px] sm:text-xs text-gray-400">
-            Quizzes Taken
-          </div>
+          <div className="text-lg sm:text-xl font-bold text-white">{stats.totalQuizzes}</div>
+          <div className="text-[10px] sm:text-xs text-gray-400">Quizzes Taken</div>
         </div>
         <div className="glass-card p-3 sm:p-4 text-center">
-          <div className="text-lg sm:text-xl font-bold text-yellow-400">
-            {stats.bestScore}%
-          </div>
+          <div className="text-lg sm:text-xl font-bold text-yellow-400">{stats.bestScore}%</div>
           <div className="text-[10px] sm:text-xs text-gray-400">Best Score</div>
         </div>
         <div className="glass-card p-3 sm:p-4 text-center">
-          <div className="text-lg sm:text-xl font-bold text-orange-400">
-            {stats.streak}
-          </div>
+          <div className="text-lg sm:text-xl font-bold text-orange-400">{stats.streak}</div>
           <div className="text-[10px] sm:text-xs text-gray-400">Day Streak</div>
         </div>
         <div className="glass-card p-3 sm:p-4 text-center">
-          <div className="text-lg sm:text-xl font-bold text-[#7c3aed]">
-            {stats.totalPoints}
-          </div>
-          <div className="text-[10px] sm:text-xs text-gray-400">
-            Total Points
-          </div>
+          <div className="text-lg sm:text-xl font-bold text-[#7c3aed]">{stats.totalPoints}</div>
+          <div className="text-[10px] sm:text-xs text-gray-400">Total Points</div>
         </div>
       </div>
 
       {/* Achievement Categories */}
-      {[
-        "Quiz",
-        "Score",
-        "Streak",
-        "Riddles",
-        "Reading",
-        "Points",
-        "Special",
-      ].map((category) => {
-        const categoryAchievements = allAchievements.filter(
-          (a) => a.category === category,
-        );
-        const earnedInCategory = categoryAchievements.filter((a) =>
-          a.requirement(stats),
-        ).length;
+      {["Quiz", "Score", "Streak", "Riddles", "Reading", "Points", "Special"].map((category) => {
+        const categoryAchievements = allAchievements.filter((a) => a.category === category);
+        const earnedInCategory = categoryAchievements.filter((a) => a.requirement(stats)).length;
 
         if (categoryAchievements.length === 0) return null;
 
         return (
           <div key={category} className="space-y-3 sm:space-y-4">
             <div className="flex items-center gap-2">
-              <span className="text-lg sm:text-xl">
-                {getCategoryIcon(category)}
-              </span>
-              <h2
-                className={`text-base sm:text-lg font-bold ${getCategoryColor(category)}`}
-              >
+              <span className="text-lg sm:text-xl">{getCategoryIcon(category)}</span>
+              <h2 className={`text-base sm:text-lg font-bold ${getCategoryColor(category)}`}>
                 {category}
               </h2>
               <span className="text-xs text-gray-500">
@@ -695,33 +602,23 @@ const Achievements = () => {
                     }`}
                   >
                     <div className="flex items-start gap-3 sm:gap-4">
-                      <div
-                        className={`text-2xl sm:text-3xl ${isEarned ? "" : "opacity-50"}`}
-                      >
+                      <div className={`text-2xl sm:text-3xl ${isEarned ? "" : "opacity-50"}`}>
                         {isEarned ? achievement.icon : "🔒"}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3
-                            className={`text-sm sm:text-base font-semibold ${isEarned ? "text-white" : "text-gray-400"}`}
-                          >
+                          <h3 className={`text-sm sm:text-base font-semibold ${isEarned ? "text-white" : "text-gray-400"}`}>
                             {achievement.title}
                           </h3>
-                          {isEarned && (
-                            <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
-                          )}
+                          {isEarned && <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />}
                         </div>
                         <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">
                           {achievement.description}
                         </p>
                         <div className="mt-2">
                           <div className="flex items-center justify-between text-[10px] sm:text-xs text-gray-500">
-                            <span>
-                              {isEarned ? "✅ Completed!" : progressText}
-                            </span>
-                            <span className="text-[#7c3aed]">
-                              +{achievement.points} pts
-                            </span>
+                            <span>{isEarned ? "✅ Completed!" : progressText}</span>
+                            <span className="text-[#7c3aed]">+{achievement.points} pts</span>
                           </div>
                           <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mt-1">
                             <motion.div
@@ -751,12 +648,9 @@ const Achievements = () => {
         <div className="glass-card p-8 sm:p-12 text-center">
           <div className="flex flex-col items-center gap-3 sm:gap-4">
             <div className="text-5xl sm:text-6xl">🏆</div>
-            <h3 className="text-lg sm:text-xl font-bold text-white">
-              No Achievements Yet
-            </h3>
+            <h3 className="text-lg sm:text-xl font-bold text-white">No Achievements Yet</h3>
             <p className="text-gray-400 text-sm sm:text-base max-w-md">
-              Start taking quizzes, solving riddles, and reading articles to
-              earn your first achievement!
+              Start taking quizzes, solving riddles, and reading articles to earn your first achievement!
             </p>
             <button
               onClick={() => navigate("/categories")}
@@ -782,9 +676,7 @@ const Achievements = () => {
                 className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full ${achievement.bgColor} border ${achievement.borderColor}`}
               >
                 <span className="text-sm sm:text-base">{achievement.icon}</span>
-                <span className="text-xs sm:text-sm text-white">
-                  {achievement.title}
-                </span>
+                <span className="text-xs sm:text-sm text-white">{achievement.title}</span>
               </div>
             ))}
           </div>
@@ -801,25 +693,19 @@ const Achievements = () => {
           <div>
             <div className="flex justify-between text-xs sm:text-sm text-gray-400">
               <span>Overall Progress</span>
-              <span>
-                {Math.round((earnedCount / totalAchievements) * 100)}%
-              </span>
+              <span>{Math.round((earnedCount / totalAchievements) * 100)}%</span>
             </div>
             <div className="w-full h-2 sm:h-2.5 bg-white/10 rounded-full overflow-hidden mt-1">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{
-                  width: `${(earnedCount / totalAchievements) * 100}%`,
-                }}
+                animate={{ width: `${(earnedCount / totalAchievements) * 100}%` }}
                 transition={{ duration: 0.5 }}
                 className="h-full bg-gradient-to-r from-[#7c3aed] to-yellow-400 rounded-full"
               />
             </div>
           </div>
           <div className="flex flex-wrap justify-between gap-2 text-xs text-gray-500">
-            <span>
-              🏆 {earnedCount} / {totalAchievements} unlocked
-            </span>
+            <span>🏆 {earnedCount} / {totalAchievements} unlocked</span>
             <span>⭐ {totalPoints} points earned from achievements</span>
           </div>
         </div>

@@ -25,7 +25,6 @@ import {
   Settings,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
-
 import { useAuth } from "../context/AuthContext";
 
 const Dashboard = () => {
@@ -39,6 +38,8 @@ const Dashboard = () => {
     bestScore: 0,
     riddlesSolved: 0,
     readArticles: 0,
+    totalTime: 0,
+    perfectScores: 0,
   });
   const [recentActivity, setRecentActivity] = useState([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -65,9 +66,10 @@ const Dashboard = () => {
           bestScore: statsData.best_score || 0,
           riddlesSolved: statsData.riddles_solved || 0,
           readArticles: statsData.read_articles || 0,
+          totalTime: statsData.total_time || 0,
+          perfectScores: statsData.perfect_scores || 0,
         });
       } else {
-        // Fetch from users table
         const { data, error } = await supabase
           .from("users")
           .select("stats")
@@ -84,6 +86,8 @@ const Dashboard = () => {
             bestScore: statsData.best_score || 0,
             riddlesSolved: statsData.riddles_solved || 0,
             readArticles: statsData.read_articles || 0,
+            totalTime: statsData.total_time || 0,
+            perfectScores: statsData.perfect_scores || 0,
           });
         }
       }
@@ -109,40 +113,39 @@ const Dashboard = () => {
     }
   };
 
-  // Public Dashboard - For non-authenticated users
+  // Public Dashboard
   if (!isAuthenticated) {
     return (
-      <div className="max-w-6xl mx-auto space-y-8 px-3 sm:px-4 pb-12">
-        {/* Hero Section */}
+      <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 px-3 sm:px-4 pb-12">
         <div className="glass-card p-6 sm:p-8 md:p-12 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-4"
+            className="space-y-3 sm:space-y-4"
           >
             <div className="flex justify-center">
-              <div className="w-20 h-20 rounded-full bg-[#7c3aed]/20 flex items-center justify-center">
-                <Brain className="w-10 h-10 text-[#7c3aed]" />
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#7c3aed]/20 flex items-center justify-center">
+                <Brain className="w-8 h-8 sm:w-10 sm:h-10 text-[#7c3aed]" />
               </div>
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white">
               Welcome to <span className="text-[#7c3aed]">Cerebrum</span>
             </h1>
-            <p className="text-gray-400 text-base sm:text-lg max-w-2xl mx-auto">
+            <p className="text-gray-400 text-sm sm:text-base md:text-lg max-w-2xl mx-auto">
               Challenge your mind with interactive quizzes, riddles, and brain
               teasers. Sign up to track your progress and compete with others!
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-3 sm:pt-4">
               <button
                 onClick={() => navigate("/auth")}
-                className="px-6 py-3 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors flex items-center justify-center gap-2"
+                className="px-5 sm:px-6 py-2.5 sm:py-3 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
               >
                 Get Started
                 <ArrowRight className="w-4 h-4" />
               </button>
               <button
                 onClick={() => navigate("/categories")}
-                className="px-6 py-3 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors"
+                className="px-5 sm:px-6 py-2.5 sm:py-3 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors text-sm sm:text-base"
               >
                 Browse Quizzes
               </button>
@@ -150,54 +153,72 @@ const Dashboard = () => {
           </motion.div>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          <div className="glass-card p-6 text-center hover:border-[#7c3aed]/30 transition-all">
-            <div className="w-12 h-12 rounded-full bg-blue-400/10 flex items-center justify-center mx-auto mb-3">
-              <Brain className="w-6 h-6 text-blue-400" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+          <div className="glass-card p-4 sm:p-6 text-center hover:border-[#7c3aed]/30 transition-all">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-400/10 flex items-center justify-center mx-auto mb-2 sm:mb-3">
+              <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
             </div>
-            <h3 className="text-white font-semibold">Interactive Quizzes</h3>
-            <p className="text-gray-400 text-sm mt-1">
+            <h3 className="text-white font-semibold text-sm sm:text-base">
+              Interactive Quizzes
+            </h3>
+            <p className="text-gray-400 text-xs sm:text-sm mt-1">
               Test your knowledge across various subjects
             </p>
           </div>
-          <div className="glass-card p-6 text-center hover:border-[#7c3aed]/30 transition-all">
-            <div className="w-12 h-12 rounded-full bg-purple-400/10 flex items-center justify-center mx-auto mb-3">
-              <Puzzle className="w-6 h-6 text-purple-400" />
+          <div className="glass-card p-4 sm:p-6 text-center hover:border-[#7c3aed]/30 transition-all">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-purple-400/10 flex items-center justify-center mx-auto mb-2 sm:mb-3">
+              <Puzzle className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" />
             </div>
-            <h3 className="text-white font-semibold">Brain Teasers</h3>
-            <p className="text-gray-400 text-sm mt-1">
+            <h3 className="text-white font-semibold text-sm sm:text-base">
+              Brain Teasers
+            </h3>
+            <p className="text-gray-400 text-xs sm:text-sm mt-1">
               Solve challenging riddles and puzzles
             </p>
           </div>
-          <div className="glass-card p-6 text-center hover:border-[#7c3aed]/30 transition-all">
-            <div className="w-12 h-12 rounded-full bg-green-400/10 flex items-center justify-center mx-auto mb-3">
-              <Trophy className="w-6 h-6 text-green-400" />
+          <div className="glass-card p-4 sm:p-6 text-center hover:border-[#7c3aed]/30 transition-all">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-green-400/10 flex items-center justify-center mx-auto mb-2 sm:mb-3">
+              <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
             </div>
-            <h3 className="text-white font-semibold">Track Progress</h3>
-            <p className="text-gray-400 text-sm mt-1">
+            <h3 className="text-white font-semibold text-sm sm:text-base">
+              Track Progress
+            </h3>
+            <p className="text-gray-400 text-xs sm:text-sm mt-1">
               Monitor your scores and achievements
             </p>
           </div>
         </div>
 
-        {/* Public Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="glass-card p-4 text-center">
-            <div className="text-2xl font-bold text-[#7c3aed]">50+</div>
-            <div className="text-xs text-gray-400">Quizzes Available</div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div className="glass-card p-3 sm:p-4 text-center">
+            <div className="text-xl sm:text-2xl font-bold text-[#7c3aed]">
+              50+
+            </div>
+            <div className="text-[10px] sm:text-xs text-gray-400">
+              Quizzes Available
+            </div>
           </div>
-          <div className="glass-card p-4 text-center">
-            <div className="text-2xl font-bold text-yellow-400">100+</div>
-            <div className="text-xs text-gray-400">Riddles</div>
+          <div className="glass-card p-3 sm:p-4 text-center">
+            <div className="text-xl sm:text-2xl font-bold text-yellow-400">
+              100+
+            </div>
+            <div className="text-[10px] sm:text-xs text-gray-400">Riddles</div>
           </div>
-          <div className="glass-card p-4 text-center">
-            <div className="text-2xl font-bold text-green-400">10+</div>
-            <div className="text-xs text-gray-400">Categories</div>
+          <div className="glass-card p-3 sm:p-4 text-center">
+            <div className="text-xl sm:text-2xl font-bold text-green-400">
+              10+
+            </div>
+            <div className="text-[10px] sm:text-xs text-gray-400">
+              Categories
+            </div>
           </div>
-          <div className="glass-card p-4 text-center">
-            <div className="text-2xl font-bold text-blue-400">500+</div>
-            <div className="text-xs text-gray-400">Active Users</div>
+          <div className="glass-card p-3 sm:p-4 text-center">
+            <div className="text-xl sm:text-2xl font-bold text-blue-400">
+              500+
+            </div>
+            <div className="text-[10px] sm:text-xs text-gray-400">
+              Active Users
+            </div>
           </div>
         </div>
       </div>
@@ -206,18 +227,17 @@ const Dashboard = () => {
 
   // Authenticated Dashboard
   return (
-    <div className="max-w-6xl mx-auto space-y-6 px-3 sm:px-4 pb-12">
-      {/* Welcome Header */}
-      <div className="glass-card p-6 sm:p-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12">
+      <div className="glass-card p-5 sm:p-6 md:p-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
               Welcome back,{" "}
               <span className="text-[#7c3aed]">
                 {currentUser?.user_metadata?.name || "Learner"}! 👋
               </span>
             </h1>
-            <p className="text-gray-400 text-sm mt-1">
+            <p className="text-gray-400 text-xs sm:text-sm mt-1">
               {stats.streak > 0
                 ? `🔥 You're on a ${stats.streak}-day learning streak!`
                 : "Ready to learn something new today?"}
@@ -225,7 +245,7 @@ const Dashboard = () => {
           </div>
           <button
             onClick={() => navigate("/categories")}
-            className="px-4 py-2 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors text-sm flex items-center gap-2 whitespace-nowrap"
+            className="px-4 py-2 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors text-sm flex items-center gap-2 whitespace-nowrap w-full sm:w-auto justify-center"
           >
             <Play className="w-4 h-4" />
             Start Learning
@@ -233,13 +253,12 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="glass-card p-3 sm:p-4 text-center">
           <div className="flex items-center justify-center gap-1 text-yellow-400">
             <Trophy className="w-4 h-4" />
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-white mt-1">
+          <div className="text-lg sm:text-xl md:text-2xl font-bold text-white mt-1">
             {stats.totalPoints || 0}
           </div>
           <div className="text-[10px] sm:text-xs text-gray-400">
@@ -250,7 +269,7 @@ const Dashboard = () => {
           <div className="flex items-center justify-center gap-1 text-orange-400">
             <Flame className="w-4 h-4" />
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-white mt-1">
+          <div className="text-lg sm:text-xl md:text-2xl font-bold text-white mt-1">
             {stats.streak || 0}
           </div>
           <div className="text-[10px] sm:text-xs text-gray-400">Day Streak</div>
@@ -259,7 +278,7 @@ const Dashboard = () => {
           <div className="flex items-center justify-center gap-1 text-[#7c3aed]">
             <Brain className="w-4 h-4" />
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-white mt-1">
+          <div className="text-lg sm:text-xl md:text-2xl font-bold text-white mt-1">
             {stats.totalQuizzes || 0}
           </div>
           <div className="text-[10px] sm:text-xs text-gray-400">
@@ -270,72 +289,84 @@ const Dashboard = () => {
           <div className="flex items-center justify-center gap-1 text-green-400">
             <Target className="w-4 h-4" />
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-white mt-1">
+          <div className="text-lg sm:text-xl md:text-2xl font-bold text-white mt-1">
             {stats.averageScore || 0}%
           </div>
           <div className="text-[10px] sm:text-xs text-gray-400">Avg Score</div>
         </div>
       </div>
 
-      {/* Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <button
           onClick={() => navigate("/categories")}
-          className="glass-card p-4 text-center hover:border-[#7c3aed]/30 transition-all group"
+          className="glass-card p-3 sm:p-4 text-center hover:border-[#7c3aed]/30 transition-all group"
         >
-          <div className="w-10 h-10 rounded-full bg-[#7c3aed]/10 flex items-center justify-center mx-auto mb-2 group-hover:bg-[#7c3aed]/20 transition-all">
-            <Play className="w-5 h-5 text-[#7c3aed]" />
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#7c3aed]/10 flex items-center justify-center mx-auto mb-1 sm:mb-2 group-hover:bg-[#7c3aed]/20 transition-all">
+            <Play className="w-4 h-4 sm:w-5 sm:h-5 text-[#7c3aed]" />
           </div>
-          <span className="text-white text-sm font-medium">Take Quiz</span>
-          <p className="text-gray-400 text-xs">Test your knowledge</p>
+          <span className="text-white text-xs sm:text-sm font-medium">
+            Take Quiz
+          </span>
+          <p className="text-gray-400 text-[10px] sm:text-xs">
+            Test your knowledge
+          </p>
         </button>
         <button
           onClick={() => navigate("/riddles")}
-          className="glass-card p-4 text-center hover:border-[#7c3aed]/30 transition-all group"
+          className="glass-card p-3 sm:p-4 text-center hover:border-[#7c3aed]/30 transition-all group"
         >
-          <div className="w-10 h-10 rounded-full bg-purple-400/10 flex items-center justify-center mx-auto mb-2 group-hover:bg-purple-400/20 transition-all">
-            <Puzzle className="w-5 h-5 text-purple-400" />
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-purple-400/10 flex items-center justify-center mx-auto mb-1 sm:mb-2 group-hover:bg-purple-400/20 transition-all">
+            <Puzzle className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
           </div>
-          <span className="text-white text-sm font-medium">Riddles</span>
-          <p className="text-gray-400 text-xs">Solve brain teasers</p>
+          <span className="text-white text-xs sm:text-sm font-medium">
+            Riddles
+          </span>
+          <p className="text-gray-400 text-[10px] sm:text-xs">
+            Solve brain teasers
+          </p>
         </button>
         <button
           onClick={() => navigate("/read-and-test")}
-          className="glass-card p-4 text-center hover:border-[#7c3aed]/30 transition-all group"
+          className="glass-card p-3 sm:p-4 text-center hover:border-[#7c3aed]/30 transition-all group"
         >
-          <div className="w-10 h-10 rounded-full bg-green-400/10 flex items-center justify-center mx-auto mb-2 group-hover:bg-green-400/20 transition-all">
-            <BookOpen className="w-5 h-5 text-green-400" />
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-green-400/10 flex items-center justify-center mx-auto mb-1 sm:mb-2 group-hover:bg-green-400/20 transition-all">
+            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
           </div>
-          <span className="text-white text-sm font-medium">Read & Test</span>
-          <p className="text-gray-400 text-xs">Learn and quiz</p>
+          <span className="text-white text-xs sm:text-sm font-medium">
+            Read & Test
+          </span>
+          <p className="text-gray-400 text-[10px] sm:text-xs">Learn and quiz</p>
         </button>
         <button
           onClick={() => navigate("/leaderboard")}
-          className="glass-card p-4 text-center hover:border-[#7c3aed]/30 transition-all group"
+          className="glass-card p-3 sm:p-4 text-center hover:border-[#7c3aed]/30 transition-all group"
         >
-          <div className="w-10 h-10 rounded-full bg-yellow-400/10 flex items-center justify-center mx-auto mb-2 group-hover:bg-yellow-400/20 transition-all">
-            <Users className="w-5 h-5 text-yellow-400" />
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-yellow-400/10 flex items-center justify-center mx-auto mb-1 sm:mb-2 group-hover:bg-yellow-400/20 transition-all">
+            <Users className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
           </div>
-          <span className="text-white text-sm font-medium">Leaderboard</span>
-          <p className="text-gray-400 text-xs">See top players</p>
+          <span className="text-white text-xs sm:text-sm font-medium">
+            Leaderboard
+          </span>
+          <p className="text-gray-400 text-[10px] sm:text-xs">
+            See top players
+          </p>
         </button>
       </div>
 
-      {/* Recent Activity */}
       {recentActivity.length > 0 && (
         <div className="glass-card p-4 sm:p-6">
           <h3 className="text-white font-semibold mb-3 flex items-center gap-2 text-sm sm:text-base">
             <Clock className="w-4 h-4 text-gray-400" />
             Recent Activity
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-1.5 sm:space-y-2">
             {recentActivity.map((activity, index) => (
               <div
                 key={index}
                 className="flex items-center justify-between p-2 sm:p-3 bg-white/5 rounded-lg"
               >
                 <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="w-2 h-2 rounded-full bg-[#7c3aed]"></div>
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#7c3aed]"></div>
                   <span className="text-white text-xs sm:text-sm">
                     {activity.category || "Quiz"}
                   </span>
@@ -352,7 +383,6 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Recommendation */}
       <div className="glass-card p-4 sm:p-6 border border-[#7c3aed]/20 bg-[#7c3aed]/5">
         <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
           <div className="flex-1 text-center sm:text-left">
@@ -366,7 +396,7 @@ const Dashboard = () => {
           </div>
           <button
             onClick={() => navigate("/categories")}
-            className="px-4 py-2 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors text-sm flex items-center gap-2"
+            className="px-4 py-2 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors text-sm flex items-center gap-2 w-full sm:w-auto justify-center"
           >
             Take Challenge
             <ChevronRight className="w-4 h-4" />

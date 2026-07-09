@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-
 import {
   Brain,
   Mail,
@@ -31,7 +30,6 @@ const Auth = () => {
     confirmPassword: "",
   });
 
-  // Check if user is already logged in
   useEffect(() => {
     const checkUser = async () => {
       const {
@@ -44,25 +42,18 @@ const Auth = () => {
     checkUser();
   }, [navigate]);
 
-  // Handle verification code from URL
   useEffect(() => {
     const handleVerification = async () => {
       const params = new URLSearchParams(location.search);
       const code = params.get("code");
 
-      console.log("🔍 Checking for verification code...", code);
-
       if (code) {
-        console.log("✅ Verification code found:", code);
         setLoading(true);
-
         try {
           const { data, error } =
             await supabase.auth.exchangeCodeForSession(code);
-
           if (error) {
-            console.error("❌ Verification error:", error);
-            // toast."Verification link expired or invalid.");
+            console.error("Verification error:", error);
             window.history.replaceState(
               {},
               document.title,
@@ -71,10 +62,7 @@ const Auth = () => {
             setLoading(false);
             return;
           }
-
           if (data?.session) {
-            console.log("✅ Verification successful!", data);
-            // toast."Email verified! Welcome to Cerebrum! 🎉");
             window.history.replaceState(
               {},
               document.title,
@@ -83,8 +71,7 @@ const Auth = () => {
             navigate("/dashboard");
           }
         } catch (error) {
-          console.error("❌ Verification error:", error);
-          // toast."Verification failed. Please try again.");
+          console.error("Verification error:", error);
           window.history.replaceState(
             {},
             document.title,
@@ -95,7 +82,6 @@ const Auth = () => {
         }
       }
     };
-
     handleVerification();
   }, [location, navigate]);
 
@@ -118,30 +104,23 @@ const Auth = () => {
         });
 
         if (error) {
-          if (error.message.includes("Email not confirmed")) {
-            // toast."Please confirm your email first. Check your inbox!");
-          } else if (error.message.includes("Invalid login credentials")) {
-            // toast."Invalid email or password. Please try again.");
-          } else {
-            // toast.error.message);
-          }
+          console.error("Login error:", error.message);
           setLoading(false);
           return;
         }
 
         if (data?.user) {
-          // toast."Welcome back! 🎉");
           navigate("/dashboard");
         }
       } else {
         if (formData.password !== formData.confirmPassword) {
-          // toast."Passwords do not match");
+          console.error("Passwords do not match");
           setLoading(false);
           return;
         }
 
         if (formData.password.length < 6) {
-          // toast."Password must be at least 6 characters");
+          console.error("Password must be at least 6 characters");
           setLoading(false);
           return;
         }
@@ -158,27 +137,21 @@ const Auth = () => {
         });
 
         if (error) {
-          if (error.message.includes("already registered")) {
-            // toast."Account already exists. Please sign in.");
-          } else {
-            // toast.error.message);
-          }
+          console.error("Signup error:", error.message);
           setLoading(false);
           return;
         }
 
         if (data.user?.identities?.length === 0) {
-          // toast."Account already exists. Please sign in.");
+          console.error("Account already exists");
           setLoading(false);
           return;
         }
 
-        // toast."Account created! Welcome to Cerebrum! 🎉");
         navigate("/dashboard");
       }
     } catch (error) {
       console.error("Auth error:", error);
-      // toast.error.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -187,7 +160,7 @@ const Auth = () => {
   const handleResetPassword = async (e) => {
     e.preventDefault();
     if (!resetEmail) {
-      // toast."Please enter your email address");
+      console.error("Please enter your email address");
       return;
     }
 
@@ -198,13 +171,10 @@ const Auth = () => {
       });
 
       if (error) throw error;
-
-      // toast."Password reset email sent! Check your inbox. 📧");
       setShowReset(false);
       setResetEmail("");
     } catch (error) {
       console.error("Reset error:", error);
-      // toast.error.message || "Failed to send reset email");
     } finally {
       setLoading(false);
     }
@@ -221,7 +191,7 @@ const Auth = () => {
       });
 
       if (error) {
-        // toast.error.message);
+        console.error("Google login error:", error);
         setGoogleLoading(false);
         return;
       }
@@ -231,7 +201,6 @@ const Auth = () => {
       }
     } catch (error) {
       console.error("Google login error:", error);
-      // toast."Google login failed. Please try again.");
       setGoogleLoading(false);
     }
   };
@@ -247,7 +216,7 @@ const Auth = () => {
       });
 
       if (error) {
-        // toast.error.message);
+        console.error("GitHub login error:", error);
         setGithubLoading(false);
         return;
       }
@@ -257,36 +226,39 @@ const Auth = () => {
       }
     } catch (error) {
       console.error("GitHub login error:", error);
-      // toast."GitHub login failed. Please try again.");
       setGithubLoading(false);
     }
   };
 
-  // Password Reset Form
   if (showReset) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0f0f1a] p-4">
-        <div className="glass-card p-6 sm:p-8 max-w-md w-full">
+      <div className="min-h-screen flex items-center justify-center bg-[#0f0f1a] p-3 sm:p-4">
+        <div className="glass-card p-5 sm:p-6 md:p-8 max-w-md w-full">
           <button
             onClick={() => setShowReset(false)}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6 text-sm sm:text-base"
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-4 sm:mb-6 text-sm sm:text-base"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Sign In
           </button>
 
-          <div className="text-center mb-6 sm:mb-8">
-            <div className="inline-block p-3 bg-[#7c3aed]/20 rounded-full mb-4">
-              <Mail className="w-10 h-10 sm:w-12 sm:h-12 text-[#a78bfa]" />
+          <div className="text-center mb-5 sm:mb-6 md:mb-8">
+            <div className="inline-block p-2.5 sm:p-3 bg-[#7c3aed]/20 rounded-full mb-3 sm:mb-4">
+              <Mail className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-[#a78bfa]" />
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-white">Reset Password</h2>
-            <p className="text-gray-400 text-xs sm:text-sm mt-2">
+            <h2 className="text-xl sm:text-2xl font-bold text-white">
+              Reset Password
+            </h2>
+            <p className="text-gray-400 text-xs sm:text-sm mt-1 sm:mt-2">
               Enter your email address and we'll send you a link to reset your
               password.
             </p>
           </div>
 
-          <form onSubmit={handleResetPassword} className="space-y-4">
+          <form
+            onSubmit={handleResetPassword}
+            className="space-y-3 sm:space-y-4"
+          >
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
               <input
@@ -322,14 +294,16 @@ const Auth = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="min-h-screen flex items-center justify-center bg-[#0f0f1a] p-4"
+      className="min-h-screen flex items-center justify-center bg-[#0f0f1a] p-3 sm:p-4"
     >
-      <div className="glass-card p-6 sm:p-8 max-w-md w-full">
-        <div className="text-center mb-6 sm:mb-8">
-          <div className="inline-block p-3 bg-[#7c3aed]/20 rounded-full mb-4">
-            <Brain className="w-10 h-10 sm:w-12 sm:h-12 text-[#a78bfa]" />
+      <div className="glass-card p-5 sm:p-6 md:p-8 max-w-md w-full">
+        <div className="text-center mb-5 sm:mb-6 md:mb-8">
+          <div className="inline-block p-2.5 sm:p-3 bg-[#7c3aed]/20 rounded-full mb-3 sm:mb-4">
+            <Brain className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-[#a78bfa]" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white">Cerebrum</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">
+            Cerebrum
+          </h1>
           <p className="text-gray-400 text-xs sm:text-sm">
             {isLogin ? "Welcome back!" : "Create your account"}
           </p>
@@ -425,12 +399,12 @@ const Auth = () => {
           </motion.button>
         </form>
 
-        <div className="relative my-6 sm:my-8">
+        <div className="relative my-5 sm:my-6 md:my-8">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-700"></div>
           </div>
           <div className="relative flex justify-center">
-            <span className="px-4 bg-[#1a1a2e] text-gray-500 text-[10px] sm:text-xs font-medium tracking-wider">
+            <span className="px-3 sm:px-4 bg-[#1a1a2e] text-gray-500 text-[10px] sm:text-xs font-medium tracking-wider">
               OR CONTINUE WITH
             </span>
           </div>
@@ -468,7 +442,7 @@ const Auth = () => {
           </motion.button>
         </div>
 
-        <div className="mt-4 sm:mt-6 text-center">
+        <div className="mt-4 sm:mt-5 md:mt-6 text-center">
           <button
             onClick={() => {
               setIsLogin(!isLogin);
