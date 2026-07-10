@@ -46,6 +46,7 @@ const Dashboard = () => {
   const [recentActivity, setRecentActivity] = useState([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingStats, setLoadingStats] = useState(true);
 
   // Load data on mount, location change, and user change
   useEffect(() => {
@@ -92,10 +93,13 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     try {
       console.log("📊 Loading dashboard data...");
+      setLoadingStats(true);
       await Promise.all([loadUserStats(), loadRecentActivity()]);
       console.log("✅ Dashboard data loaded");
     } catch (error) {
       console.error("❌ Error loading dashboard data:", error);
+    } finally {
+      setLoadingStats(false);
     }
   };
 
@@ -108,7 +112,18 @@ const Dashboard = () => {
 
       console.log("📊 Fetching quiz results for user:", currentUser.id);
 
-      // ✅ FIRST: Get quiz results
+      // 1. Get user stats from the users table
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("stats")
+        .eq("id", currentUser.id)
+        .maybeSingle();
+
+      if (userError && userError.code !== "PGRST116") {
+        console.error("❌ Error fetching user stats:", userError);
+      }
+
+      // 2. Get all quiz results
       const { data: quizResults, error: quizError } = await supabase
         .from("quiz_results")
         .select("*")
@@ -121,18 +136,7 @@ const Dashboard = () => {
 
       console.log(`📊 Found ${quizResults?.length || 0} quiz results`);
 
-      // ✅ SECOND: Get user stats from the users table
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("stats")
-        .eq("id", currentUser.id)
-        .single();
-
-      if (userError && userError.code !== "PGRST116") {
-        console.error("❌ Error fetching user stats:", userError);
-      }
-
-      // ✅ THIRD: Calculate stats from quiz results
+      // 3. Calculate stats from quiz results
       let totalQuizzes = 0;
       let totalPoints = 0;
       let totalScore = 0;
@@ -144,6 +148,7 @@ const Dashboard = () => {
         totalQuizzes = quizResults.length;
 
         quizResults.forEach((quiz) => {
+          // Use percentage if available, otherwise calculate from score
           let percentage = parseFloat(quiz.percentage) || 0;
           if (percentage === 0 && quiz.score && quiz.total_questions) {
             percentage = Math.round((quiz.score / quiz.total_questions) * 100);
@@ -160,15 +165,17 @@ const Dashboard = () => {
         });
       }
 
+      // Calculate average score
       const averageScore =
         totalQuizzes > 0 ? Math.round(totalScore / totalQuizzes) : 0;
 
-      // ✅ FOURTH: Calculate streak
+      // 4. Calculate streak from quiz dates
       let streak = 0;
       if (quizResults && quizResults.length > 0) {
         const dates = quizResults
           .map((q) => new Date(q.created_at).toISOString().split("T")[0])
           .sort();
+
         const uniqueDates = [...new Set(dates)].sort();
 
         if (uniqueDates.length > 0) {
@@ -197,21 +204,23 @@ const Dashboard = () => {
         }
       }
 
-      // ✅ FIFTH: Get riddles and articles
-      const { data: riddlesData } = await supabase
+      // 5. Get riddles solved count
+      const { data: riddlesData, error: riddlesError } = await supabase
         .from("riddle_history")
         .select("*")
         .eq("user_id", currentUser.id);
 
-      const { data: articlesData } = await supabase
+      const riddlesSolved = riddlesError ? 0 : riddlesData?.length || 0;
+
+      // 6. Get articles read count
+      const { data: articlesData, error: articlesError } = await supabase
         .from("article_history")
         .select("*")
         .eq("user_id", currentUser.id);
 
-      const riddlesSolved = riddlesData?.length || 0;
-      const readArticles = articlesData?.length || 0;
+      const readArticles = articlesError ? 0 : articlesData?.length || 0;
 
-      // ✅ SIXTH: Update stats state
+      // 7. Update stats state
       const newStats = {
         totalQuizzes,
         totalPoints,
@@ -227,23 +236,23 @@ const Dashboard = () => {
       console.log("📊 New stats calculated:", newStats);
       setStats(newStats);
 
-      // ✅ SEVENTH: Update users table with stats
+      // 8. Update users table with stats
+      const updatedStats = {
+        total_quizzes: totalQuizzes,
+        total_points: totalPoints,
+        average_score: averageScore,
+        streak: streak,
+        best_score: bestScore,
+        riddles_solved: riddlesSolved,
+        read_articles: readArticles,
+        total_time: totalTime,
+        perfect_scores: perfectScores,
+        last_quiz_date:
+          quizResults?.length > 0 ? new Date().toISOString() : null,
+      };
+
       if (userData) {
         // Update existing user
-        const updatedStats = {
-          total_quizzes: totalQuizzes,
-          total_points: totalPoints,
-          average_score: averageScore,
-          streak: streak,
-          best_score: bestScore,
-          riddles_solved: riddlesSolved,
-          read_articles: readArticles,
-          total_time: totalTime,
-          perfect_scores: perfectScores,
-          last_quiz_date:
-            quizResults?.length > 0 ? new Date().toISOString() : null,
-        };
-
         const { error: updateError } = await supabase
           .from("users")
           .update({
@@ -259,20 +268,6 @@ const Dashboard = () => {
         }
       } else {
         // Create new user entry
-        const newUserStats = {
-          total_quizzes: totalQuizzes,
-          total_points: totalPoints,
-          average_score: averageScore,
-          streak: streak,
-          best_score: bestScore,
-          riddles_solved: riddlesSolved,
-          read_articles: readArticles,
-          total_time: totalTime,
-          perfect_scores: perfectScores,
-          last_quiz_date:
-            quizResults?.length > 0 ? new Date().toISOString() : null,
-        };
-
         const { error: insertError } = await supabase.from("users").insert({
           id: currentUser.id,
           name:
@@ -280,7 +275,7 @@ const Dashboard = () => {
             currentUser.email?.split("@")[0] ||
             "User",
           email: currentUser.email,
-          stats: newUserStats,
+          stats: updatedStats,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });
@@ -436,6 +431,17 @@ const Dashboard = () => {
   }
 
   // Authenticated Dashboard
+  if (loadingStats) {
+    return (
+      <div className="max-w-6xl mx-auto flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="w-10 h-10 text-[#7c3aed] animate-spin mx-auto mb-3" />
+          <p className="text-gray-400 text-sm">Loading your stats...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12">
       {/* Welcome Header with Refresh Button */}
