@@ -11,22 +11,15 @@ import {
   AlertCircle,
   ArrowLeft,
   RefreshCw,
-  Settings,
-  Target,
-  Zap,
   Brain,
   Sparkles,
   SkipForward,
 } from "lucide-react";
 import { fetchQuestions, shuffleArray, decodeHTML } from "../services/quizApi";
-import {
-  getCustomQuestions,
-  hasCustomQuestions,
-} from "../data/customQuestions";
+import { getCustomQuestions } from "../data/customQuestions";
 import { supabase } from "../services/supabase";
 import { generateQuestionsWithGroq } from "../services/groqService";
 
-// Fallback questions - always available
 const FALLBACK_QUESTIONS = [
   {
     question: "What is the capital of France?",
@@ -48,15 +41,14 @@ const FALLBACK_QUESTIONS = [
   },
 ];
 
-// Time options per question
 const TIME_OPTIONS = [
-  { value: 10, label: "10s", color: "text-red-400" },
-  { value: 20, label: "20s", color: "text-orange-400" },
-  { value: 30, label: "30s", color: "text-yellow-400" },
-  { value: 45, label: "45s", color: "text-blue-400" },
-  { value: 60, label: "60s", color: "text-green-400" },
-  { value: 90, label: "90s", color: "text-purple-400" },
-  { value: 120, label: "2 min", color: "text-indigo-400" },
+  { value: 10, label: "10s" },
+  { value: 20, label: "20s" },
+  { value: 30, label: "30s" },
+  { value: 45, label: "45s" },
+  { value: 60, label: "60s" },
+  { value: 90, label: "90s" },
+  { value: 120, label: "2min" },
 ];
 
 const Quiz = () => {
@@ -74,14 +66,12 @@ const Quiz = () => {
   const [difficulty, setDifficulty] = useState(null);
   const [showDifficultySelect, setShowDifficultySelect] = useState(true);
   const [showTimeSelect, setShowTimeSelect] = useState(false);
-  const [error, setError] = useState(null);
-  const [selectedDifficulty, setSelectedDifficulty] = useState(null);
-  const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [questionCount, setQuestionCount] = useState(15);
   const [user, setUser] = useState(null);
   const [quizStartTime, setQuizStartTime] = useState(Date.now());
   const [isFinishing, setIsFinishing] = useState(false);
   const [timerStarted, setTimerStarted] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
   useEffect(() => {
     const storedCategory = sessionStorage.getItem("selectedCategory");
@@ -95,16 +85,15 @@ const Quiz = () => {
 
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user);
+      console.log("✅ User loaded:", data.user?.id);
     });
   }, []);
 
   const loadQuestions = async (diff) => {
     setLoading(true);
-    setError(null);
     setQuestions([]);
     setShowDifficultySelect(false);
     setShowTimeSelect(true);
-    setSelectedDifficulty(diff);
     setDifficulty(diff);
     setQuizStartTime(Date.now());
     setTimerStarted(false);
@@ -114,7 +103,6 @@ const Quiz = () => {
       let categoryName = "General Knowledge";
       let count = 15;
       let categoryId = null;
-      let isCustom = false;
 
       if (storedCategory) {
         const category = JSON.parse(storedCategory);
@@ -126,17 +114,13 @@ const Quiz = () => {
 
       let fetchedQuestions = [];
 
-      // Try Groq AI Generation
+      // Try Groq
       try {
-        console.log(
-          `🎯 Generating ${count} questions about "${categoryName}" with Groq...`,
-        );
         const groqQuestions = await generateQuestionsWithGroq(
           categoryName,
           count,
           diff,
         );
-
         if (groqQuestions && groqQuestions.length > 0) {
           fetchedQuestions = groqQuestions.map((q) => ({
             question: q.question,
@@ -150,13 +134,8 @@ const Quiz = () => {
               : shuffleArray([q.correct_answer, ...q.incorrect_answers]),
             explanation: q.explanation || "",
           }));
-          console.log(
-            `✅ Generated ${fetchedQuestions.length} questions with Groq`,
-          );
         }
-      } catch (groqError) {
-        console.warn("Groq generation failed:", groqError.message);
-      }
+      } catch (e) {}
 
       // Try Custom Questions
       if (fetchedQuestions.length === 0 && typeof categoryId === "string") {
@@ -170,20 +149,13 @@ const Quiz = () => {
                 ...q.incorrect_answers,
               ]),
             }));
-            isCustom = true;
-            console.log(
-              `✅ Loaded ${fetchedQuestions.length} custom questions`,
-            );
           }
-        } catch (customError) {
-          console.warn("Custom questions failed:", customError.message);
-        }
+        } catch (e) {}
       }
 
-      // Try Open Trivia DB API
+      // Try Open Trivia DB
       if (fetchedQuestions.length === 0) {
         try {
-          console.log(`🔄 Fetching from Open Trivia DB...`);
           const apiQuestions = await fetchQuestions(
             count,
             categoryId,
@@ -198,18 +170,12 @@ const Quiz = () => {
                 ...q.incorrect_answers,
               ]),
             }));
-            console.log(
-              `✅ Loaded ${fetchedQuestions.length} questions from Trivia DB`,
-            );
           }
-        } catch (apiError) {
-          console.warn("Trivia DB API failed:", apiError.message);
-        }
+        } catch (e) {}
       }
 
-      // Fallback questions
+      // Fallback
       if (fetchedQuestions.length === 0) {
-        console.log("📚 Using local fallback questions");
         const fallback = FALLBACK_QUESTIONS.slice(
           0,
           Math.min(count, FALLBACK_QUESTIONS.length),
@@ -223,43 +189,14 @@ const Quiz = () => {
         }));
       }
 
-      // Ultimate fallback
-      if (fetchedQuestions.length === 0) {
-        fetchedQuestions = [
-          {
-            question: `What is the capital of knowledge?`,
-            correct_answer: "Learning",
-            incorrect_answers: ["Forgetting", "Sleeping", "Watching"],
-            category: categoryName,
-            shuffledOptions: ["Learning", "Forgetting", "Sleeping", "Watching"],
-          },
-        ];
-      }
-
       setQuestions(fetchedQuestions);
-      console.log(
-        `✅ Final: ${fetchedQuestions.length} questions loaded for "${categoryName}"`,
-      );
     } catch (error) {
       console.error("Error loading questions:", error);
-      const fallback = FALLBACK_QUESTIONS.slice(
-        0,
-        Math.min(questionCount || 15, FALLBACK_QUESTIONS.length),
-      );
-      const fallbackQuestions = fallback.map((q) => ({
-        ...q,
-        shuffledOptions: shuffleArray([
-          q.correct_answer,
-          ...q.incorrect_answers,
-        ]),
-      }));
-      setQuestions(fallbackQuestions);
     } finally {
       setLoading(false);
     }
   };
 
-  // Timer effect
   useEffect(() => {
     if (
       loading ||
@@ -299,14 +236,11 @@ const Quiz = () => {
   const handleTimeout = () => {
     if (!isAnswered && !isFinishing) {
       setIsAnswered(true);
-      console.log("⏰ Time's up! Question failed.");
       const updatedAnswers = { ...answers, [currentIndex]: null };
       setAnswers(updatedAnswers);
       if (currentIndex === questions.length - 1) {
         setIsFinishing(true);
-        setTimeout(() => {
-          finishQuiz(updatedAnswers);
-        }, 800);
+        setTimeout(() => finishQuiz(updatedAnswers), 800);
       } else {
         setTimeout(() => handleNext(updatedAnswers), 1000);
       }
@@ -328,25 +262,13 @@ const Quiz = () => {
     setSelectedAnswer(answer);
     setIsAnswered(true);
 
-    const isCorrect = answer === questions[currentIndex].correct_answer;
-    console.log(
-      `${isCorrect ? "✅" : "❌"} Question ${currentIndex + 1}: ${
-        isCorrect ? "Correct!" : "Wrong"
-      }`,
-    );
-
     if (answers[currentIndex] === undefined) {
       if (currentIndex === questions.length - 1) {
-        console.log("🏁 Last question answered! Finishing quiz...");
         setIsFinishing(true);
-        setTimeout(() => {
-          finishQuiz(updatedAnswers);
-        }, 1200);
+        setTimeout(() => finishQuiz(updatedAnswers), 1200);
       } else {
         setTimeout(() => handleNext(updatedAnswers), 800);
       }
-    } else {
-      console.log("🔄 Answer updated for question", currentIndex + 1);
     }
   };
 
@@ -385,10 +307,7 @@ const Quiz = () => {
         break;
       }
     }
-
-    if (firstUnanswered === -1) {
-      firstUnanswered = questions.length - 1;
-    }
+    if (firstUnanswered === -1) firstUnanswered = questions.length - 1;
 
     setCurrentIndex(firstUnanswered);
     const existingAnswer = answers[firstUnanswered];
@@ -397,56 +316,35 @@ const Quiz = () => {
     setTimeLeft(selectedTimePerQuestion);
   };
 
-  const handleGoBack = () => {
-    navigate("/categories");
-  };
-
+  const handleGoBack = () => navigate("/categories");
   const handleRetry = () => {
     setShowDifficultySelect(true);
     setShowTimeSelect(false);
-    setError(null);
     setQuestions([]);
     setCurrentIndex(0);
     setAnswers({});
     setQuizComplete(false);
-    setSelectedDifficulty(null);
     setIsFinishing(false);
     setTimerStarted(false);
+    setSaveError(null);
   };
 
   const finishQuiz = async (finalAnswers) => {
-    if (quizComplete) {
-      console.log("⚠️ Quiz already complete, skipping...");
-      return;
-    }
+    if (quizComplete) return;
 
     const currentAnswers = finalAnswers || answers;
     const completedAnswers = { ...currentAnswers };
     for (let i = 0; i < questions.length; i++) {
-      if (completedAnswers[i] === undefined) {
-        completedAnswers[i] = null;
-        console.log(`⚠️ Question ${i + 1} was not answered, marking as null`);
-      }
+      if (completedAnswers[i] === undefined) completedAnswers[i] = null;
     }
-
-    console.log("📝 ALL ANSWERS:", completedAnswers);
 
     let correct = 0;
     questions.forEach((q, i) => {
-      const userAnswer = completedAnswers[i];
-      const isCorrect = userAnswer === q.correct_answer;
-      console.log(
-        `Q${i + 1}: User="${userAnswer}", Correct="${q.correct_answer}", Result=${isCorrect}`,
-      );
-      if (isCorrect) correct++;
+      if (completedAnswers[i] === q.correct_answer) correct++;
     });
 
     const percentage = Math.round((correct / questions.length) * 100);
     const timeTaken = Math.floor((Date.now() - quizStartTime) / 1000);
-
-    console.log(
-      `📊 Results: ${correct}/${questions.length} correct = ${percentage}%`,
-    );
 
     const resultData = {
       score: percentage,
@@ -460,6 +358,7 @@ const Quiz = () => {
     };
     sessionStorage.setItem("quizResults", JSON.stringify(resultData));
 
+    // ✅ SAVE TO DATABASE
     if (user) {
       try {
         const quizData = {
@@ -474,79 +373,88 @@ const Quiz = () => {
           answers: completedAnswers,
         };
 
-        console.log("📊 Saving quiz data:", quizData);
+        console.log("📤 SAVING QUIZ DATA:", quizData);
 
-        const { error: quizError } = await supabase
+        const { data, error } = await supabase
           .from("quiz_results")
-          .insert(quizData);
+          .insert(quizData)
+          .select();
 
-        if (quizError) {
-          console.error("❌ Error saving quiz:", quizError);
+        if (error) {
+          console.error("❌ Error saving quiz:", error);
+          setSaveError(error.message);
         } else {
-          console.log("✅ Quiz saved with score:", percentage);
+          console.log("✅ Quiz saved successfully!", data);
         }
 
-        // Update user stats in users table
-        const { data: userData } = await supabase
-          .from("users")
-          .select("stats")
-          .eq("id", user.id)
-          .single();
+        // Update user stats
+        try {
+          const { data: userData } = await supabase
+            .from("users")
+            .select("stats")
+            .eq("id", user.id)
+            .single();
 
-        const currentStats = userData?.stats || {};
-        const totalQuizzes = (currentStats.total_quizzes || 0) + 1;
-        const totalScore = (currentStats.total_score || 0) + percentage;
-        const bestScore = Math.max(currentStats.best_score || 0, percentage);
-        const averageScore = Math.round(totalScore / totalQuizzes);
-        const totalPoints =
-          (currentStats.total_points || 0) + Math.floor(percentage / 10);
-        const perfectScores =
-          (currentStats.perfect_scores || 0) + (percentage === 100 ? 1 : 0);
+          const currentStats = userData?.stats || {};
+          const totalQuizzes = (currentStats.total_quizzes || 0) + 1;
+          const totalScore = (currentStats.total_score || 0) + percentage;
+          const bestScore = Math.max(currentStats.best_score || 0, percentage);
+          const averageScore = Math.round(totalScore / totalQuizzes);
+          const totalPoints =
+            (currentStats.total_points || 0) + Math.floor(percentage / 10);
+          const perfectScores =
+            (currentStats.perfect_scores || 0) + (percentage === 100 ? 1 : 0);
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
+          let streak = currentStats.streak || 0;
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const yesterday = new Date(today);
+          yesterday.setDate(yesterday.getDate() - 1);
 
-        const lastQuizDate = currentStats.last_quiz_date
-          ? new Date(currentStats.last_quiz_date)
-          : null;
-        let streak = currentStats.streak || 0;
-
-        if (lastQuizDate) {
-          const lastDate = new Date(lastQuizDate);
-          lastDate.setHours(0, 0, 0, 0);
-
-          if (lastDate.getTime() === yesterday.getTime()) {
-            streak = streak + 1;
-          } else if (lastDate.getTime() === today.getTime()) {
-            // Already played today
+          const lastQuizDate = currentStats.last_quiz_date
+            ? new Date(currentStats.last_quiz_date)
+            : null;
+          if (lastQuizDate) {
+            const lastDate = new Date(lastQuizDate);
+            lastDate.setHours(0, 0, 0, 0);
+            if (lastDate.getTime() === yesterday.getTime()) {
+              streak = streak + 1;
+            } else if (lastDate.getTime() === today.getTime()) {
+              // Keep streak
+            } else {
+              streak = 1;
+            }
           } else {
             streak = 1;
           }
-        } else {
-          streak = 1;
-        }
 
-        await supabase
-          .from("users")
-          .update({
-            stats: {
-              total_quizzes: totalQuizzes,
-              total_score: totalScore,
-              best_score: bestScore,
-              average_score: averageScore,
-              total_points: totalPoints,
-              streak: streak,
-              perfect_scores: perfectScores,
-              last_quiz_date: new Date().toISOString(),
-            },
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", user.id);
+          await supabase
+            .from("users")
+            .update({
+              stats: {
+                total_quizzes: totalQuizzes,
+                total_score: totalScore,
+                best_score: bestScore,
+                average_score: averageScore,
+                total_points: totalPoints,
+                streak: streak,
+                perfect_scores: perfectScores,
+                last_quiz_date: new Date().toISOString(),
+              },
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", user.id);
+
+          console.log("✅ User stats updated");
+        } catch (statsError) {
+          console.error("❌ Error updating stats:", statsError);
+        }
       } catch (error) {
         console.error("❌ Save error:", error);
+        setSaveError(error.message);
       }
+    } else {
+      console.warn("⚠️ No user logged in, results not saved");
     }
 
     setQuizComplete(true);
@@ -615,9 +523,7 @@ const Quiz = () => {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => loadQuestions(diff.id)}
                 disabled={loading}
-                className={`w-full p-3 sm:p-4 rounded-xl ${diff.bg} border ${diff.border} hover:border-[#7c3aed]/50 transition-all flex items-center justify-between group ${
-                  loading ? "opacity-50 cursor-not-allowed" : ""
-                }`}
+                className={`w-full p-3 sm:p-4 rounded-xl ${diff.bg} border ${diff.border} hover:border-[#7c3aed]/50 transition-all flex items-center justify-between group ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 <div className="flex items-center gap-2 sm:gap-3">
                   <span className="text-xl sm:text-2xl">{diff.icon}</span>
@@ -685,14 +591,10 @@ const Quiz = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setSelectedTimePerQuestion(option.value)}
-                className={`p-3 rounded-xl border-2 transition-all ${
-                  selectedTimePerQuestion === option.value
-                    ? "border-[#7c3aed] bg-[#7c3aed]/20 text-white"
-                    : "border-white/10 bg-white/5 text-gray-400 hover:border-white/30"
-                }`}
+                className={`p-3 rounded-xl border-2 transition-all ${selectedTimePerQuestion === option.value ? "border-[#7c3aed] bg-[#7c3aed]/20 text-white" : "border-white/10 bg-white/5 text-gray-400 hover:border-white/30"}`}
               >
                 <div
-                  className={`text-lg font-bold ${selectedTimePerQuestion === option.value ? "text-[#7c3aed]" : option.color}`}
+                  className={`text-lg font-bold ${selectedTimePerQuestion === option.value ? "text-[#7c3aed]" : "text-gray-400"}`}
                 >
                   {option.label}
                 </div>
@@ -715,8 +617,7 @@ const Quiz = () => {
               onClick={startQuiz}
               className="flex-1 btn-primary py-2.5 sm:py-3 text-sm sm:text-base flex items-center justify-center gap-2"
             >
-              <Zap className="w-4 h-4" />
-              Start Quiz
+              <Zap className="w-4 h-4" /> Start Quiz
             </button>
           </div>
         </div>
@@ -767,9 +668,6 @@ const Quiz = () => {
   const progress = ((currentIndex + 1) / questions.length) * 100;
   const options = currentQuestion?.shuffledOptions || [];
 
-  const hasUnanswered = questions.some((_, i) => answers[i] === undefined);
-  const allAnswered = !hasUnanswered;
-
   return (
     <div className="max-w-3xl mx-auto px-3 sm:px-4">
       <div className="flex items-center justify-between mb-3 sm:mb-4 flex-wrap gap-2">
@@ -784,13 +682,7 @@ const Quiz = () => {
             {categoryInfo?.name}
           </span>
           <span
-            className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${
-              difficulty === "easy"
-                ? "bg-green-500/20 text-green-400"
-                : difficulty === "medium"
-                  ? "bg-yellow-500/20 text-yellow-400"
-                  : "bg-red-500/20 text-red-400"
-            }`}
+            className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${difficulty === "easy" ? "bg-green-500/20 text-green-400" : difficulty === "medium" ? "bg-yellow-500/20 text-yellow-400" : "bg-red-500/20 text-red-400"}`}
           >
             {difficulty}
           </span>
@@ -832,13 +724,7 @@ const Quiz = () => {
           {questions.map((_, i) => (
             <div
               key={i}
-              className={`w-2 h-2 rounded-full transition-all ${
-                i === currentIndex
-                  ? "bg-[#7c3aed] scale-125"
-                  : answers[i] !== undefined
-                    ? "bg-green-500"
-                    : "bg-white/20"
-              }`}
+              className={`w-2 h-2 rounded-full transition-all ${i === currentIndex ? "bg-[#7c3aed] scale-125" : answers[i] !== undefined ? "bg-green-500" : "bg-white/20"}`}
             />
           ))}
         </div>
@@ -865,9 +751,6 @@ const Quiz = () => {
               answers[currentIndex] !== undefined &&
               answers[currentIndex] === answer;
 
-            const hasPreviousAnswer = answers[currentIndex] !== undefined;
-            const previousAnswer = answers[currentIndex];
-
             return (
               <motion.button
                 key={index}
@@ -882,24 +765,11 @@ const Quiz = () => {
                   ${showWrong ? "bg-red-500/30 border border-red-500 text-white" : ""}
                   ${!isSelected && !isAnswered && wasAnswered ? "bg-blue-500/20 border border-blue-500/30 text-white" : ""}
                   ${!isSelected && !isAnswered && !wasAnswered ? "bg-white/5 hover:bg-white/10 text-gray-300 border border-transparent" : ""}
-                  ${!isSelected && isAnswered && hasPreviousAnswer && previousAnswer === answer && !isCorrect ? "bg-blue-500/20 border border-blue-500/30 text-white line-through" : ""}
                 `}
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs sm:text-sm break-words">
                     {decodeHTML(answer)}
-                    {!isAnswered && wasAnswered && (
-                      <span className="ml-2 text-[10px] text-blue-400">
-                        (Current answer)
-                      </span>
-                    )}
-                    {hasPreviousAnswer &&
-                      previousAnswer === answer &&
-                      !isAnswered && (
-                        <span className="ml-2 text-[10px] text-blue-400">
-                          (Previously selected)
-                        </span>
-                      )}
                   </span>
                   {isAnswered && (
                     <span className="flex-shrink-0">
@@ -932,14 +802,12 @@ const Quiz = () => {
           <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" /> Back
         </button>
 
-        {/* Go to Current button - Only show when user has gone back */}
         {currentIndex < Object.keys(answers).length - 1 && (
           <button
             onClick={goToCurrent}
             className="text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg flex items-center gap-1 sm:gap-2 transition-colors bg-[#7c3aed]/20 text-[#a78bfa] hover:bg-[#7c3aed]/30 border border-[#7c3aed]/30"
           >
-            <SkipForward className="w-3 h-3 sm:w-4 sm:h-4" />
-            Go to Current
+            <SkipForward className="w-3 h-3 sm:w-4 sm:h-4" /> Go to Current
           </button>
         )}
 
@@ -951,6 +819,12 @@ const Quiz = () => {
               : "Select an answer"}
         </span>
       </div>
+
+      {saveError && (
+        <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs">
+          ⚠️ Error saving results: {saveError}. Please try again.
+        </div>
+      )}
     </div>
   );
 };
