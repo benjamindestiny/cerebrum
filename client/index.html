@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -10,7 +10,46 @@
     <title>Cerebrum - Quiz App</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Ezoic Integration -->
+    <script>
+      // Ezoic service worker registration
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("/service-worker.js")
+          .then(function (registration) {
+            console.log(
+              "Service Worker registered successfully:",
+              registration,
+            );
+          })
+          .catch(function (error) {
+            console.log("Service Worker registration failed:", error);
+          });
+      }
+    </script>
+
+    <!-- Ezoic Ad Script -->
+    <script src="//www.ezojs.com/ezoic/ezoads.js" async></script>
+
+    <!-- Ezoic Verification -->
+    <script>
+      (function () {
+        // Ezoic publisher setup
+        window.ezoic = window.ezoic || {};
+        window.ezoic.publisher_id = "YOUR_PUBLISHER_ID"; // Replace with your actual publisher ID
+
+        // Load Ezoic script
+        var ezoicScript = document.createElement("script");
+        ezoicScript.src = "https://5gvci.com/act/files/ezoic.js";
+        ezoicScript.async = true;
+        document.head.appendChild(ezoicScript);
+      })();
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Trophy,
@@ -23,12 +23,14 @@ import {
   Puzzle,
   Play,
   Settings,
+  RefreshCw,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
 import { useAuth } from "../context/AuthContext";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentUser, userProfile, loading } = useAuth();
   const [stats, setStats] = useState({
     totalQuizzes: 0,
@@ -43,61 +45,228 @@ const Dashboard = () => {
   });
   const [recentActivity, setRecentActivity] = useState([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
+  // Load data on mount, location change, and user change
   useEffect(() => {
     if (!loading) {
       setIsAuthenticated(!!currentUser);
       if (currentUser) {
-        loadUserStats();
-        loadRecentActivity();
+        loadDashboardData();
       }
     }
-  }, [currentUser, loading]);
+  }, [currentUser, loading, location.key]);
+
+  // Real-time subscription for quiz results
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const subscription = supabase
+      .channel("dashboard_updates")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "quiz_results",
+          filter: `user_id=eq.${currentUser.id}`,
+        },
+        () => {
+          // Refresh data when new quiz result is added
+          loadDashboardData();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [currentUser]);
+
+  const loadDashboardData = async () => {
+    try {
+      await Promise.all([loadUserStats(), loadRecentActivity()]);
+    } catch (error) {
+      console.error("Error loading dashboard data:", error);
+    }
+  };
 
   const loadUserStats = async () => {
     try {
-      if (userProfile?.stats) {
-        const statsData = userProfile.stats;
-        setStats({
-          totalQuizzes: statsData.total_quizzes || 0,
-          totalPoints: statsData.total_points || 0,
-          averageScore: statsData.average_score || 0,
-          streak: statsData.streak || 0,
-          bestScore: statsData.best_score || 0,
-          riddlesSolved: statsData.riddles_solved || 0,
-          readArticles: statsData.read_articles || 0,
-          totalTime: statsData.total_time || 0,
-          perfectScores: statsData.perfect_scores || 0,
-        });
-      } else {
-        const { data, error } = await supabase
-          .from("users")
-          .select("stats")
-          .eq("id", currentUser.id)
-          .maybeSingle();
+      if (!currentUser) return;
 
-        if (!error && data?.stats) {
-          const statsData = data.stats;
-          setStats({
-            totalQuizzes: statsData.total_quizzes || 0,
-            totalPoints: statsData.total_points || 0,
-            averageScore: statsData.average_score || 0,
-            streak: statsData.streak || 0,
-            bestScore: statsData.best_score || 0,
-            riddlesSolved: statsData.riddles_solved || 0,
-            readArticles: statsData.read_articles || 0,
-            totalTime: statsData.total_time || 0,
-            perfectScores: statsData.perfect_scores || 0,
-          });
+      // Get quiz results for the current user
+      const { data: quizResults, error: quizError } = await supabase
+        .from("quiz_results")
+        .select("*")
+        .eq("user_id", currentUser.id);
+
+      if (quizError) {
+        console.error("Error fetching quiz results:", quizError);
+        return;
+      }
+
+      // Calculate stats from quiz results
+      let totalQuizzes = 0;
+      let totalPoints = 0;
+      let totalScore = 0;
+      let bestScore = 0;
+      let perfectScores = 0;
+      let totalTime = 0;
+
+      if (quizResults && quizResults.length > 0) {
+        totalQuizzes = quizResults.length;
+
+        quizResults.forEach((quiz) => {
+          // Use percentage if available, otherwise calculate from score
+          let percentage = parseFloat(quiz.percentage) || 0;
+          if (percentage === 0 && quiz.score && quiz.total_questions) {
+            percentage = Math.round((quiz.score / quiz.total_questions) * 100);
+          }
+          if (percentage === 0 && quiz.score) {
+            percentage = Math.round(quiz.score);
+          }
+
+          totalScore += percentage;
+          totalPoints += quiz.points || Math.floor(percentage / 10);
+          bestScore = Math.max(bestScore, percentage);
+          if (percentage === 100) perfectScores++;
+          totalTime += quiz.time_taken || 0;
+        });
+      }
+
+      // Calculate average score
+      const averageScore =
+        totalQuizzes > 0 ? Math.round(totalScore / totalQuizzes) : 0;
+
+      // Calculate streak from quiz dates
+      let streak = 0;
+      if (quizResults && quizResults.length > 0) {
+        // Get unique dates
+        const dates = quizResults
+          .map((q) => new Date(q.created_at).toISOString().split("T")[0])
+          .sort();
+
+        const uniqueDates = [...new Set(dates)].sort();
+
+        if (uniqueDates.length > 0) {
+          const today = new Date().toISOString().split("T")[0];
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+          // Check if last quiz was today or yesterday
+          const lastDate = uniqueDates[uniqueDates.length - 1];
+
+          if (lastDate === today || lastDate === yesterdayStr) {
+            streak = 1;
+            // Count consecutive days backward
+            let currentDate = new Date(lastDate);
+            for (let i = uniqueDates.length - 2; i >= 0; i--) {
+              const prevDate = new Date(uniqueDates[i]);
+              const diffDays = Math.floor(
+                (currentDate - prevDate) / (1000 * 60 * 60 * 24),
+              );
+              if (diffDays === 1) {
+                streak++;
+                currentDate = prevDate;
+              } else {
+                break;
+              }
+            }
+          }
         }
       }
+
+      // Get riddles solved count
+      const { data: riddlesData, error: riddlesError } = await supabase
+        .from("riddle_history")
+        .select("*")
+        .eq("user_id", currentUser.id);
+
+      const riddlesSolved = riddlesError ? 0 : riddlesData?.length || 0;
+
+      // Get articles read count
+      const { data: articlesData, error: articlesError } = await supabase
+        .from("article_history")
+        .select("*")
+        .eq("user_id", currentUser.id);
+
+      const readArticles = articlesError ? 0 : articlesData?.length || 0;
+
+      // Update stats
+      const newStats = {
+        totalQuizzes,
+        totalPoints,
+        averageScore,
+        streak,
+        bestScore,
+        riddlesSolved,
+        readArticles,
+        totalTime,
+        perfectScores,
+      };
+
+      setStats(newStats);
+
+      // Also update the users table stats
+      await updateUserStats(newStats);
     } catch (error) {
-      console.error("Error loading stats:", error);
+      console.error("Error loading user stats:", error);
+    }
+  };
+
+  const updateUserStats = async (newStats) => {
+    try {
+      // Get current user stats from database
+      const { data: userData, error: fetchError } = await supabase
+        .from("users")
+        .select("stats")
+        .eq("id", currentUser.id)
+        .single();
+
+      if (fetchError && fetchError.code !== "PGRST116") {
+        console.error("Error fetching user stats:", fetchError);
+        return;
+      }
+
+      const currentStats = userData?.stats || {};
+
+      // Merge with new stats
+      const updatedStats = {
+        total_quizzes: newStats.totalQuizzes,
+        total_points: newStats.totalPoints,
+        average_score: newStats.averageScore,
+        streak: newStats.streak,
+        best_score: newStats.bestScore,
+        riddles_solved: newStats.riddlesSolved,
+        read_articles: newStats.readArticles,
+        total_time: newStats.totalTime,
+        perfect_scores: newStats.perfectScores,
+        last_quiz_date: new Date().toISOString(),
+      };
+
+      // Update users table
+      const { error: updateError } = await supabase
+        .from("users")
+        .update({
+          stats: updatedStats,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", currentUser.id);
+
+      if (updateError) {
+        console.error("Error updating user stats:", updateError);
+      }
+    } catch (error) {
+      console.error("Error updating user stats:", error);
     }
   };
 
   const loadRecentActivity = async () => {
     try {
+      if (!currentUser) return;
+
       const { data, error } = await supabase
         .from("quiz_results")
         .select("*")
@@ -113,7 +282,13 @@ const Dashboard = () => {
     }
   };
 
-  // Public Dashboard
+  const refreshDashboard = async () => {
+    setRefreshing(true);
+    await loadDashboardData();
+    setRefreshing(false);
+  };
+
+  // Public Dashboard for non-authenticated users
   if (!isAuthenticated) {
     return (
       <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 px-3 sm:px-4 pb-12">
@@ -154,6 +329,7 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+          {/* Features - keep your existing code */}
           <div className="glass-card p-4 sm:p-6 text-center hover:border-[#7c3aed]/30 transition-all">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-400/10 flex items-center justify-center mx-auto mb-2 sm:mb-3">
               <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
@@ -228,6 +404,7 @@ const Dashboard = () => {
   // Authenticated Dashboard
   return (
     <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12">
+      {/* Welcome Header with Refresh Button */}
       <div className="glass-card p-5 sm:p-6 md:p-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div>
@@ -243,16 +420,29 @@ const Dashboard = () => {
                 : "Ready to learn something new today?"}
             </p>
           </div>
-          <button
-            onClick={() => navigate("/categories")}
-            className="px-4 py-2 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors text-sm flex items-center gap-2 whitespace-nowrap w-full sm:w-auto justify-center"
-          >
-            <Play className="w-4 h-4" />
-            Start Learning
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={refreshDashboard}
+              disabled={refreshing}
+              className="px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-xs sm:text-sm flex items-center gap-2"
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+              />
+              {refreshing ? "Refreshing..." : "Refresh"}
+            </button>
+            <button
+              onClick={() => navigate("/categories")}
+              className="px-4 py-2 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors text-sm flex items-center gap-2 whitespace-nowrap"
+            >
+              <Play className="w-4 h-4" />
+              Start Learning
+            </button>
+          </div>
         </div>
       </div>
 
+      {/* Stats Grid - This will now show correct values */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="glass-card p-3 sm:p-4 text-center">
           <div className="flex items-center justify-center gap-1 text-yellow-400">
@@ -296,6 +486,7 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <button
           onClick={() => navigate("/categories")}
@@ -353,6 +544,7 @@ const Dashboard = () => {
         </button>
       </div>
 
+      {/* Recent Activity */}
       {recentActivity.length > 0 && (
         <div className="glass-card p-4 sm:p-6">
           <h3 className="text-white font-semibold mb-3 flex items-center gap-2 text-sm sm:text-base">
@@ -383,6 +575,7 @@ const Dashboard = () => {
         </div>
       )}
 
+      {/* Daily Challenge */}
       <div className="glass-card p-4 sm:p-6 border border-[#7c3aed]/20 bg-[#7c3aed]/5">
         <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
           <div className="flex-1 text-center sm:text-left">

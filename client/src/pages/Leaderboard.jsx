@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Trophy,
@@ -16,6 +17,7 @@ import {
 import { supabase } from "../services/supabase";
 
 const Leaderboard = () => {
+  const location = useLocation();
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -23,10 +25,14 @@ const Leaderboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
 
+  // Load leaderboard on mount, filter change, and navigation
   useEffect(() => {
     loadLeaderboard();
     getCurrentUser();
+  }, [timeFilter, location.key]);
 
+  // Real-time subscription for new quiz results
+  useEffect(() => {
     const subscription = supabase
       .channel("leaderboard_updates")
       .on(
@@ -56,7 +62,7 @@ const Leaderboard = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [timeFilter]);
+  }, []);
 
   const getCurrentUser = async () => {
     const {
