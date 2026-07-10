@@ -320,11 +320,9 @@ const Quiz = () => {
     setQuizStartTime(Date.now());
   };
 
-  // ✅ FIXED: Allow changing answers when going back
   const handleAnswerSelect = (answer) => {
     if (isFinishing) return;
 
-    // If the question was already answered, update the answer
     const updatedAnswers = { ...answers, [currentIndex]: answer };
     setAnswers(updatedAnswers);
     setSelectedAnswer(answer);
@@ -332,13 +330,12 @@ const Quiz = () => {
 
     const isCorrect = answer === questions[currentIndex].correct_answer;
     console.log(
-      `${isCorrect ? "✅" : "❌"} Question ${currentIndex + 1}: ${isCorrect ? "Correct!" : "Wrong"}`,
+      `${isCorrect ? "✅" : "❌"} Question ${currentIndex + 1}: ${
+        isCorrect ? "Correct!" : "Wrong"
+      }`,
     );
 
-    // Don't auto-advance if the user is revisiting a question
-    // Only auto-advance if it's a new question (not previously answered)
     if (answers[currentIndex] === undefined) {
-      // This is a new answer, advance to next
       if (currentIndex === questions.length - 1) {
         console.log("🏁 Last question answered! Finishing quiz...");
         setIsFinishing(true);
@@ -349,9 +346,7 @@ const Quiz = () => {
         setTimeout(() => handleNext(updatedAnswers), 800);
       }
     } else {
-      // User changed their answer, stay on the same question
       console.log("🔄 Answer updated for question", currentIndex + 1);
-      // Show a brief indicator that answer was updated
     }
   };
 
@@ -382,9 +377,7 @@ const Quiz = () => {
     }
   };
 
-  // ✅ NEW: Go to current (first unanswered) question
   const goToCurrent = () => {
-    // Find the first unanswered question
     let firstUnanswered = -1;
     for (let i = 0; i < questions.length; i++) {
       if (answers[i] === undefined) {
@@ -393,7 +386,6 @@ const Quiz = () => {
       }
     }
 
-    // If all questions are answered, go to the last question
     if (firstUnanswered === -1) {
       firstUnanswered = questions.length - 1;
     }
@@ -456,7 +448,6 @@ const Quiz = () => {
       `📊 Results: ${correct}/${questions.length} correct = ${percentage}%`,
     );
 
-    // Save to session storage
     const resultData = {
       score: percentage,
       correct,
@@ -495,8 +486,64 @@ const Quiz = () => {
           console.log("✅ Quiz saved with score:", percentage);
         }
 
-        // Update user stats
-        // (keep existing stats update code)
+        // Update user stats in users table
+        const { data: userData } = await supabase
+          .from("users")
+          .select("stats")
+          .eq("id", user.id)
+          .single();
+
+        const currentStats = userData?.stats || {};
+        const totalQuizzes = (currentStats.total_quizzes || 0) + 1;
+        const totalScore = (currentStats.total_score || 0) + percentage;
+        const bestScore = Math.max(currentStats.best_score || 0, percentage);
+        const averageScore = Math.round(totalScore / totalQuizzes);
+        const totalPoints =
+          (currentStats.total_points || 0) + Math.floor(percentage / 10);
+        const perfectScores =
+          (currentStats.perfect_scores || 0) + (percentage === 100 ? 1 : 0);
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        const lastQuizDate = currentStats.last_quiz_date
+          ? new Date(currentStats.last_quiz_date)
+          : null;
+        let streak = currentStats.streak || 0;
+
+        if (lastQuizDate) {
+          const lastDate = new Date(lastQuizDate);
+          lastDate.setHours(0, 0, 0, 0);
+
+          if (lastDate.getTime() === yesterday.getTime()) {
+            streak = streak + 1;
+          } else if (lastDate.getTime() === today.getTime()) {
+            // Already played today
+          } else {
+            streak = 1;
+          }
+        } else {
+          streak = 1;
+        }
+
+        await supabase
+          .from("users")
+          .update({
+            stats: {
+              total_quizzes: totalQuizzes,
+              total_score: totalScore,
+              best_score: bestScore,
+              average_score: averageScore,
+              total_points: totalPoints,
+              streak: streak,
+              perfect_scores: perfectScores,
+              last_quiz_date: new Date().toISOString(),
+            },
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", user.id);
       } catch (error) {
         console.error("❌ Save error:", error);
       }
@@ -720,7 +767,6 @@ const Quiz = () => {
   const progress = ((currentIndex + 1) / questions.length) * 100;
   const options = currentQuestion?.shuffledOptions || [];
 
-  // Check if there's any unanswered question
   const hasUnanswered = questions.some((_, i) => answers[i] === undefined);
   const allAnswered = !hasUnanswered;
 
@@ -782,7 +828,6 @@ const Quiz = () => {
             transition={{ duration: 0.5 }}
           />
         </div>
-        {/* Mini progress dots */}
         <div className="flex gap-1 mt-2 justify-center flex-wrap">
           {questions.map((_, i) => (
             <div
@@ -820,7 +865,6 @@ const Quiz = () => {
               answers[currentIndex] !== undefined &&
               answers[currentIndex] === answer;
 
-            // Check if this question was previously answered (for showing the answer indicator)
             const hasPreviousAnswer = answers[currentIndex] !== undefined;
             const previousAnswer = answers[currentIndex];
 
@@ -888,20 +932,14 @@ const Quiz = () => {
           <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" /> Back
         </button>
 
-        {/* ✅ NEW: Go to Current button */}
-        {(hasUnanswered || allAnswered) && (
+        {/* Go to Current button - Only show when user has gone back */}
+        {currentIndex < Object.keys(answers).length - 1 && (
           <button
             onClick={goToCurrent}
-            className={`text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg flex items-center gap-1 sm:gap-2 transition-colors ${
-              allAnswered
-                ? "bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30"
-                : "bg-[#7c3aed]/20 text-[#a78bfa] hover:bg-[#7c3aed]/30 border border-[#7c3aed]/30"
-            }`}
+            className="text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg flex items-center gap-1 sm:gap-2 transition-colors bg-[#7c3aed]/20 text-[#a78bfa] hover:bg-[#7c3aed]/30 border border-[#7c3aed]/30"
           >
             <SkipForward className="w-3 h-3 sm:w-4 sm:h-4" />
-            {allAnswered
-              ? "Review Answers"
-              : `Go to Current (${Object.keys(answers).length}/${questions.length})`}
+            Go to Current
           </button>
         )}
 

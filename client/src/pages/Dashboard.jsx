@@ -44,18 +44,25 @@ const Dashboard = () => {
 
     setLoadingStats(true);
     try {
-      console.log("📊 Loading dashboard for:", currentUser.id);
+      console.log("📊 Loading dashboard for user:", currentUser.id);
 
-      // Get quiz results
+      // Get quiz results from the database
       const { data: quizResults, error } = await supabase
         .from("quiz_results")
         .select("*")
         .eq("user_id", currentUser.id)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("❌ Error fetching quiz results:", error);
+        setLoadingStats(false);
+        return;
+      }
+
+      console.log(`📊 Found ${quizResults?.length || 0} quiz results`);
 
       if (!quizResults || quizResults.length === 0) {
+        // No quiz results, set everything to 0
         setStats({
           totalQuizzes: 0,
           totalPoints: 0,
@@ -68,8 +75,6 @@ const Dashboard = () => {
         setLoadingStats(false);
         return;
       }
-
-      console.log(`📊 Found ${quizResults.length} quiz results`);
 
       // Calculate stats
       let totalQuizzes = quizResults.length;
@@ -91,7 +96,7 @@ const Dashboard = () => {
 
       const averageScore = Math.round(totalScore / totalQuizzes);
 
-      // Calculate streak
+      // Calculate streak from quiz dates
       let streak = 0;
       const dates = quizResults
         .map((q) => new Date(q.created_at).toISOString().split("T")[0])
@@ -114,7 +119,9 @@ const Dashboard = () => {
             if (diff === 1) {
               streak++;
               current = prev;
-            } else break;
+            } else {
+              break;
+            }
           }
         }
       }
@@ -127,26 +134,37 @@ const Dashboard = () => {
         bestScore,
         perfectScores,
       };
+
       console.log("📊 Stats calculated:", newStats);
       setStats(newStats);
       setRecentActivity(quizResults.slice(0, 5));
 
-      // Update users table
-      await supabase
-        .from("users")
-        .update({
-          stats: {
-            total_quizzes: totalQuizzes,
-            total_points: totalPoints,
-            average_score: averageScore,
-            streak: streak,
-            best_score: bestScore,
-            perfect_scores: perfectScores,
-            last_quiz_date: new Date().toISOString(),
-          },
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", currentUser.id);
+      // Update users table with stats
+      try {
+        const { error: updateError } = await supabase
+          .from("users")
+          .update({
+            stats: {
+              total_quizzes: totalQuizzes,
+              total_points: totalPoints,
+              average_score: averageScore,
+              streak: streak,
+              best_score: bestScore,
+              perfect_scores: perfectScores,
+              last_quiz_date: new Date().toISOString(),
+            },
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", currentUser.id);
+
+        if (updateError) {
+          console.error("❌ Error updating user stats:", updateError);
+        } else {
+          console.log("✅ User stats updated in database");
+        }
+      } catch (updateError) {
+        console.error("❌ Update error:", updateError);
+      }
     } catch (error) {
       console.error("❌ Error loading dashboard:", error);
     } finally {
