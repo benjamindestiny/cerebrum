@@ -28,22 +28,23 @@ const Dashboard = () => {
   const location = useLocation();
   const { currentUser, loading } = useAuth();
 
-  // Simple state
-  const [totalQuizzes, setTotalQuizzes] = useState(0);
-  const [totalPoints, setTotalPoints] = useState(0);
-  const [averageScore, setAverageScore] = useState(0);
-  const [streak, setStreak] = useState(0);
-  const [bestScore, setBestScore] = useState(0);
-  const [riddlesSolved, setRiddlesSolved] = useState(0);
-  const [readArticles, setReadArticles] = useState(0);
-  const [perfectScores, setPerfectScores] = useState(0);
+  // Simple, flat state
+  const [stats, setStats] = useState({
+    totalQuizzes: 0,
+    totalPoints: 0,
+    averageScore: 0,
+    streak: 0,
+    bestScore: 0,
+    riddlesSolved: 0,
+    readArticles: 0,
+    perfectScores: 0,
+  });
   const [recentActivity, setRecentActivity] = useState([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingStats, setLoadingStats] = useState(true);
-  const [updateCounter, setUpdateCounter] = useState(0);
+  const [renderKey, setRenderKey] = useState(Date.now());
 
-  // Force reload on location change
   useEffect(() => {
     if (!loading) {
       setIsAuthenticated(!!currentUser);
@@ -60,13 +61,10 @@ const Dashboard = () => {
       await loadUserStats();
       await loadRecentActivity();
       // Force re-render
-      setUpdateCounter((prev) => prev + 1);
-      console.log(
-        "✅ Dashboard data loaded, updateCounter:",
-        updateCounter + 1,
-      );
+      setRenderKey(Date.now());
+      console.log("✅ Dashboard updated at:", new Date().toISOString());
     } catch (error) {
-      console.error("❌ Error loading dashboard data:", error);
+      console.error("❌ Error:", error);
     } finally {
       setLoadingStats(false);
     }
@@ -76,135 +74,132 @@ const Dashboard = () => {
     try {
       if (!currentUser) return;
 
-      console.log("📊 Fetching quiz results...");
-
+      // Get quiz results
       const { data: quizResults, error } = await supabase
         .from("quiz_results")
         .select("*")
         .eq("user_id", currentUser.id);
 
       if (error) {
-        console.error("❌ Error:", error);
+        console.error("❌ Error fetching:", error);
         return;
       }
 
-      console.log(`📊 Found ${quizResults?.length || 0} quiz results`);
+      console.log("📊 Raw quiz data:", quizResults);
 
-      if (quizResults && quizResults.length > 0) {
-        let points = 0;
-        let totalScore = 0;
-        let best = 0;
-        let perfect = 0;
-        let totalTime = 0;
-
-        quizResults.forEach((quiz) => {
-          let percentage = parseFloat(quiz.percentage) || 0;
-          if (percentage === 0 && quiz.score && quiz.total_questions) {
-            percentage = Math.round((quiz.score / quiz.total_questions) * 100);
-          }
-          totalScore += percentage;
-          points += quiz.points || Math.floor(percentage / 10);
-          best = Math.max(best, percentage);
-          if (percentage === 100) perfect++;
-          totalTime += quiz.time_taken || 0;
+      if (!quizResults || quizResults.length === 0) {
+        setStats({
+          totalQuizzes: 0,
+          totalPoints: 0,
+          averageScore: 0,
+          streak: 0,
+          bestScore: 0,
+          riddlesSolved: 0,
+          readArticles: 0,
+          perfectScores: 0,
         });
+        return;
+      }
 
-        const avg = Math.round(totalScore / quizResults.length);
+      // Calculate stats
+      let totalQuizzes = quizResults.length;
+      let totalPoints = 0;
+      let totalScore = 0;
+      let bestScore = 0;
+      let perfectScores = 0;
+      let streak = 0;
 
-        // Calculate streak
-        let streakCount = 0;
-        const dates = quizResults
-          .map((q) => new Date(q.created_at).toISOString().split("T")[0])
-          .sort();
-        const uniqueDates = [...new Set(dates)].sort();
+      // Process each quiz
+      quizResults.forEach((quiz) => {
+        // Calculate percentage
+        let percentage = parseFloat(quiz.percentage) || 0;
+        if (percentage === 0 && quiz.score && quiz.total_questions) {
+          percentage = Math.round((quiz.score / quiz.total_questions) * 100);
+        }
 
-        if (uniqueDates.length > 0) {
-          const today = new Date().toISOString().split("T")[0];
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = yesterday.toISOString().split("T")[0];
-          const lastDate = uniqueDates[uniqueDates.length - 1];
+        // Add to totals
+        totalScore += percentage;
+        totalPoints += quiz.points || Math.floor(percentage / 10) || 0;
+        bestScore = Math.max(bestScore, percentage);
+        if (percentage === 100) perfectScores++;
+      });
 
-          if (lastDate === today || lastDate === yesterdayStr) {
-            streakCount = 1;
-            let currentDate = new Date(lastDate);
-            for (let i = uniqueDates.length - 2; i >= 0; i--) {
-              const prevDate = new Date(uniqueDates[i]);
-              const diffDays = Math.floor(
-                (currentDate - prevDate) / (1000 * 60 * 60 * 24),
-              );
-              if (diffDays === 1) {
-                streakCount++;
-                currentDate = prevDate;
-              } else {
-                break;
-              }
+      // Calculate average
+      const averageScore = Math.round(totalScore / totalQuizzes);
+
+      // Calculate streak (consecutive days)
+      const dates = quizResults
+        .map((q) => new Date(q.created_at).toISOString().split("T")[0])
+        .sort();
+      const uniqueDates = [...new Set(dates)].sort();
+
+      console.log("📊 Unique dates:", uniqueDates);
+
+      if (uniqueDates.length > 0) {
+        const today = new Date().toISOString().split("T")[0];
+        const lastDate = uniqueDates[uniqueDates.length - 1];
+
+        // Check if last quiz was today or yesterday
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+        if (lastDate === today || lastDate === yesterdayStr) {
+          streak = 1;
+          // Count backward
+          let currentDate = new Date(lastDate);
+          for (let i = uniqueDates.length - 2; i >= 0; i--) {
+            const prevDate = new Date(uniqueDates[i]);
+            const diffDays = Math.floor(
+              (currentDate - prevDate) / (1000 * 60 * 60 * 24),
+            );
+            if (diffDays === 1) {
+              streak++;
+              currentDate = prevDate;
+            } else {
+              break;
             }
           }
         }
-
-        console.log("📊 Calculated stats:", {
-          totalQuizzes: quizResults.length,
-          totalPoints: points,
-          averageScore: avg,
-          streak: streakCount,
-          bestScore: best,
-          perfectScores: perfect,
-        });
-
-        setTotalQuizzes(quizResults.length);
-        setTotalPoints(points);
-        setAverageScore(avg);
-        setStreak(streakCount);
-        setBestScore(best);
-        setPerfectScores(perfect);
-
-        // Update users table
-        await supabase
-          .from("users")
-          .update({
-            stats: {
-              total_quizzes: quizResults.length,
-              total_points: points,
-              average_score: avg,
-              streak: streakCount,
-              best_score: best,
-              perfect_scores: perfect,
-              last_quiz_date: new Date().toISOString(),
-            },
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", currentUser.id);
-      } else {
-        // No quizzes, reset stats
-        setTotalQuizzes(0);
-        setTotalPoints(0);
-        setAverageScore(0);
-        setStreak(0);
-        setBestScore(0);
-        setPerfectScores(0);
       }
 
-      // Get riddles and articles
-      try {
-        const { data: riddlesData } = await supabase
-          .from("riddle_history")
-          .select("*")
-          .eq("user_id", currentUser.id);
-        setRiddlesSolved(riddlesData?.length || 0);
-      } catch (e) {
-        setRiddlesSolved(0);
-      }
+      console.log("📊 Calculated:", {
+        totalQuizzes,
+        totalPoints,
+        averageScore,
+        streak,
+        bestScore,
+        perfectScores,
+      });
 
-      try {
-        const { data: articlesData } = await supabase
-          .from("article_history")
-          .select("*")
-          .eq("user_id", currentUser.id);
-        setReadArticles(articlesData?.length || 0);
-      } catch (e) {
-        setReadArticles(0);
-      }
+      // Update stats
+      setStats({
+        totalQuizzes,
+        totalPoints,
+        averageScore,
+        streak,
+        bestScore,
+        perfectScores,
+        riddlesSolved: 0,
+        readArticles: 0,
+      });
+
+      // Update users table
+      await supabase
+        .from("users")
+        .update({
+          stats: {
+            total_quizzes: totalQuizzes,
+            total_points: totalPoints,
+            average_score: averageScore,
+            streak: streak,
+            best_score: bestScore,
+            perfect_scores: perfectScores,
+            last_quiz_date: new Date().toISOString(),
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", currentUser.id);
     } catch (error) {
       console.error("❌ Error:", error);
     }
@@ -222,17 +217,16 @@ const Dashboard = () => {
         .limit(5);
 
       if (!error && data) {
-        console.log(`📊 Recent activity: ${data.length} items`);
+        console.log("📊 Recent activity:", data);
         setRecentActivity(data);
       }
     } catch (error) {
-      console.error("❌ Error loading recent activity:", error);
+      console.error("❌ Error:", error);
     }
   };
 
   const refreshDashboard = async () => {
     setRefreshing(true);
-    console.log("🔄 Manual refresh triggered");
     await loadDashboardData();
     setRefreshing(false);
   };
@@ -264,8 +258,7 @@ const Dashboard = () => {
                 onClick={() => navigate("/auth")}
                 className="px-5 sm:px-6 py-2.5 sm:py-3 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
               >
-                Get Started
-                <ArrowRight className="w-4 h-4" />
+                Get Started <ArrowRight className="w-4 h-4" />
               </button>
               <button
                 onClick={() => navigate("/categories")}
@@ -292,7 +285,10 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12">
+    <div
+      key={renderKey}
+      className="max-w-6xl mx-auto space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12"
+    >
       {/* Welcome Header */}
       <div className="glass-card p-5 sm:p-6 md:p-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
@@ -304,8 +300,8 @@ const Dashboard = () => {
               </span>
             </h1>
             <p className="text-gray-400 text-xs sm:text-sm mt-1">
-              {streak > 0
-                ? `🔥 You're on a ${streak}-day learning streak!`
+              {stats.streak > 0
+                ? `🔥 You're on a ${stats.streak}-day learning streak!`
                 : "Ready to learn something new today?"}
             </p>
           </div>
@@ -322,26 +318,22 @@ const Dashboard = () => {
             </button>
             <button
               onClick={() => navigate("/categories")}
-              className="px-4 py-2 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors text-sm flex items-center gap-2"
+              className="px-4 py-2 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors text-sm flex items-center gap-2 whitespace-nowrap"
             >
-              <Play className="w-4 h-4" />
-              Start Learning
+              <Play className="w-4 h-4" /> Start Learning
             </button>
           </div>
         </div>
       </div>
 
-      {/* Stats Grid - Using the simple state variables */}
-      <div
-        key={`stats-${updateCounter}`}
-        className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4"
-      >
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="glass-card p-3 sm:p-4 text-center">
           <div className="flex items-center justify-center gap-1 text-yellow-400">
             <Trophy className="w-4 h-4" />
           </div>
           <div className="text-lg sm:text-xl md:text-2xl font-bold text-white mt-1">
-            {totalPoints}
+            {stats.totalPoints}
           </div>
           <div className="text-[10px] sm:text-xs text-gray-400">
             Total Points
@@ -352,7 +344,7 @@ const Dashboard = () => {
             <Flame className="w-4 h-4" />
           </div>
           <div className="text-lg sm:text-xl md:text-2xl font-bold text-white mt-1">
-            {streak}
+            {stats.streak}
           </div>
           <div className="text-[10px] sm:text-xs text-gray-400">Day Streak</div>
         </div>
@@ -361,7 +353,7 @@ const Dashboard = () => {
             <Brain className="w-4 h-4" />
           </div>
           <div className="text-lg sm:text-xl md:text-2xl font-bold text-white mt-1">
-            {totalQuizzes}
+            {stats.totalQuizzes}
           </div>
           <div className="text-[10px] sm:text-xs text-gray-400">
             Quizzes Taken
@@ -372,7 +364,7 @@ const Dashboard = () => {
             <Target className="w-4 h-4" />
           </div>
           <div className="text-lg sm:text-xl md:text-2xl font-bold text-white mt-1">
-            {averageScore}%
+            {stats.averageScore}%
           </div>
           <div className="text-[10px] sm:text-xs text-gray-400">Avg Score</div>
         </div>
@@ -440,8 +432,7 @@ const Dashboard = () => {
       {recentActivity.length > 0 && (
         <div className="glass-card p-4 sm:p-6">
           <h3 className="text-white font-semibold mb-3 flex items-center gap-2 text-sm sm:text-base">
-            <Clock className="w-4 h-4 text-gray-400" />
-            Recent Activity
+            <Clock className="w-4 h-4 text-gray-400" /> Recent Activity
           </h3>
           <div className="space-y-1.5 sm:space-y-2">
             {recentActivity.map((activity, index) => (
@@ -472,8 +463,7 @@ const Dashboard = () => {
         <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
           <div className="flex-1 text-center sm:text-left">
             <h3 className="text-white font-semibold text-sm sm:text-base flex items-center gap-2 justify-center sm:justify-start">
-              <Sparkles className="w-4 h-4 text-yellow-400" />
-              Daily Challenge
+              <Sparkles className="w-4 h-4 text-yellow-400" /> Daily Challenge
             </h3>
             <p className="text-gray-400 text-xs sm:text-sm mt-1">
               Complete a quiz today to maintain your streak!
@@ -483,8 +473,7 @@ const Dashboard = () => {
             onClick={() => navigate("/categories")}
             className="px-4 py-2 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors text-sm flex items-center gap-2 w-full sm:w-auto justify-center"
           >
-            Take Challenge
-            <ChevronRight className="w-4 h-4" />
+            Take Challenge <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
