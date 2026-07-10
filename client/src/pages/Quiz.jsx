@@ -282,18 +282,15 @@ const Quiz = () => {
     if (!isAnswered && !isFinishing) {
       setIsAnswered(true);
       console.log("⏰ Time's up!");
-      // Save empty answer for timeout
       const updatedAnswers = { ...answers, [currentIndex]: null };
       setAnswers(updatedAnswers);
       setTimeout(() => handleNext(updatedAnswers), 1200);
     }
   };
 
-  // ✅ FIXED: handleAnswerSelect - properly saves answers and handles last question
   const handleAnswerSelect = (answer) => {
     if (isAnswered || isFinishing) return;
 
-    // ✅ Save the answer immediately
     const updatedAnswers = { ...answers, [currentIndex]: answer };
     setAnswers(updatedAnswers);
     setSelectedAnswer(answer);
@@ -304,18 +301,15 @@ const Quiz = () => {
       `${isCorrect ? "✅" : "❌"} Question ${currentIndex + 1}: ${isCorrect ? "Correct!" : "Wrong"}`
     );
 
-    // ✅ Check if this is the last question
     if (currentIndex === questions.length - 1) {
       console.log("🏁 Last question answered! Finishing quiz...");
       setIsFinishing(true);
       setTimeout(() => {
-        // Make sure we use the updated answers
         setAnswers(updatedAnswers);
         console.log("📝 Final answers before finish:", updatedAnswers);
         finishQuiz(updatedAnswers);
       }, 1200);
     } else {
-      // Move to next question
       setTimeout(() => handleNext(updatedAnswers), 1200);
     }
   };
@@ -327,7 +321,6 @@ const Quiz = () => {
       setIsAnswered(false);
       setTimeLeft(30);
     } else {
-      // If we get here via timeout or other means, finish the quiz
       if (!isFinishing) {
         setIsFinishing(true);
         console.log("🏁 handleNext called on last question, finishing...");
@@ -360,18 +353,15 @@ const Quiz = () => {
     setIsFinishing(false);
   };
 
-  // ✅ FIXED: finishQuiz - properly calculates and saves results
   const finishQuiz = async (finalAnswers) => {
-    // Prevent double execution
     if (quizComplete) {
       console.log("⚠️ Quiz already complete, skipping...");
       return;
     }
 
-    // Use the passed in answers or the current state
     const currentAnswers = finalAnswers || answers;
     
-    // ✅ Ensure all questions have an answer
+    // Ensure all questions have an answer
     const completedAnswers = { ...currentAnswers };
     for (let i = 0; i < questions.length; i++) {
       if (completedAnswers[i] === undefined) {
@@ -403,13 +393,10 @@ const Quiz = () => {
       }
     });
 
-    // Calculate percentage correctly
     const percentage = Math.round((correct / questions.length) * 100);
     const timeTaken = Math.floor((Date.now() - quizStartTime) / 1000);
 
-    console.log(
-      `📊 Results: ${correct}/${questions.length} correct = ${percentage}%`
-    );
+    console.log(`📊 Results: ${correct}/${questions.length} correct = ${percentage}%`);
     console.log(`📊 Answered: ${answeredCount}/${questions.length} questions`);
 
     // Save to session storage first (for results page)
@@ -426,10 +413,9 @@ const Quiz = () => {
 
     sessionStorage.setItem("quizResults", JSON.stringify(resultData));
 
-    // If user is logged in, save to database
     if (user) {
       try {
-        // Save quiz result with correct percentage
+        // ✅ Save quiz result with correct data
         const quizData = {
           user_id: user.id,
           category: categoryInfo?.name || "General Knowledge",
@@ -438,6 +424,7 @@ const Quiz = () => {
           correct_answers: correct,
           percentage: parseFloat(percentage.toFixed(2)),
           time_taken: timeTaken,
+          points: Math.floor(percentage / 10), // Points based on percentage
           answers: completedAnswers,
         };
 
@@ -453,9 +440,128 @@ const Quiz = () => {
           console.log("✅ Quiz saved with score:", percentage);
         }
 
-        // ... rest of the stats update code (keep as is)
-        // (The stats update code remains the same as before)
+        // Get current user stats
+        const { data: userData, error: userError } = await supabase
+          .from("users")
+          .select("stats")
+          .eq("id", user.id)
+          .single();
 
+        if (userError && userError.code !== "PGRST116") {
+          console.error("Error fetching user stats:", userError);
+        }
+
+        const currentStats = userData?.stats || {};
+
+        // Calculate new stats
+        const totalQuizzes = (currentStats.total_quizzes || 0) + 1;
+        const totalScore = (currentStats.total_score || 0) + percentage;
+        const bestScore = Math.max(currentStats.best_score || 0, percentage);
+        const averageScore = Math.round(totalScore / totalQuizzes);
+        const totalPoints = (currentStats.total_points || 0) + Math.floor(percentage / 10);
+        const perfectScores = (currentStats.perfect_scores || 0) + (percentage === 100 ? 1 : 0);
+
+        // Update streak
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        const lastQuizDate = currentStats.last_quiz_date
+          ? new Date(currentStats.last_quiz_date)
+          : null;
+        let streak = currentStats.streak || 0;
+
+        if (lastQuizDate) {
+          const lastDate = new Date(lastQuizDate);
+          lastDate.setHours(0, 0, 0, 0);
+
+          if (lastDate.getTime() === yesterday.getTime()) {
+            streak = streak + 1;
+          } else if (lastDate.getTime() === today.getTime()) {
+            // Already played today, keep streak
+          } else {
+            streak = 1;
+          }
+        } else {
+          streak = 1;
+        }
+
+        const updatedStats = {
+          total_quizzes: totalQuizzes,
+          best_score: bestScore,
+          average_score: averageScore,
+          total_points: totalPoints,
+          streak: streak,
+          perfect_scores: perfectScores,
+          riddles_solved: currentStats.riddles_solved || 0,
+          read_articles: currentStats.read_articles || 0,
+          total_time: (currentStats.total_time || 0) + timeTaken,
+          last_quiz_date: new Date().toISOString(),
+        };
+
+        const { error: updateError } = await supabase
+          .from("users")
+          .update({
+            stats: updatedStats,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", user.id);
+
+        if (updateError) {
+          console.error("❌ Error updating stats:", updateError);
+        } else {
+          console.log("✅ Stats updated:", updatedStats);
+        }
+
+        // Update leaderboard
+        try {
+          const username =
+            user.user_metadata?.name ||
+            user.user_metadata?.full_name ||
+            user.email?.split("@")[0] ||
+            "User";
+
+          const { data: existingEntry, error: checkError } = await supabase
+            .from("leaderboard")
+            .select("score")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (existingEntry) {
+            if (percentage > existingEntry.score) {
+              await supabase
+                .from("leaderboard")
+                .update({
+                  score: percentage,
+                  username: username,
+                  category: categoryInfo?.name || "General Knowledge",
+                })
+                .eq("user_id", user.id);
+            }
+          } else {
+            await supabase.from("leaderboard").insert({
+              user_id: user.id,
+              username: username,
+              score: percentage,
+              category: categoryInfo?.name || "General Knowledge",
+            });
+          }
+        } catch (lbError) {
+          console.error("❌ Leaderboard error:", lbError);
+        }
+
+        setStats({
+          totalQuizzes: totalQuizzes,
+          bestScore: bestScore,
+          averageScore: averageScore,
+          totalPoints: totalPoints,
+          streak: streak,
+          riddlesSolved: currentStats.riddles_solved || 0,
+          readArticles: currentStats.read_articles || 0,
+          totalTime: (currentStats.total_time || 0) + timeTaken,
+          perfectScores: perfectScores,
+        });
       } catch (error) {
         console.error("❌ Save error:", error);
       }
