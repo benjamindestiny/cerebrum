@@ -47,6 +47,7 @@ const Dashboard = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [updateKey, setUpdateKey] = useState(0); // Force re-render
 
   // Load data on mount, location change, and user change
   useEffect(() => {
@@ -87,20 +88,23 @@ const Dashboard = () => {
     };
   }, [currentUser]);
 
-  const loadDashboardData = useCallback(async () => {
+  const loadDashboardData = async () => {
     try {
       console.log("📊 Loading dashboard data...");
       setLoadingStats(true);
-      await Promise.all([loadUserStats(), loadRecentActivity()]);
+      await loadUserStats();
+      await loadRecentActivity();
+      // Force re-render after data is loaded
+      setUpdateKey(prev => prev + 1);
       console.log("✅ Dashboard data loaded");
     } catch (error) {
       console.error("❌ Error loading dashboard data:", error);
     } finally {
       setLoadingStats(false);
     }
-  }, [currentUser]);
+  };
 
-  const loadUserStats = useCallback(async () => {
+  const loadUserStats = async () => {
     try {
       if (!currentUser) {
         console.log("⚠️ No current user");
@@ -195,7 +199,7 @@ const Dashboard = () => {
           .eq("user_id", currentUser.id);
         riddlesSolved = riddlesData?.length || 0;
       } catch (e) {
-        console.log("Riddle history table not found, skipping");
+        // Table doesn't exist, ignore
       }
 
       try {
@@ -205,7 +209,7 @@ const Dashboard = () => {
           .eq("user_id", currentUser.id);
         readArticles = articlesData?.length || 0;
       } catch (e) {
-        console.log("Article history table not found, skipping");
+        // Table doesn't exist, ignore
       }
 
       // Create new stats object
@@ -257,9 +261,9 @@ const Dashboard = () => {
     } catch (error) {
       console.error("❌ Error loading user stats:", error);
     }
-  }, [currentUser]);
+  };
 
-  const loadRecentActivity = useCallback(async () => {
+  const loadRecentActivity = async () => {
     try {
       if (!currentUser) return;
 
@@ -277,7 +281,7 @@ const Dashboard = () => {
     } catch (error) {
       console.error("❌ Error loading recent activity:", error);
     }
-  }, [currentUser]);
+  };
 
   const refreshDashboard = async () => {
     setRefreshing(true);
@@ -383,6 +387,7 @@ const Dashboard = () => {
     );
   }
 
+  // Show current stats
   return (
     <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12">
       {/* Welcome Header with Refresh Button */}
@@ -421,8 +426,8 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Stats Grid - Force re-render with key */}
-      <div key={`stats-${stats.totalQuizzes}-${stats.totalPoints}`} className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      {/* Stats Grid with updateKey to force re-render */}
+      <div key={`stats-${updateKey}`} className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="glass-card p-3 sm:p-4 text-center">
           <div className="flex items-center justify-center gap-1 text-yellow-400">
             <Trophy className="w-4 h-4" />
