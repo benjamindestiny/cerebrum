@@ -14,6 +14,7 @@ import {
   Award,
   Flame,
   Star,
+  Mail,
   Sparkles,
   Loader2,
   ChevronRight,
