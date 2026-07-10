@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import Layout from "./components/Layout/Layout";
 import Home from "./pages/Home";
+import AdminSubscribers from './pages/AdminSubscribers';
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Quiz from "./pages/Quiz";
@@ -68,6 +69,7 @@ function App() {
             <Route path="/admin/email" element={<AdminEmail />} />
             <Route path="/admin/weekly-report" element={<AdminWeeklyReport />} />
             <Route path="donate" element={<Donate />} />
+            <Route path="/admin/subscribers" element={<AdminSubscribers />} />
             <Route path="categories" element={<Categories />} />
             <Route path="leaderboard" element={<Leaderboard />} />
             <Route path="riddles" element={<Riddles />} />
