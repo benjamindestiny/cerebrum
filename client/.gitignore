@@ -58,3 +58,13 @@ coverage/
 tmp/
 temp/
 .cache/
+
+# Backup files
+*.backup
+*.bak
+*.swp
+
+# Package manager
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
