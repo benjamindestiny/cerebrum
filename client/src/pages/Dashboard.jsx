@@ -46,7 +46,7 @@ const Dashboard = () => {
     try {
       console.log("📊 Loading dashboard for user:", currentUser.id);
 
-      // Get quiz results from the database
+      // Get quiz results
       const { data: quizResults, error } = await supabase
         .from("quiz_results")
         .select("*")
@@ -54,7 +54,7 @@ const Dashboard = () => {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("❌ Error fetching quiz results:", error);
+        console.error("❌ Error fetching:", error);
         setLoadingStats(false);
         return;
       }
@@ -62,7 +62,6 @@ const Dashboard = () => {
       console.log(`📊 Found ${quizResults?.length || 0} quiz results`);
 
       if (!quizResults || quizResults.length === 0) {
-        // No quiz results, set everything to 0
         setStats({
           totalQuizzes: 0,
           totalPoints: 0,
@@ -96,7 +95,7 @@ const Dashboard = () => {
 
       const averageScore = Math.round(totalScore / totalQuizzes);
 
-      // Calculate streak from quiz dates
+      // Calculate streak
       let streak = 0;
       const dates = quizResults
         .map((q) => new Date(q.created_at).toISOString().split("T")[0])
@@ -138,33 +137,6 @@ const Dashboard = () => {
       console.log("📊 Stats calculated:", newStats);
       setStats(newStats);
       setRecentActivity(quizResults.slice(0, 5));
-
-      // Update users table with stats
-      try {
-        const { error: updateError } = await supabase
-          .from("users")
-          .update({
-            stats: {
-              total_quizzes: totalQuizzes,
-              total_points: totalPoints,
-              average_score: averageScore,
-              streak: streak,
-              best_score: bestScore,
-              perfect_scores: perfectScores,
-              last_quiz_date: new Date().toISOString(),
-            },
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", currentUser.id);
-
-        if (updateError) {
-          console.error("❌ Error updating user stats:", updateError);
-        } else {
-          console.log("✅ User stats updated in database");
-        }
-      } catch (updateError) {
-        console.error("❌ Update error:", updateError);
-      }
     } catch (error) {
       console.error("❌ Error loading dashboard:", error);
     } finally {
@@ -184,7 +156,7 @@ const Dashboard = () => {
     setRefreshing(false);
   };
 
-  // Public Dashboard (not logged in)
+  // Public Dashboard
   if (!currentUser && !loading) {
     return (
       <div className="max-w-6xl mx-auto space-y-6 px-3 sm:px-4 pb-12">
@@ -238,7 +210,6 @@ const Dashboard = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12">
-      {/* Welcome Header */}
       <div className="glass-card p-5 sm:p-6 md:p-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div>
@@ -275,7 +246,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="glass-card p-3 sm:p-4 text-center">
           <Trophy className="w-5 h-5 text-yellow-400 mx-auto mb-1" />
@@ -311,7 +281,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <button
           onClick={() => navigate("/categories")}
@@ -355,7 +324,6 @@ const Dashboard = () => {
         </button>
       </div>
 
-      {/* Recent Activity */}
       {recentActivity.length > 0 && (
         <div className="glass-card p-4 sm:p-6">
           <h3 className="text-white font-semibold mb-3 flex items-center gap-2 text-sm sm:text-base">
@@ -385,7 +353,6 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Daily Challenge */}
       <div className="glass-card p-4 sm:p-6 border border-[#7c3aed]/20 bg-[#7c3aed]/5">
         <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
           <div className="flex-1 text-center sm:text-left">
