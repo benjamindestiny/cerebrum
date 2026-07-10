@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -8,10 +8,8 @@ import {
   Target,
   BookOpen,
   Users,
-  Calendar,
   Clock,
   ArrowRight,
-  TrendingUp,
   Award,
   Flame,
   Star,
@@ -30,26 +28,22 @@ const Dashboard = () => {
   const location = useLocation();
   const { currentUser, loading } = useAuth();
 
-  // Single state object for all stats
-  const [dashboardData, setDashboardData] = useState({
-    totalQuizzes: 0,
-    totalPoints: 0,
-    averageScore: 0,
-    streak: 0,
-    bestScore: 0,
-    riddlesSolved: 0,
-    readArticles: 0,
-    totalTime: 0,
-    perfectScores: 0,
-  });
-
+  // Simple state
+  const [totalQuizzes, setTotalQuizzes] = useState(0);
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [averageScore, setAverageScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [bestScore, setBestScore] = useState(0);
+  const [riddlesSolved, setRiddlesSolved] = useState(0);
+  const [readArticles, setReadArticles] = useState(0);
+  const [perfectScores, setPerfectScores] = useState(0);
   const [recentActivity, setRecentActivity] = useState([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingStats, setLoadingStats] = useState(true);
-  const [renderKey, setRenderKey] = useState(0);
+  const [updateCounter, setUpdateCounter] = useState(0);
 
-  // Load data on mount, location change, and user change
+  // Force reload on location change
   useEffect(() => {
     if (!loading) {
       setIsAuthenticated(!!currentUser);
@@ -60,50 +54,17 @@ const Dashboard = () => {
     }
   }, [currentUser, loading, location.key]);
 
-  // Real-time subscription for quiz results
-  useEffect(() => {
-    if (!currentUser) return;
-
-    console.log(
-      "📡 Setting up real-time subscription for user:",
-      currentUser.id,
-    );
-
-    const subscription = supabase
-      .channel("dashboard_updates")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "quiz_results",
-          filter: `user_id=eq.${currentUser.id}`,
-        },
-        () => {
-          console.log("🔄 New quiz result detected! Refreshing dashboard...");
-          loadDashboardData();
-        },
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [currentUser]);
-
   const loadDashboardData = async () => {
     try {
-      console.log("📊 Loading dashboard data...");
       setLoadingStats(true);
-
-      // Load stats and activity
       await loadUserStats();
       await loadRecentActivity();
-
       // Force re-render
-      setRenderKey((prev) => prev + 1);
-
-      console.log("✅ Dashboard data loaded");
+      setUpdateCounter((prev) => prev + 1);
+      console.log(
+        "✅ Dashboard data loaded, updateCounter:",
+        updateCounter + 1,
+      );
     } catch (error) {
       console.error("❌ Error loading dashboard data:", error);
     } finally {
@@ -113,58 +74,45 @@ const Dashboard = () => {
 
   const loadUserStats = async () => {
     try {
-      if (!currentUser) {
-        console.log("⚠️ No current user");
-        return;
-      }
+      if (!currentUser) return;
 
-      console.log("📊 Fetching quiz results for user:", currentUser.id);
+      console.log("📊 Fetching quiz results...");
 
-      // Get all quiz results
-      const { data: quizResults, error: quizError } = await supabase
+      const { data: quizResults, error } = await supabase
         .from("quiz_results")
         .select("*")
         .eq("user_id", currentUser.id);
 
-      if (quizError) {
-        console.error("❌ Error fetching quiz results:", quizError);
+      if (error) {
+        console.error("❌ Error:", error);
         return;
       }
 
       console.log(`📊 Found ${quizResults?.length || 0} quiz results`);
 
-      // Calculate stats from quiz results
-      let totalQuizzes = quizResults?.length || 0;
-      let totalPoints = 0;
-      let totalScore = 0;
-      let bestScore = 0;
-      let perfectScores = 0;
-      let totalTime = 0;
-
       if (quizResults && quizResults.length > 0) {
+        let points = 0;
+        let totalScore = 0;
+        let best = 0;
+        let perfect = 0;
+        let totalTime = 0;
+
         quizResults.forEach((quiz) => {
           let percentage = parseFloat(quiz.percentage) || 0;
           if (percentage === 0 && quiz.score && quiz.total_questions) {
             percentage = Math.round((quiz.score / quiz.total_questions) * 100);
           }
-          if (percentage === 0 && quiz.score) {
-            percentage = Math.round(quiz.score);
-          }
-
           totalScore += percentage;
-          totalPoints += quiz.points || Math.floor(percentage / 10);
-          bestScore = Math.max(bestScore, percentage);
-          if (percentage === 100) perfectScores++;
+          points += quiz.points || Math.floor(percentage / 10);
+          best = Math.max(best, percentage);
+          if (percentage === 100) perfect++;
           totalTime += quiz.time_taken || 0;
         });
-      }
 
-      const averageScore =
-        totalQuizzes > 0 ? Math.round(totalScore / totalQuizzes) : 0;
+        const avg = Math.round(totalScore / quizResults.length);
 
-      // Calculate streak from quiz dates
-      let streak = 0;
-      if (quizResults && quizResults.length > 0) {
+        // Calculate streak
+        let streakCount = 0;
         const dates = quizResults
           .map((q) => new Date(q.created_at).toISOString().split("T")[0])
           .sort();
@@ -178,7 +126,7 @@ const Dashboard = () => {
           const lastDate = uniqueDates[uniqueDates.length - 1];
 
           if (lastDate === today || lastDate === yesterdayStr) {
-            streak = 1;
+            streakCount = 1;
             let currentDate = new Date(lastDate);
             for (let i = uniqueDates.length - 2; i >= 0; i--) {
               const prevDate = new Date(uniqueDates[i]);
@@ -186,7 +134,7 @@ const Dashboard = () => {
                 (currentDate - prevDate) / (1000 * 60 * 60 * 24),
               );
               if (diffDays === 1) {
-                streak++;
+                streakCount++;
                 currentDate = prevDate;
               } else {
                 break;
@@ -194,20 +142,58 @@ const Dashboard = () => {
             }
           }
         }
+
+        console.log("📊 Calculated stats:", {
+          totalQuizzes: quizResults.length,
+          totalPoints: points,
+          averageScore: avg,
+          streak: streakCount,
+          bestScore: best,
+          perfectScores: perfect,
+        });
+
+        setTotalQuizzes(quizResults.length);
+        setTotalPoints(points);
+        setAverageScore(avg);
+        setStreak(streakCount);
+        setBestScore(best);
+        setPerfectScores(perfect);
+
+        // Update users table
+        await supabase
+          .from("users")
+          .update({
+            stats: {
+              total_quizzes: quizResults.length,
+              total_points: points,
+              average_score: avg,
+              streak: streakCount,
+              best_score: best,
+              perfect_scores: perfect,
+              last_quiz_date: new Date().toISOString(),
+            },
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", currentUser.id);
+      } else {
+        // No quizzes, reset stats
+        setTotalQuizzes(0);
+        setTotalPoints(0);
+        setAverageScore(0);
+        setStreak(0);
+        setBestScore(0);
+        setPerfectScores(0);
       }
 
-      // Get riddles and articles (ignore 404 errors)
-      let riddlesSolved = 0;
-      let readArticles = 0;
-
+      // Get riddles and articles
       try {
         const { data: riddlesData } = await supabase
           .from("riddle_history")
           .select("*")
           .eq("user_id", currentUser.id);
-        riddlesSolved = riddlesData?.length || 0;
+        setRiddlesSolved(riddlesData?.length || 0);
       } catch (e) {
-        // Table doesn't exist, ignore
+        setRiddlesSolved(0);
       }
 
       try {
@@ -215,59 +201,12 @@ const Dashboard = () => {
           .from("article_history")
           .select("*")
           .eq("user_id", currentUser.id);
-        readArticles = articlesData?.length || 0;
+        setReadArticles(articlesData?.length || 0);
       } catch (e) {
-        // Table doesn't exist, ignore
-      }
-
-      // Create new stats object
-      const newStats = {
-        totalQuizzes,
-        totalPoints,
-        averageScore,
-        streak,
-        bestScore,
-        riddlesSolved,
-        readArticles,
-        totalTime,
-        perfectScores,
-      };
-
-      console.log("📊 New stats calculated:", newStats);
-
-      // ✅ Update state with new values
-      setDashboardData(newStats);
-
-      // Update users table with stats
-      const updatedStats = {
-        total_quizzes: totalQuizzes,
-        total_points: totalPoints,
-        average_score: averageScore,
-        streak: streak,
-        best_score: bestScore,
-        riddles_solved: riddlesSolved,
-        read_articles: readArticles,
-        total_time: totalTime,
-        perfect_scores: perfectScores,
-        last_quiz_date:
-          quizResults?.length > 0 ? new Date().toISOString() : null,
-      };
-
-      const { error: updateError } = await supabase
-        .from("users")
-        .update({
-          stats: updatedStats,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", currentUser.id);
-
-      if (updateError) {
-        console.error("❌ Error updating user stats:", updateError);
-      } else {
-        console.log("✅ User stats updated in database");
+        setReadArticles(0);
       }
     } catch (error) {
-      console.error("❌ Error loading user stats:", error);
+      console.error("❌ Error:", error);
     }
   };
 
@@ -298,10 +237,10 @@ const Dashboard = () => {
     setRefreshing(false);
   };
 
-  // Public Dashboard for non-authenticated users
+  // Public Dashboard
   if (!isAuthenticated) {
     return (
-      <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 px-3 sm:px-4 pb-12">
+      <div className="max-w-6xl mx-auto space-y-6 px-3 sm:px-4 pb-12">
         <div className="glass-card p-6 sm:p-8 md:p-12 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -318,7 +257,7 @@ const Dashboard = () => {
             </h1>
             <p className="text-gray-400 text-sm sm:text-base md:text-lg max-w-2xl mx-auto">
               Challenge your mind with interactive quizzes, riddles, and brain
-              teasers. Sign up to track your progress and compete with others!
+              teasers.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-3 sm:pt-4">
               <button
@@ -337,80 +276,10 @@ const Dashboard = () => {
             </div>
           </motion.div>
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-          <div className="glass-card p-4 sm:p-6 text-center hover:border-[#7c3aed]/30 transition-all">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-400/10 flex items-center justify-center mx-auto mb-2 sm:mb-3">
-              <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
-            </div>
-            <h3 className="text-white font-semibold text-sm sm:text-base">
-              Interactive Quizzes
-            </h3>
-            <p className="text-gray-400 text-xs sm:text-sm mt-1">
-              Test your knowledge across various subjects
-            </p>
-          </div>
-          <div className="glass-card p-4 sm:p-6 text-center hover:border-[#7c3aed]/30 transition-all">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-purple-400/10 flex items-center justify-center mx-auto mb-2 sm:mb-3">
-              <Puzzle className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" />
-            </div>
-            <h3 className="text-white font-semibold text-sm sm:text-base">
-              Brain Teasers
-            </h3>
-            <p className="text-gray-400 text-xs sm:text-sm mt-1">
-              Solve challenging riddles and puzzles
-            </p>
-          </div>
-          <div className="glass-card p-4 sm:p-6 text-center hover:border-[#7c3aed]/30 transition-all">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-green-400/10 flex items-center justify-center mx-auto mb-2 sm:mb-3">
-              <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
-            </div>
-            <h3 className="text-white font-semibold text-sm sm:text-base">
-              Track Progress
-            </h3>
-            <p className="text-gray-400 text-xs sm:text-sm mt-1">
-              Monitor your scores and achievements
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          <div className="glass-card p-3 sm:p-4 text-center">
-            <div className="text-xl sm:text-2xl font-bold text-[#7c3aed]">
-              50+
-            </div>
-            <div className="text-[10px] sm:text-xs text-gray-400">
-              Quizzes Available
-            </div>
-          </div>
-          <div className="glass-card p-3 sm:p-4 text-center">
-            <div className="text-xl sm:text-2xl font-bold text-yellow-400">
-              100+
-            </div>
-            <div className="text-[10px] sm:text-xs text-gray-400">Riddles</div>
-          </div>
-          <div className="glass-card p-3 sm:p-4 text-center">
-            <div className="text-xl sm:text-2xl font-bold text-green-400">
-              10+
-            </div>
-            <div className="text-[10px] sm:text-xs text-gray-400">
-              Categories
-            </div>
-          </div>
-          <div className="glass-card p-3 sm:p-4 text-center">
-            <div className="text-xl sm:text-2xl font-bold text-blue-400">
-              500+
-            </div>
-            <div className="text-[10px] sm:text-xs text-gray-400">
-              Active Users
-            </div>
-          </div>
-        </div>
       </div>
     );
   }
 
-  // Authenticated Dashboard
   if (loadingStats) {
     return (
       <div className="max-w-6xl mx-auto flex items-center justify-center min-h-[400px]">
@@ -422,12 +291,9 @@ const Dashboard = () => {
     );
   }
 
-  // Use dashboardData for rendering
-  const stats = dashboardData;
-
   return (
     <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12">
-      {/* Welcome Header with Refresh Button */}
+      {/* Welcome Header */}
       <div className="glass-card p-5 sm:p-6 md:p-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div>
@@ -438,8 +304,8 @@ const Dashboard = () => {
               </span>
             </h1>
             <p className="text-gray-400 text-xs sm:text-sm mt-1">
-              {stats.streak > 0
-                ? `🔥 You're on a ${stats.streak}-day learning streak!`
+              {streak > 0
+                ? `🔥 You're on a ${streak}-day learning streak!`
                 : "Ready to learn something new today?"}
             </p>
           </div>
@@ -456,7 +322,7 @@ const Dashboard = () => {
             </button>
             <button
               onClick={() => navigate("/categories")}
-              className="px-4 py-2 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors text-sm flex items-center gap-2 whitespace-nowrap"
+              className="px-4 py-2 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors text-sm flex items-center gap-2"
             >
               <Play className="w-4 h-4" />
               Start Learning
@@ -465,9 +331,9 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Stats Grid - Force re-render with key */}
+      {/* Stats Grid - Using the simple state variables */}
       <div
-        key={`stats-${renderKey}-${stats.totalQuizzes}-${stats.totalPoints}`}
+        key={`stats-${updateCounter}`}
         className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4"
       >
         <div className="glass-card p-3 sm:p-4 text-center">
@@ -475,7 +341,7 @@ const Dashboard = () => {
             <Trophy className="w-4 h-4" />
           </div>
           <div className="text-lg sm:text-xl md:text-2xl font-bold text-white mt-1">
-            {stats.totalPoints || 0}
+            {totalPoints}
           </div>
           <div className="text-[10px] sm:text-xs text-gray-400">
             Total Points
@@ -486,7 +352,7 @@ const Dashboard = () => {
             <Flame className="w-4 h-4" />
           </div>
           <div className="text-lg sm:text-xl md:text-2xl font-bold text-white mt-1">
-            {stats.streak || 0}
+            {streak}
           </div>
           <div className="text-[10px] sm:text-xs text-gray-400">Day Streak</div>
         </div>
@@ -495,7 +361,7 @@ const Dashboard = () => {
             <Brain className="w-4 h-4" />
           </div>
           <div className="text-lg sm:text-xl md:text-2xl font-bold text-white mt-1">
-            {stats.totalQuizzes || 0}
+            {totalQuizzes}
           </div>
           <div className="text-[10px] sm:text-xs text-gray-400">
             Quizzes Taken
@@ -506,7 +372,7 @@ const Dashboard = () => {
             <Target className="w-4 h-4" />
           </div>
           <div className="text-lg sm:text-xl md:text-2xl font-bold text-white mt-1">
-            {stats.averageScore || 0}%
+            {averageScore}%
           </div>
           <div className="text-[10px] sm:text-xs text-gray-400">Avg Score</div>
         </div>
