@@ -31,7 +31,7 @@ import { useAuth } from "../context/AuthContext";
 const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser, userProfile, loading } = useAuth();
+  const { currentUser, loading } = useAuth();
   const [stats, setStats] = useState({
     totalQuizzes: 0,
     totalPoints: 0,
@@ -62,7 +62,10 @@ const Dashboard = () => {
   useEffect(() => {
     if (!currentUser) return;
 
-    console.log("📡 Setting up real-time subscription for user:", currentUser.id);
+    console.log(
+      "📡 Setting up real-time subscription for user:",
+      currentUser.id,
+    );
 
     const subscription = supabase
       .channel("dashboard_updates")
@@ -105,7 +108,7 @@ const Dashboard = () => {
 
       console.log("📊 Fetching quiz results for user:", currentUser.id);
 
-      // Get quiz results for the current user
+      // ✅ FIRST: Get quiz results
       const { data: quizResults, error: quizError } = await supabase
         .from("quiz_results")
         .select("*")
@@ -118,7 +121,18 @@ const Dashboard = () => {
 
       console.log(`📊 Found ${quizResults?.length || 0} quiz results`);
 
-      // Calculate stats from quiz results
+      // ✅ SECOND: Get user stats from the users table
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("stats")
+        .eq("id", currentUser.id)
+        .single();
+
+      if (userError && userError.code !== "PGRST116") {
+        console.error("❌ Error fetching user stats:", userError);
+      }
+
+      // ✅ THIRD: Calculate stats from quiz results
       let totalQuizzes = 0;
       let totalPoints = 0;
       let totalScore = 0;
@@ -130,7 +144,6 @@ const Dashboard = () => {
         totalQuizzes = quizResults.length;
 
         quizResults.forEach((quiz) => {
-          // Use percentage if available, otherwise calculate from score
           let percentage = parseFloat(quiz.percentage) || 0;
           if (percentage === 0 && quiz.score && quiz.total_questions) {
             percentage = Math.round((quiz.score / quiz.total_questions) * 100);
@@ -138,8 +151,6 @@ const Dashboard = () => {
           if (percentage === 0 && quiz.score) {
             percentage = Math.round(quiz.score);
           }
-
-          console.log(`📊 Quiz: ${quiz.category || 'Unknown'} - ${percentage}%`);
 
           totalScore += percentage;
           totalPoints += quiz.points || Math.floor(percentage / 10);
@@ -149,18 +160,15 @@ const Dashboard = () => {
         });
       }
 
-      // Calculate average score
       const averageScore =
         totalQuizzes > 0 ? Math.round(totalScore / totalQuizzes) : 0;
 
-      // Calculate streak from quiz dates
+      // ✅ FOURTH: Calculate streak
       let streak = 0;
       if (quizResults && quizResults.length > 0) {
-        // Get unique dates
         const dates = quizResults
           .map((q) => new Date(q.created_at).toISOString().split("T")[0])
           .sort();
-
         const uniqueDates = [...new Set(dates)].sort();
 
         if (uniqueDates.length > 0) {
@@ -168,13 +176,10 @@ const Dashboard = () => {
           const yesterday = new Date();
           yesterday.setDate(yesterday.getDate() - 1);
           const yesterdayStr = yesterday.toISOString().split("T")[0];
-
-          // Check if last quiz was today or yesterday
           const lastDate = uniqueDates[uniqueDates.length - 1];
 
           if (lastDate === today || lastDate === yesterdayStr) {
             streak = 1;
-            // Count consecutive days backward
             let currentDate = new Date(lastDate);
             for (let i = uniqueDates.length - 2; i >= 0; i--) {
               const prevDate = new Date(uniqueDates[i]);
@@ -192,23 +197,21 @@ const Dashboard = () => {
         }
       }
 
-      // Get riddles solved count
-      const { data: riddlesData, error: riddlesError } = await supabase
+      // ✅ FIFTH: Get riddles and articles
+      const { data: riddlesData } = await supabase
         .from("riddle_history")
         .select("*")
         .eq("user_id", currentUser.id);
 
-      const riddlesSolved = riddlesError ? 0 : riddlesData?.length || 0;
-
-      // Get articles read count
-      const { data: articlesData, error: articlesError } = await supabase
+      const { data: articlesData } = await supabase
         .from("article_history")
         .select("*")
         .eq("user_id", currentUser.id);
 
-      const readArticles = articlesError ? 0 : articlesData?.length || 0;
+      const riddlesSolved = riddlesData?.length || 0;
+      const readArticles = articlesData?.length || 0;
 
-      // Update stats
+      // ✅ SIXTH: Update stats state
       const newStats = {
         totalQuizzes,
         totalPoints,
@@ -222,81 +225,74 @@ const Dashboard = () => {
       };
 
       console.log("📊 New stats calculated:", newStats);
-
       setStats(newStats);
 
-      // Also update the users table stats
-      await updateUserStats(newStats);
-    } catch (error) {
-      console.error("❌ Error loading user stats:", error);
-    }
-  };
-
-  const updateUserStats = async (newStats) => {
-    try {
-      // Check if user exists in users table
-      const { data: existingUser, error: checkError } = await supabase
-        .from("users")
-        .select("id, stats")
-        .eq("id", currentUser.id)
-        .single();
-
-      if (checkError && checkError.code !== "PGRST116") {
-        console.error("❌ Error checking user:", checkError);
-        return;
-      }
-
-      const currentStats = existingUser?.stats || {};
-
-      // Merge with new stats
-      const updatedStats = {
-        total_quizzes: newStats.totalQuizzes,
-        total_points: newStats.totalPoints,
-        average_score: newStats.averageScore,
-        streak: newStats.streak,
-        best_score: newStats.bestScore,
-        riddles_solved: newStats.riddlesSolved,
-        read_articles: newStats.readArticles,
-        total_time: newStats.totalTime,
-        perfect_scores: newStats.perfectScores,
-        last_quiz_date: new Date().toISOString(),
-      };
-
-      console.log("💾 Updating user stats:", updatedStats);
-
-      let updateError;
-      if (existingUser) {
+      // ✅ SEVENTH: Update users table with stats
+      if (userData) {
         // Update existing user
-        const { error } = await supabase
+        const updatedStats = {
+          total_quizzes: totalQuizzes,
+          total_points: totalPoints,
+          average_score: averageScore,
+          streak: streak,
+          best_score: bestScore,
+          riddles_solved: riddlesSolved,
+          read_articles: readArticles,
+          total_time: totalTime,
+          perfect_scores: perfectScores,
+          last_quiz_date:
+            quizResults?.length > 0 ? new Date().toISOString() : null,
+        };
+
+        const { error: updateError } = await supabase
           .from("users")
           .update({
             stats: updatedStats,
             updated_at: new Date().toISOString(),
           })
           .eq("id", currentUser.id);
-        updateError = error;
-      } else {
-        // Insert new user
-        const { error } = await supabase
-          .from("users")
-          .insert({
-            id: currentUser.id,
-            name: currentUser.user_metadata?.name || currentUser.email?.split("@")[0] || "User",
-            email: currentUser.email,
-            stats: updatedStats,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
-        updateError = error;
-      }
 
-      if (updateError) {
-        console.error("❌ Error updating user stats:", updateError);
+        if (updateError) {
+          console.error("❌ Error updating user stats:", updateError);
+        } else {
+          console.log("✅ User stats updated in database");
+        }
       } else {
-        console.log("✅ User stats updated successfully");
+        // Create new user entry
+        const newUserStats = {
+          total_quizzes: totalQuizzes,
+          total_points: totalPoints,
+          average_score: averageScore,
+          streak: streak,
+          best_score: bestScore,
+          riddles_solved: riddlesSolved,
+          read_articles: readArticles,
+          total_time: totalTime,
+          perfect_scores: perfectScores,
+          last_quiz_date:
+            quizResults?.length > 0 ? new Date().toISOString() : null,
+        };
+
+        const { error: insertError } = await supabase.from("users").insert({
+          id: currentUser.id,
+          name:
+            currentUser.user_metadata?.name ||
+            currentUser.email?.split("@")[0] ||
+            "User",
+          email: currentUser.email,
+          stats: newUserStats,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+        if (insertError) {
+          console.error("❌ Error creating user:", insertError);
+        } else {
+          console.log("✅ New user created in database");
+        }
       }
     } catch (error) {
-      console.error("❌ Error updating user stats:", error);
+      console.error("❌ Error loading user stats:", error);
     }
   };
 
