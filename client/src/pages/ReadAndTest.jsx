@@ -20,6 +20,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import readingMaterials from "../data/readingMaterials";
+import { supabase } from "../services/supabase";
 
 const ReadAndTest = () => {
   const navigate = useNavigate();
@@ -36,11 +37,84 @@ const ReadAndTest = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedSubcategory, setSelectedSubcategory] = useState("all");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     setMaterials(readingMaterials);
     setFilteredMaterials(readingMaterials);
+    getCurrentUser();
   }, []);
+
+  const getCurrentUser = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    setUser(user);
+  };
+
+  // Save article to history when read
+  const saveArticleToHistory = async (articleId) => {
+    if (!user) return;
+    try {
+      const { data: existing } = await supabase
+        .from("article_history")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("article_id", articleId)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from("article_history")
+          .update({ read_at: new Date().toISOString() })
+          .eq("id", existing.id);
+      } else {
+        await supabase.from("article_history").insert({
+          user_id: user.id,
+          article_id: articleId,
+          read_at: new Date().toISOString(),
+        });
+      }
+
+      await updateUserArticleStats();
+      console.log("✅ Article saved to history:", articleId);
+    } catch (error) {
+      console.error("Error saving article history:", error);
+    }
+  };
+
+  const updateUserArticleStats = async () => {
+    if (!user) return;
+    try {
+      const { data: userData } = await supabase
+        .from("users")
+        .select("stats")
+        .eq("id", user.id)
+        .single();
+
+      const currentStats = userData?.stats || {};
+
+      const { data: articles } = await supabase
+        .from("article_history")
+        .select("id")
+        .eq("user_id", user.id);
+
+      const readArticles = articles?.length || 0;
+
+      const updatedStats = {
+        ...currentStats,
+        read_articles: readArticles,
+      };
+
+      await supabase
+        .from("users")
+        .update({ stats: updatedStats })
+        .eq("id", user.id);
+    } catch (error) {
+      console.error("Error updating article stats:", error);
+    }
+  };
 
   const categories = ["all", ...new Set(materials.map((m) => m.category))];
   const getSubcategories = () => {
@@ -82,29 +156,48 @@ const ReadAndTest = () => {
     setAnswers({});
     setCurrentQuestion(0);
     setShowResults(false);
+    setIsSubmitting(false);
+
+    saveArticleToHistory(material.id);
   };
 
   const startQuiz = () => {
     setCurrentView("quiz");
     setCurrentQuestion(0);
     setAnswers({});
+    setIsSubmitting(false);
   };
 
-  const handleAnswer = (questionIndex, answerIndex) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionIndex]: answerIndex,
-    }));
-  };
+  const handleAnswerSelect = (questionIndex, answerIndex) => {
+    const updatedAnswers = { ...answers, [questionIndex]: answerIndex };
+    setAnswers(updatedAnswers);
 
-  const submitQuiz = () => {
-    let correct = 0;
     const questions = selectedMaterial.questions;
+    const totalQuestions = questions.length;
+
+    if (questionIndex === totalQuestions - 1) {
+      setIsSubmitting(true);
+      setTimeout(() => {
+        submitQuiz(updatedAnswers);
+      }, 800);
+    } else {
+      setTimeout(() => {
+        setCurrentQuestion((prev) => prev + 1);
+      }, 500);
+    }
+  };
+
+  const submitQuiz = (finalAnswers) => {
+    const currentAnswers = finalAnswers || answers;
+    const questions = selectedMaterial.questions;
+    let correct = 0;
+
     questions.forEach((q, index) => {
-      if (answers[index] === q.correct) {
+      if (currentAnswers[index] === q.correct) {
         correct++;
       }
     });
+
     const finalScore = Math.round((correct / questions.length) * 100);
     setScore(finalScore);
     setShowResults(true);
@@ -117,7 +210,7 @@ const ReadAndTest = () => {
       correct,
       total: questions.length,
       questions: questions,
-      answers: answers,
+      answers: currentAnswers,
       title: selectedMaterial.title,
       category: selectedMaterial.category,
       subcategory: selectedMaterial.subcategory,
@@ -146,11 +239,6 @@ const ReadAndTest = () => {
   };
 
   const renderBrowseView = () => {
-    const categoryCounts = {};
-    materials.forEach((m) => {
-      categoryCounts[m.category] = (categoryCounts[m.category] || 0) + 1;
-    });
-
     return (
       <div className="space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
@@ -438,18 +526,16 @@ const ReadAndTest = () => {
                       : {}
                   }
                   onClick={() => {
-                    if (answers[currentQuestion] === undefined) {
-                      handleAnswer(currentQuestion, index);
-                      setTimeout(() => {
-                        if (currentQuestion < totalQuestions - 1) {
-                          setCurrentQuestion((prev) => prev + 1);
-                        } else {
-                          submitQuiz();
-                        }
-                      }, 1000);
+                    if (
+                      answers[currentQuestion] === undefined &&
+                      !isSubmitting
+                    ) {
+                      handleAnswerSelect(currentQuestion, index);
                     }
                   }}
-                  disabled={answers[currentQuestion] !== undefined}
+                  disabled={
+                    answers[currentQuestion] !== undefined || isSubmitting
+                  }
                   className={`w-full text-left px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg transition-all duration-200 text-xs sm:text-sm md:text-base ${
                     answers[currentQuestion] === undefined
                       ? "bg-white/5 hover:bg-white/10 text-gray-300 border border-transparent"

@@ -19,7 +19,7 @@ import {
   Award,
 } from "lucide-react";
 import { supabase } from "../../services/supabase";
-import { useTheme } from "../../hooks/useTheme";
+// import { useTheme } from "../../hooks/useTheme";
 
 const Header = () => {
   const location = useLocation();
@@ -131,7 +131,7 @@ const Header = () => {
 
           {/* Right side */}
           <div className="hidden md:flex items-center gap-2">
-            <button
+            {/* <button
               onClick={toggleTheme}
               className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface-2)]/90 px-3 py-2 text-sm text-[var(--muted)] transition-colors hover:text-[var(--text)]"
               aria-label="Toggle theme"
@@ -142,7 +142,7 @@ const Header = () => {
                 <Moon className="h-4 w-4" />
               )}
               <span>{isDark ? "Light" : "Dark"}</span>
-            </button>
+            </button> */}
             {user ? (
               <div className="flex items-center gap-3">
                 <Link
