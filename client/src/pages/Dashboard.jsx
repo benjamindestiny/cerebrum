@@ -72,16 +72,54 @@ const Dashboard = () => {
 
   const loadUserStats = async () => {
     try {
-      if (!currentUser) return;
+      if (!currentUser) {
+        console.log("⚠️ No current user");
+        return;
+      }
 
-      // Get quiz results
+      console.log("📊 Fetching quiz results for user:", currentUser.id);
+
+      // First, check if the user has any quiz results
+      const { data: checkData, error: checkError } = await supabase
+        .from("quiz_results")
+        .select("id")
+        .eq("user_id", currentUser.id)
+        .limit(1);
+
+      console.log("📊 Check data:", checkData);
+
+      if (checkError) {
+        console.error("❌ Check error:", checkError);
+        setLoadingStats(false);
+        return;
+      }
+
+      if (!checkData || checkData.length === 0) {
+        console.log("📊 No quiz results found, setting stats to 0");
+        setStats({
+          totalQuizzes: 0,
+          totalPoints: 0,
+          averageScore: 0,
+          streak: 0,
+          bestScore: 0,
+          riddlesSolved: 0,
+          readArticles: 0,
+          perfectScores: 0,
+        });
+        setLoadingStats(false);
+        return;
+      }
+
+      // Get all quiz results
       const { data: quizResults, error } = await supabase
         .from("quiz_results")
         .select("*")
-        .eq("user_id", currentUser.id);
+        .eq("user_id", currentUser.id)
+        .order("created_at", { ascending: true });
 
       if (error) {
         console.error("❌ Error fetching:", error);
+        setLoadingStats(false);
         return;
       }
 
@@ -98,6 +136,7 @@ const Dashboard = () => {
           readArticles: 0,
           perfectScores: 0,
         });
+        setLoadingStats(false);
         return;
       }
 
@@ -116,10 +155,14 @@ const Dashboard = () => {
         if (percentage === 0 && quiz.score && quiz.total_questions) {
           percentage = Math.round((quiz.score / quiz.total_questions) * 100);
         }
+        if (percentage === 0 && quiz.score) {
+          percentage = Math.round(quiz.score);
+        }
 
         // Add to totals
         totalScore += percentage;
-        totalPoints += quiz.points || Math.floor(percentage / 10) || 0;
+        const points = quiz.points || Math.floor(percentage / 10) || 0;
+        totalPoints += points;
         bestScore = Math.max(bestScore, percentage);
         if (percentage === 100) perfectScores++;
       });
@@ -163,45 +206,86 @@ const Dashboard = () => {
         }
       }
 
-      console.log("📊 Calculated:", {
+      // Get riddles solved count (if table exists)
+      let riddlesSolved = 0;
+      try {
+        const { data: riddlesData } = await supabase
+          .from("riddle_history")
+          .select("*")
+          .eq("user_id", currentUser.id);
+        riddlesSolved = riddlesData?.length || 0;
+      } catch (e) {
+        console.log("⚠️ Riddle history table not found");
+      }
+
+      // Get articles read count (if table exists)
+      let readArticles = 0;
+      try {
+        const { data: articlesData } = await supabase
+          .from("article_history")
+          .select("*")
+          .eq("user_id", currentUser.id);
+        readArticles = articlesData?.length || 0;
+      } catch (e) {
+        console.log("⚠️ Article history table not found");
+      }
+
+      console.log("📊 Calculated stats:", {
         totalQuizzes,
         totalPoints,
         averageScore,
         streak,
         bestScore,
         perfectScores,
+        riddlesSolved,
+        readArticles,
       });
 
-      // Update stats
-      setStats({
+      // Update stats state
+      const newStats = {
         totalQuizzes,
         totalPoints,
         averageScore,
         streak,
         bestScore,
         perfectScores,
-        riddlesSolved: 0,
-        readArticles: 0,
-      });
+        riddlesSolved,
+        readArticles,
+      };
+      setStats(newStats);
 
       // Update users table
-      await supabase
-        .from("users")
-        .update({
-          stats: {
-            total_quizzes: totalQuizzes,
-            total_points: totalPoints,
-            average_score: averageScore,
-            streak: streak,
-            best_score: bestScore,
-            perfect_scores: perfectScores,
-            last_quiz_date: new Date().toISOString(),
-          },
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", currentUser.id);
+      try {
+        const updatedStats = {
+          total_quizzes: totalQuizzes,
+          total_points: totalPoints,
+          average_score: averageScore,
+          streak: streak,
+          best_score: bestScore,
+          perfect_scores: perfectScores,
+          riddles_solved: riddlesSolved,
+          read_articles: readArticles,
+          last_quiz_date: new Date().toISOString(),
+        };
+
+        const { error: updateError } = await supabase
+          .from("users")
+          .update({
+            stats: updatedStats,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", currentUser.id);
+
+        if (updateError) {
+          console.error("❌ Error updating user stats:", updateError);
+        } else {
+          console.log("✅ User stats updated in database");
+        }
+      } catch (updateError) {
+        console.error("❌ Update error:", updateError);
+      }
     } catch (error) {
-      console.error("❌ Error:", error);
+      console.error("❌ Error in loadUserStats:", error);
     }
   };
 
@@ -221,7 +305,7 @@ const Dashboard = () => {
         setRecentActivity(data);
       }
     } catch (error) {
-      console.error("❌ Error:", error);
+      console.error("❌ Error loading recent activity:", error);
     }
   };
 
