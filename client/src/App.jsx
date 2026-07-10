@@ -86,6 +86,14 @@ function App() {
               }
             />
             <Route
+              path="achievements"
+              element={
+                <ProtectedRoute>
+                  <Achievements />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="quiz"
               element={
                 <ProtectedRoute>
