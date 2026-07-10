@@ -52,6 +52,7 @@ const Dashboard = () => {
     if (!loading) {
       setIsAuthenticated(!!currentUser);
       if (currentUser) {
+        console.log("🔄 Loading dashboard for user:", currentUser.id);
         loadDashboardData();
       }
     }
@@ -60,6 +61,8 @@ const Dashboard = () => {
   // Real-time subscription for quiz results
   useEffect(() => {
     if (!currentUser) return;
+
+    console.log("📡 Setting up real-time subscription for user:", currentUser.id);
 
     const subscription = supabase
       .channel("dashboard_updates")
@@ -72,7 +75,7 @@ const Dashboard = () => {
           filter: `user_id=eq.${currentUser.id}`,
         },
         () => {
-          // Refresh data when new quiz result is added
+          console.log("🔄 New quiz result detected! Refreshing dashboard...");
           loadDashboardData();
         },
       )
@@ -85,15 +88,22 @@ const Dashboard = () => {
 
   const loadDashboardData = async () => {
     try {
+      console.log("📊 Loading dashboard data...");
       await Promise.all([loadUserStats(), loadRecentActivity()]);
+      console.log("✅ Dashboard data loaded");
     } catch (error) {
-      console.error("Error loading dashboard data:", error);
+      console.error("❌ Error loading dashboard data:", error);
     }
   };
 
   const loadUserStats = async () => {
     try {
-      if (!currentUser) return;
+      if (!currentUser) {
+        console.log("⚠️ No current user");
+        return;
+      }
+
+      console.log("📊 Fetching quiz results for user:", currentUser.id);
 
       // Get quiz results for the current user
       const { data: quizResults, error: quizError } = await supabase
@@ -102,9 +112,11 @@ const Dashboard = () => {
         .eq("user_id", currentUser.id);
 
       if (quizError) {
-        console.error("Error fetching quiz results:", quizError);
+        console.error("❌ Error fetching quiz results:", quizError);
         return;
       }
+
+      console.log(`📊 Found ${quizResults?.length || 0} quiz results`);
 
       // Calculate stats from quiz results
       let totalQuizzes = 0;
@@ -126,6 +138,8 @@ const Dashboard = () => {
           if (percentage === 0 && quiz.score) {
             percentage = Math.round(quiz.score);
           }
+
+          console.log(`📊 Quiz: ${quiz.category || 'Unknown'} - ${percentage}%`);
 
           totalScore += percentage;
           totalPoints += quiz.points || Math.floor(percentage / 10);
@@ -207,30 +221,32 @@ const Dashboard = () => {
         perfectScores,
       };
 
+      console.log("📊 New stats calculated:", newStats);
+
       setStats(newStats);
 
       // Also update the users table stats
       await updateUserStats(newStats);
     } catch (error) {
-      console.error("Error loading user stats:", error);
+      console.error("❌ Error loading user stats:", error);
     }
   };
 
   const updateUserStats = async (newStats) => {
     try {
-      // Get current user stats from database
-      const { data: userData, error: fetchError } = await supabase
+      // Check if user exists in users table
+      const { data: existingUser, error: checkError } = await supabase
         .from("users")
-        .select("stats")
+        .select("id, stats")
         .eq("id", currentUser.id)
         .single();
 
-      if (fetchError && fetchError.code !== "PGRST116") {
-        console.error("Error fetching user stats:", fetchError);
+      if (checkError && checkError.code !== "PGRST116") {
+        console.error("❌ Error checking user:", checkError);
         return;
       }
 
-      const currentStats = userData?.stats || {};
+      const currentStats = existingUser?.stats || {};
 
       // Merge with new stats
       const updatedStats = {
@@ -246,20 +262,41 @@ const Dashboard = () => {
         last_quiz_date: new Date().toISOString(),
       };
 
-      // Update users table
-      const { error: updateError } = await supabase
-        .from("users")
-        .update({
-          stats: updatedStats,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", currentUser.id);
+      console.log("💾 Updating user stats:", updatedStats);
+
+      let updateError;
+      if (existingUser) {
+        // Update existing user
+        const { error } = await supabase
+          .from("users")
+          .update({
+            stats: updatedStats,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", currentUser.id);
+        updateError = error;
+      } else {
+        // Insert new user
+        const { error } = await supabase
+          .from("users")
+          .insert({
+            id: currentUser.id,
+            name: currentUser.user_metadata?.name || currentUser.email?.split("@")[0] || "User",
+            email: currentUser.email,
+            stats: updatedStats,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+        updateError = error;
+      }
 
       if (updateError) {
-        console.error("Error updating user stats:", updateError);
+        console.error("❌ Error updating user stats:", updateError);
+      } else {
+        console.log("✅ User stats updated successfully");
       }
     } catch (error) {
-      console.error("Error updating user stats:", error);
+      console.error("❌ Error updating user stats:", error);
     }
   };
 
@@ -275,15 +312,17 @@ const Dashboard = () => {
         .limit(5);
 
       if (!error && data) {
+        console.log(`📊 Recent activity: ${data.length} items`);
         setRecentActivity(data);
       }
     } catch (error) {
-      console.error("Error loading recent activity:", error);
+      console.error("❌ Error loading recent activity:", error);
     }
   };
 
   const refreshDashboard = async () => {
     setRefreshing(true);
+    console.log("🔄 Manual refresh triggered");
     await loadDashboardData();
     setRefreshing(false);
   };
@@ -329,7 +368,6 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-          {/* Features - keep your existing code */}
           <div className="glass-card p-4 sm:p-6 text-center hover:border-[#7c3aed]/30 transition-all">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-400/10 flex items-center justify-center mx-auto mb-2 sm:mb-3">
               <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
@@ -442,7 +480,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Stats Grid - This will now show correct values */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="glass-card p-3 sm:p-4 text-center">
           <div className="flex items-center justify-center gap-1 text-yellow-400">
