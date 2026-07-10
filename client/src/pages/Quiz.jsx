@@ -6,7 +6,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Check,
-  Zap,
   X,
   Loader2,
   AlertCircle,
@@ -20,6 +19,7 @@ import { fetchQuestions, shuffleArray, decodeHTML } from "../services/quizApi";
 import { getCustomQuestions } from "../data/customQuestions";
 import { supabase } from "../services/supabase";
 import { generateQuestionsWithGroq } from "../services/groqService";
+import { sendEmail, emailTemplates } from "../services/emailService";
 
 const FALLBACK_QUESTIONS = [
   {
@@ -359,9 +359,9 @@ const Quiz = () => {
     };
     sessionStorage.setItem("quizResults", JSON.stringify(resultData));
 
-    // ✅ SAVE TO DATABASE - FIXED (removed correct_answers column)
     if (user) {
       try {
+        // Save quiz data
         const quizData = {
           user_id: user.id,
           category: categoryInfo?.name || "General Knowledge",
@@ -386,6 +386,23 @@ const Quiz = () => {
           return;
         } else {
           console.log("✅ Quiz saved successfully!", data);
+        }
+
+        // ✅ Send quiz results email
+        try {
+          await sendEmail({
+            to: user.email,
+            subject: `📊 Your ${categoryInfo?.name || "Quiz"} Results`,
+            html: emailTemplates.quizResults(
+              user.user_metadata?.name,
+              categoryInfo?.name || "Quiz",
+              percentage,
+              Math.floor(percentage / 10),
+            ).html,
+          });
+          console.log("✅ Quiz result email sent");
+        } catch (emailError) {
+          console.error("❌ Quiz result email failed:", emailError);
         }
 
         // Update user stats

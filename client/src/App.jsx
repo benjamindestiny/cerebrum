@@ -11,8 +11,10 @@ import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Quiz from "./pages/Quiz";
 import Results from "./pages/Results";
+import AdminEmail from './pages/AdminEmail';
 import Dashboard from "./pages/Dashboard";
 import Leaderboard from "./pages/Leaderboard";
+import AdminWeeklyReport from "./pages/AdminWeeklyReport";
 import Riddles from "./pages/Riddles";
 import Categories from "./pages/Categories";
 import Achievements from "./pages/Achievements";
@@ -63,6 +65,8 @@ function App() {
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="*" element={<NotFound />} />
+            <Route path="/admin/email" element={<AdminEmail />} />
+            <Route path="/admin/weekly-report" element={<AdminWeeklyReport />} />
             <Route path="donate" element={<Donate />} />
             <Route path="categories" element={<Categories />} />
             <Route path="leaderboard" element={<Leaderboard />} />

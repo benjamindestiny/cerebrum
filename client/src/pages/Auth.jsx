@@ -13,6 +13,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
+import { sendEmail, emailTemplates } from "../services/emailService";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -148,6 +149,20 @@ const Auth = () => {
           return;
         }
 
+        // ✅ Send welcome email
+        try {
+          await sendEmail({
+            to: formData.email,
+            subject: "🎉 Welcome to Cerebrum!",
+            html: emailTemplates.welcome(
+              formData.name || formData.email.split("@")[0],
+            ).html,
+          });
+          console.log("✅ Welcome email sent");
+        } catch (emailError) {
+          console.error("❌ Welcome email failed:", emailError);
+        }
+
         navigate("/dashboard");
       }
     } catch (error) {
@@ -173,6 +188,7 @@ const Auth = () => {
       if (error) throw error;
       setShowReset(false);
       setResetEmail("");
+      console.log("Reset email sent");
     } catch (error) {
       console.error("Reset error:", error);
     } finally {
