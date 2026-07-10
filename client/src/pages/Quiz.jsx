@@ -23,6 +23,7 @@ import {
   hasCustomQuestions,
 } from "../data/customQuestions";
 import { supabase } from "../services/supabase";
+import { generateQuestionsWithGroq } from "../services/groqService";
 
 // Fallback questions - always available
 const FALLBACK_QUESTIONS = [
@@ -65,6 +66,7 @@ const Quiz = () => {
   const [questionCount, setQuestionCount] = useState(15);
   const [user, setUser] = useState(null);
   const [quizStartTime, setQuizStartTime] = useState(Date.now());
+  const [isFinishing, setIsFinishing] = useState(false);
   const [stats, setStats] = useState({
     totalQuizzes: 0,
     bestScore: 0,
@@ -103,9 +105,9 @@ const Quiz = () => {
 
     try {
       const storedCategory = sessionStorage.getItem("selectedCategory");
-      let categoryId = null;
       let categoryName = "General Knowledge";
       let count = 15;
+      let categoryId = null;
       let isCustom = false;
 
       if (storedCategory) {
@@ -118,22 +120,64 @@ const Quiz = () => {
 
       let fetchedQuestions = [];
 
-      if (typeof categoryId === "string") {
-        const customQ = getCustomQuestions(categoryId, count);
-        if (customQ.length > 0) {
-          fetchedQuestions = customQ.map((q) => ({
-            ...q,
-            shuffledOptions: shuffleArray([
-              q.correct_answer,
-              ...q.incorrect_answers,
-            ]),
+      // ✅ TRY 1: Groq AI Generation
+      try {
+        console.log(
+          `🎯 Generating ${count} questions about "${categoryName}" with Groq...`,
+        );
+        const groqQuestions = await generateQuestionsWithGroq(
+          categoryName,
+          count,
+          diff,
+        );
+
+        if (groqQuestions && groqQuestions.length > 0) {
+          fetchedQuestions = groqQuestions.map((q) => ({
+            question: q.question,
+            correct_answer: q.correct_answer,
+            incorrect_answers: q.options
+              ? q.options.filter((opt) => opt !== q.correct_answer)
+              : [],
+            category: categoryName,
+            shuffledOptions: q.options
+              ? shuffleArray(q.options)
+              : shuffleArray([q.correct_answer, ...q.incorrect_answers]),
+            explanation: q.explanation || "",
           }));
-          isCustom = true;
+          console.log(
+            `✅ Generated ${fetchedQuestions.length} questions with Groq`,
+          );
+        }
+      } catch (groqError) {
+        console.warn("Groq generation failed:", groqError.message);
+      }
+
+      // ✅ TRY 2: Custom Questions
+      if (fetchedQuestions.length === 0 && typeof categoryId === "string") {
+        try {
+          const customQ = getCustomQuestions(categoryId, count);
+          if (customQ && customQ.length > 0) {
+            fetchedQuestions = customQ.map((q) => ({
+              ...q,
+              shuffledOptions: shuffleArray([
+                q.correct_answer,
+                ...q.incorrect_answers,
+              ]),
+            }));
+            isCustom = true;
+            console.log(
+              `✅ Loaded ${fetchedQuestions.length} custom questions`,
+            );
+          }
+        } catch (customError) {
+          console.warn("Custom questions failed:", customError.message);
         }
       }
 
+      // ✅ TRY 3: Open Trivia DB API
       if (fetchedQuestions.length === 0) {
         try {
+          console.log(`🔄 Fetching from Open Trivia DB...`);
           const apiQuestions = await fetchQuestions(
             count,
             categoryId,
@@ -148,13 +192,18 @@ const Quiz = () => {
                 ...q.incorrect_answers,
               ]),
             }));
+            console.log(
+              `✅ Loaded ${fetchedQuestions.length} questions from Trivia DB`,
+            );
           }
         } catch (apiError) {
-          console.error("API fetch failed:", apiError);
+          console.warn("Trivia DB API failed:", apiError.message);
         }
       }
 
+      // ✅ TRY 4: Fallback questions
       if (fetchedQuestions.length === 0) {
+        console.log("📚 Using local fallback questions");
         const fallback = FALLBACK_QUESTIONS.slice(
           0,
           Math.min(count, FALLBACK_QUESTIONS.length),
@@ -168,20 +217,23 @@ const Quiz = () => {
         }));
       }
 
+      // ✅ ULTIMATE FALLBACK
       if (fetchedQuestions.length === 0) {
         fetchedQuestions = [
           {
-            question: "What is the capital of knowledge?",
+            question: `What is the capital of knowledge?`,
             correct_answer: "Learning",
             incorrect_answers: ["Forgetting", "Sleeping", "Watching"],
-            category: "General Knowledge",
+            category: categoryName,
             shuffledOptions: ["Learning", "Forgetting", "Sleeping", "Watching"],
           },
         ];
       }
 
       setQuestions(fetchedQuestions);
-      console.log(`✅ ${fetchedQuestions.length} questions loaded`);
+      console.log(
+        `✅ Final: ${fetchedQuestions.length} questions loaded for "${categoryName}"`,
+      );
       setTimeLeft(30);
     } catch (error) {
       console.error("Error loading questions:", error);
@@ -197,7 +249,6 @@ const Quiz = () => {
         ]),
       }));
       setQuestions(fallbackQuestions);
-      console.log(`✅ ${fallbackQuestions.length} fallback questions loaded`);
       setTimeLeft(30);
     } finally {
       setLoading(false);
@@ -210,7 +261,8 @@ const Quiz = () => {
       loading ||
       quizComplete ||
       questions.length === 0 ||
-      showDifficultySelect
+      showDifficultySelect ||
+      isFinishing
     )
       return;
 
@@ -233,31 +285,42 @@ const Quiz = () => {
     isAnswered,
     questions.length,
     showDifficultySelect,
+    isFinishing,
   ]);
 
   const handleTimeout = () => {
-    if (!isAnswered) {
+    if (!isAnswered && !isFinishing) {
       setIsAnswered(true);
       console.log("⏰ Time's up!");
+      setAnswers((prev) => ({ ...prev, [currentIndex]: null }));
       setTimeout(() => handleNext(), 1200);
     }
   };
 
   const handleAnswerSelect = (answer) => {
-    if (isAnswered) return;
+    if (isAnswered || isFinishing) return;
 
     setSelectedAnswer(answer);
     setIsAnswered(true);
-    setAnswers((prev) => ({ ...prev, [currentIndex]: answer }));
+
+    const updatedAnswers = { ...answers, [currentIndex]: answer };
+    setAnswers(updatedAnswers);
 
     const isCorrect = answer === questions[currentIndex].correct_answer;
-    if (isCorrect) {
-      console.log("✅ Correct!");
-    } else {
-      console.log("❌ Wrong answer");
-    }
+    console.log(
+      `${isCorrect ? "✅" : "❌"} Question ${currentIndex + 1}: ${isCorrect ? "Correct!" : "Wrong"}`,
+    );
 
-    setTimeout(() => handleNext(), 1200);
+    if (currentIndex === questions.length - 1) {
+      console.log("🏁 Last question answered! Finishing quiz...");
+      setIsFinishing(true);
+      setTimeout(() => {
+        setAnswers(updatedAnswers);
+        finishQuiz();
+      }, 1500);
+    } else {
+      setTimeout(() => handleNext(), 1200);
+    }
   };
 
   const handleNext = () => {
@@ -267,7 +330,10 @@ const Quiz = () => {
       setIsAnswered(false);
       setTimeLeft(30);
     } else {
-      finishQuiz();
+      if (!isFinishing) {
+        setIsFinishing(true);
+        finishQuiz();
+      }
     }
   };
 
@@ -292,15 +358,27 @@ const Quiz = () => {
     setAnswers({});
     setQuizComplete(false);
     setSelectedDifficulty(null);
+    setIsFinishing(false);
   };
 
   const finishQuiz = async () => {
+    if (quizComplete) return;
+
     let correct = 0;
+    const currentAnswers = answers;
+
+    console.log("📝 All answers:", currentAnswers);
+    console.log("📝 Total questions:", questions.length);
+
     questions.forEach((q, i) => {
-      if (answers[i] === q.correct_answer) correct++;
+      const userAnswer = currentAnswers[i];
+      const isCorrect = userAnswer === q.correct_answer;
+      console.log(
+        `Q${i + 1}: User="${userAnswer}", Correct="${q.correct_answer}", Result=${isCorrect}`,
+      );
+      if (isCorrect) correct++;
     });
 
-    // Calculate percentage correctly
     const percentage = Math.round((correct / questions.length) * 100);
     const timeTaken = Math.floor((Date.now() - quizStartTime) / 1000);
 
@@ -308,26 +386,37 @@ const Quiz = () => {
       `📊 Results: ${correct}/${questions.length} correct = ${percentage}%`,
     );
 
+    const resultData = {
+      score: percentage,
+      correct,
+      total: questions.length,
+      answers: currentAnswers,
+      questions: questions,
+      category: categoryInfo?.name || "General Knowledge",
+      difficulty: difficulty || "medium",
+      timestamp: new Date().toISOString(),
+    };
+
+    sessionStorage.setItem("quizResults", JSON.stringify(resultData));
+
     if (user) {
       try {
-        // Save quiz result with correct percentage
         const quizData = {
           user_id: user.id,
           category: categoryInfo?.name || "General Knowledge",
-          score: correct, // Store raw correct answers
+          score: correct,
           total_questions: questions.length,
           correct_answers: correct,
           percentage: parseFloat(percentage.toFixed(2)),
           time_taken: timeTaken,
-          answers: answers,
+          answers: currentAnswers,
         };
 
         console.log("📊 Saving quiz data:", quizData);
 
-        const { data: quizResult, error: quizError } = await supabase
+        const { error: quizError } = await supabase
           .from("quiz_results")
-          .insert(quizData)
-          .select();
+          .insert(quizData);
 
         if (quizError) {
           console.error("❌ Error saving quiz:", quizError);
@@ -335,7 +424,6 @@ const Quiz = () => {
           console.log("✅ Quiz saved with score:", percentage);
         }
 
-        // Get current user stats
         const { data: userData, error: userError } = await supabase
           .from("users")
           .select("stats")
@@ -348,7 +436,6 @@ const Quiz = () => {
 
         const currentStats = userData?.stats || {};
 
-        // Calculate new stats
         const totalQuizzes = (currentStats.total_quizzes || 0) + 1;
         const totalScore = (currentStats.total_score || 0) + percentage;
         const bestScore = Math.max(currentStats.best_score || 0, percentage);
@@ -358,7 +445,6 @@ const Quiz = () => {
         const perfectScores =
           (currentStats.perfect_scores || 0) + (percentage === 100 ? 1 : 0);
 
-        // Update streak
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const yesterday = new Date(today);
@@ -384,7 +470,6 @@ const Quiz = () => {
           streak = 1;
         }
 
-        // Update users table with all stats
         const updatedStats = {
           total_quizzes: totalQuizzes,
           best_score: bestScore,
@@ -412,7 +497,6 @@ const Quiz = () => {
           console.log("✅ Stats updated:", updatedStats);
         }
 
-        // Update leaderboard
         try {
           const username =
             user.user_metadata?.name ||
@@ -449,7 +533,6 @@ const Quiz = () => {
           console.error("❌ Leaderboard error:", lbError);
         }
 
-        // Update local stats state
         setStats({
           totalQuizzes: totalQuizzes,
           bestScore: bestScore,
@@ -468,20 +551,8 @@ const Quiz = () => {
       console.log("⚠️ User not logged in, results not saved");
     }
 
-    const resultData = {
-      score: percentage,
-      correct,
-      total: questions.length,
-      answers,
-      questions,
-      category: categoryInfo?.name || "General Knowledge",
-      difficulty: difficulty || "medium",
-      timestamp: new Date().toISOString(),
-    };
-
-    sessionStorage.setItem("quizResults", JSON.stringify(resultData));
     setQuizComplete(true);
-
+    setIsFinishing(false);
     setTimeout(() => navigate("/results"), 1200);
   };
 

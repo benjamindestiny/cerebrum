@@ -21,6 +21,7 @@ import ReadAndTestResults from "./pages/ReadAndTestResults";
 import Privacy from "./pages/Privacy";
 import About from "./pages/About";
 import Terms from "./pages/Terms";
+import TestGroq from "./pages/TestGroq";
 import CookieConsent from "./components/Common/CookieConsent";
 import { supabase } from "./services/supabase";
 
@@ -63,6 +64,7 @@ function App() {
             <Route path="leaderboard" element={<Leaderboard />} />
             <Route path="riddles" element={<Riddles />} />
             <Route path="achievements" element={<Achievements />} />
+            <Route path="test-groq" element={<TestGroq />} />
             <Route path="read-and-test" element={<ReadAndTest />} />
             <Route path="read-and-test-results" element={<ReadAndTestResults />} />
             <Route path="privacy" element={<Privacy />} />
