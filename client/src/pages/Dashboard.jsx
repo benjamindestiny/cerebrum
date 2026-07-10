@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -63,10 +63,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (!currentUser) return;
 
-    console.log(
-      "📡 Setting up real-time subscription for user:",
-      currentUser.id,
-    );
+    console.log("📡 Setting up real-time subscription for user:", currentUser.id);
 
     const subscription = supabase
       .channel("dashboard_updates")
@@ -90,7 +87,7 @@ const Dashboard = () => {
     };
   }, [currentUser]);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       console.log("📊 Loading dashboard data...");
       setLoadingStats(true);
@@ -101,9 +98,9 @@ const Dashboard = () => {
     } finally {
       setLoadingStats(false);
     }
-  };
+  }, [currentUser]);
 
-  const loadUserStats = async () => {
+  const loadUserStats = useCallback(async () => {
     try {
       if (!currentUser) {
         console.log("⚠️ No current user");
@@ -112,18 +109,7 @@ const Dashboard = () => {
 
       console.log("📊 Fetching quiz results for user:", currentUser.id);
 
-      // 1. Get user stats from the users table
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("stats")
-        .eq("id", currentUser.id)
-        .maybeSingle();
-
-      if (userError && userError.code !== "PGRST116") {
-        console.error("❌ Error fetching user stats:", userError);
-      }
-
-      // 2. Get all quiz results
+      // Get all quiz results
       const { data: quizResults, error: quizError } = await supabase
         .from("quiz_results")
         .select("*")
@@ -136,7 +122,7 @@ const Dashboard = () => {
 
       console.log(`📊 Found ${quizResults?.length || 0} quiz results`);
 
-      // 3. Calculate stats from quiz results
+      // Calculate stats from quiz results
       let totalQuizzes = 0;
       let totalPoints = 0;
       let totalScore = 0;
@@ -148,7 +134,6 @@ const Dashboard = () => {
         totalQuizzes = quizResults.length;
 
         quizResults.forEach((quiz) => {
-          // Use percentage if available, otherwise calculate from score
           let percentage = parseFloat(quiz.percentage) || 0;
           if (percentage === 0 && quiz.score && quiz.total_questions) {
             percentage = Math.round((quiz.score / quiz.total_questions) * 100);
@@ -165,17 +150,14 @@ const Dashboard = () => {
         });
       }
 
-      // Calculate average score
-      const averageScore =
-        totalQuizzes > 0 ? Math.round(totalScore / totalQuizzes) : 0;
+      const averageScore = totalQuizzes > 0 ? Math.round(totalScore / totalQuizzes) : 0;
 
-      // 4. Calculate streak from quiz dates
+      // Calculate streak
       let streak = 0;
       if (quizResults && quizResults.length > 0) {
         const dates = quizResults
           .map((q) => new Date(q.created_at).toISOString().split("T")[0])
           .sort();
-
         const uniqueDates = [...new Set(dates)].sort();
 
         if (uniqueDates.length > 0) {
@@ -190,9 +172,7 @@ const Dashboard = () => {
             let currentDate = new Date(lastDate);
             for (let i = uniqueDates.length - 2; i >= 0; i--) {
               const prevDate = new Date(uniqueDates[i]);
-              const diffDays = Math.floor(
-                (currentDate - prevDate) / (1000 * 60 * 60 * 24),
-              );
+              const diffDays = Math.floor((currentDate - prevDate) / (1000 * 60 * 60 * 24));
               if (diffDays === 1) {
                 streak++;
                 currentDate = prevDate;
@@ -204,23 +184,31 @@ const Dashboard = () => {
         }
       }
 
-      // 5. Get riddles solved count
-      const { data: riddlesData, error: riddlesError } = await supabase
-        .from("riddle_history")
-        .select("*")
-        .eq("user_id", currentUser.id);
+      // Get riddles and articles (ignore 404 errors)
+      let riddlesSolved = 0;
+      let readArticles = 0;
+      
+      try {
+        const { data: riddlesData } = await supabase
+          .from("riddle_history")
+          .select("*")
+          .eq("user_id", currentUser.id);
+        riddlesSolved = riddlesData?.length || 0;
+      } catch (e) {
+        console.log("Riddle history table not found, skipping");
+      }
 
-      const riddlesSolved = riddlesError ? 0 : riddlesData?.length || 0;
+      try {
+        const { data: articlesData } = await supabase
+          .from("article_history")
+          .select("*")
+          .eq("user_id", currentUser.id);
+        readArticles = articlesData?.length || 0;
+      } catch (e) {
+        console.log("Article history table not found, skipping");
+      }
 
-      // 6. Get articles read count
-      const { data: articlesData, error: articlesError } = await supabase
-        .from("article_history")
-        .select("*")
-        .eq("user_id", currentUser.id);
-
-      const readArticles = articlesError ? 0 : articlesData?.length || 0;
-
-      // 7. Update stats state
+      // Create new stats object
       const newStats = {
         totalQuizzes,
         totalPoints,
@@ -234,9 +222,11 @@ const Dashboard = () => {
       };
 
       console.log("📊 New stats calculated:", newStats);
+
+      // ✅ Force update stats state
       setStats(newStats);
 
-      // 8. Update users table with stats
+      // Update users table with stats
       const updatedStats = {
         total_quizzes: totalQuizzes,
         total_points: totalPoints,
@@ -247,51 +237,29 @@ const Dashboard = () => {
         read_articles: readArticles,
         total_time: totalTime,
         perfect_scores: perfectScores,
-        last_quiz_date:
-          quizResults?.length > 0 ? new Date().toISOString() : null,
+        last_quiz_date: quizResults?.length > 0 ? new Date().toISOString() : null,
       };
 
-      if (userData) {
-        // Update existing user
-        const { error: updateError } = await supabase
-          .from("users")
-          .update({
-            stats: updatedStats,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", currentUser.id);
-
-        if (updateError) {
-          console.error("❌ Error updating user stats:", updateError);
-        } else {
-          console.log("✅ User stats updated in database");
-        }
-      } else {
-        // Create new user entry
-        const { error: insertError } = await supabase.from("users").insert({
-          id: currentUser.id,
-          name:
-            currentUser.user_metadata?.name ||
-            currentUser.email?.split("@")[0] ||
-            "User",
-          email: currentUser.email,
+      const { error: updateError } = await supabase
+        .from("users")
+        .update({
           stats: updatedStats,
-          created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        });
+        })
+        .eq("id", currentUser.id);
 
-        if (insertError) {
-          console.error("❌ Error creating user:", insertError);
-        } else {
-          console.log("✅ New user created in database");
-        }
+      if (updateError) {
+        console.error("❌ Error updating user stats:", updateError);
+      } else {
+        console.log("✅ User stats updated in database");
       }
+
     } catch (error) {
       console.error("❌ Error loading user stats:", error);
     }
-  };
+  }, [currentUser]);
 
-  const loadRecentActivity = async () => {
+  const loadRecentActivity = useCallback(async () => {
     try {
       if (!currentUser) return;
 
@@ -309,7 +277,7 @@ const Dashboard = () => {
     } catch (error) {
       console.error("❌ Error loading recent activity:", error);
     }
-  };
+  }, [currentUser]);
 
   const refreshDashboard = async () => {
     setRefreshing(true);
@@ -337,8 +305,7 @@ const Dashboard = () => {
               Welcome to <span className="text-[#7c3aed]">Cerebrum</span>
             </h1>
             <p className="text-gray-400 text-sm sm:text-base md:text-lg max-w-2xl mx-auto">
-              Challenge your mind with interactive quizzes, riddles, and brain
-              teasers. Sign up to track your progress and compete with others!
+              Challenge your mind with interactive quizzes, riddles, and brain teasers. Sign up to track your progress and compete with others!
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-3 sm:pt-4">
               <button
@@ -363,67 +330,41 @@ const Dashboard = () => {
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-400/10 flex items-center justify-center mx-auto mb-2 sm:mb-3">
               <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
             </div>
-            <h3 className="text-white font-semibold text-sm sm:text-base">
-              Interactive Quizzes
-            </h3>
-            <p className="text-gray-400 text-xs sm:text-sm mt-1">
-              Test your knowledge across various subjects
-            </p>
+            <h3 className="text-white font-semibold text-sm sm:text-base">Interactive Quizzes</h3>
+            <p className="text-gray-400 text-xs sm:text-sm mt-1">Test your knowledge across various subjects</p>
           </div>
           <div className="glass-card p-4 sm:p-6 text-center hover:border-[#7c3aed]/30 transition-all">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-purple-400/10 flex items-center justify-center mx-auto mb-2 sm:mb-3">
               <Puzzle className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" />
             </div>
-            <h3 className="text-white font-semibold text-sm sm:text-base">
-              Brain Teasers
-            </h3>
-            <p className="text-gray-400 text-xs sm:text-sm mt-1">
-              Solve challenging riddles and puzzles
-            </p>
+            <h3 className="text-white font-semibold text-sm sm:text-base">Brain Teasers</h3>
+            <p className="text-gray-400 text-xs sm:text-sm mt-1">Solve challenging riddles and puzzles</p>
           </div>
           <div className="glass-card p-4 sm:p-6 text-center hover:border-[#7c3aed]/30 transition-all">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-green-400/10 flex items-center justify-center mx-auto mb-2 sm:mb-3">
               <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
             </div>
-            <h3 className="text-white font-semibold text-sm sm:text-base">
-              Track Progress
-            </h3>
-            <p className="text-gray-400 text-xs sm:text-sm mt-1">
-              Monitor your scores and achievements
-            </p>
+            <h3 className="text-white font-semibold text-sm sm:text-base">Track Progress</h3>
+            <p className="text-gray-400 text-xs sm:text-sm mt-1">Monitor your scores and achievements</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           <div className="glass-card p-3 sm:p-4 text-center">
-            <div className="text-xl sm:text-2xl font-bold text-[#7c3aed]">
-              50+
-            </div>
-            <div className="text-[10px] sm:text-xs text-gray-400">
-              Quizzes Available
-            </div>
+            <div className="text-xl sm:text-2xl font-bold text-[#7c3aed]">50+</div>
+            <div className="text-[10px] sm:text-xs text-gray-400">Quizzes Available</div>
           </div>
           <div className="glass-card p-3 sm:p-4 text-center">
-            <div className="text-xl sm:text-2xl font-bold text-yellow-400">
-              100+
-            </div>
+            <div className="text-xl sm:text-2xl font-bold text-yellow-400">100+</div>
             <div className="text-[10px] sm:text-xs text-gray-400">Riddles</div>
           </div>
           <div className="glass-card p-3 sm:p-4 text-center">
-            <div className="text-xl sm:text-2xl font-bold text-green-400">
-              10+
-            </div>
-            <div className="text-[10px] sm:text-xs text-gray-400">
-              Categories
-            </div>
+            <div className="text-xl sm:text-2xl font-bold text-green-400">10+</div>
+            <div className="text-[10px] sm:text-xs text-gray-400">Categories</div>
           </div>
           <div className="glass-card p-3 sm:p-4 text-center">
-            <div className="text-xl sm:text-2xl font-bold text-blue-400">
-              500+
-            </div>
-            <div className="text-[10px] sm:text-xs text-gray-400">
-              Active Users
-            </div>
+            <div className="text-xl sm:text-2xl font-bold text-blue-400">500+</div>
+            <div className="text-[10px] sm:text-xs text-gray-400">Active Users</div>
           </div>
         </div>
       </div>
@@ -466,9 +407,7 @@ const Dashboard = () => {
               disabled={refreshing}
               className="px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-xs sm:text-sm flex items-center gap-2"
             >
-              <RefreshCw
-                className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
-              />
+              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
               {refreshing ? "Refreshing..." : "Refresh"}
             </button>
             <button
@@ -482,8 +421,8 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      {/* Stats Grid - Force re-render with key */}
+      <div key={`stats-${stats.totalQuizzes}-${stats.totalPoints}`} className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="glass-card p-3 sm:p-4 text-center">
           <div className="flex items-center justify-center gap-1 text-yellow-400">
             <Trophy className="w-4 h-4" />
@@ -491,9 +430,7 @@ const Dashboard = () => {
           <div className="text-lg sm:text-xl md:text-2xl font-bold text-white mt-1">
             {stats.totalPoints || 0}
           </div>
-          <div className="text-[10px] sm:text-xs text-gray-400">
-            Total Points
-          </div>
+          <div className="text-[10px] sm:text-xs text-gray-400">Total Points</div>
         </div>
         <div className="glass-card p-3 sm:p-4 text-center">
           <div className="flex items-center justify-center gap-1 text-orange-400">
@@ -511,9 +448,7 @@ const Dashboard = () => {
           <div className="text-lg sm:text-xl md:text-2xl font-bold text-white mt-1">
             {stats.totalQuizzes || 0}
           </div>
-          <div className="text-[10px] sm:text-xs text-gray-400">
-            Quizzes Taken
-          </div>
+          <div className="text-[10px] sm:text-xs text-gray-400">Quizzes Taken</div>
         </div>
         <div className="glass-card p-3 sm:p-4 text-center">
           <div className="flex items-center justify-center gap-1 text-green-400">
@@ -535,12 +470,8 @@ const Dashboard = () => {
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#7c3aed]/10 flex items-center justify-center mx-auto mb-1 sm:mb-2 group-hover:bg-[#7c3aed]/20 transition-all">
             <Play className="w-4 h-4 sm:w-5 sm:h-5 text-[#7c3aed]" />
           </div>
-          <span className="text-white text-xs sm:text-sm font-medium">
-            Take Quiz
-          </span>
-          <p className="text-gray-400 text-[10px] sm:text-xs">
-            Test your knowledge
-          </p>
+          <span className="text-white text-xs sm:text-sm font-medium">Take Quiz</span>
+          <p className="text-gray-400 text-[10px] sm:text-xs">Test your knowledge</p>
         </button>
         <button
           onClick={() => navigate("/riddles")}
@@ -549,12 +480,8 @@ const Dashboard = () => {
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-purple-400/10 flex items-center justify-center mx-auto mb-1 sm:mb-2 group-hover:bg-purple-400/20 transition-all">
             <Puzzle className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
           </div>
-          <span className="text-white text-xs sm:text-sm font-medium">
-            Riddles
-          </span>
-          <p className="text-gray-400 text-[10px] sm:text-xs">
-            Solve brain teasers
-          </p>
+          <span className="text-white text-xs sm:text-sm font-medium">Riddles</span>
+          <p className="text-gray-400 text-[10px] sm:text-xs">Solve brain teasers</p>
         </button>
         <button
           onClick={() => navigate("/read-and-test")}
@@ -563,9 +490,7 @@ const Dashboard = () => {
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-green-400/10 flex items-center justify-center mx-auto mb-1 sm:mb-2 group-hover:bg-green-400/20 transition-all">
             <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
           </div>
-          <span className="text-white text-xs sm:text-sm font-medium">
-            Read & Test
-          </span>
+          <span className="text-white text-xs sm:text-sm font-medium">Read & Test</span>
           <p className="text-gray-400 text-[10px] sm:text-xs">Learn and quiz</p>
         </button>
         <button
@@ -575,12 +500,8 @@ const Dashboard = () => {
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-yellow-400/10 flex items-center justify-center mx-auto mb-1 sm:mb-2 group-hover:bg-yellow-400/20 transition-all">
             <Users className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
           </div>
-          <span className="text-white text-xs sm:text-sm font-medium">
-            Leaderboard
-          </span>
-          <p className="text-gray-400 text-[10px] sm:text-xs">
-            See top players
-          </p>
+          <span className="text-white text-xs sm:text-sm font-medium">Leaderboard</span>
+          <p className="text-gray-400 text-[10px] sm:text-xs">See top players</p>
         </button>
       </div>
 
