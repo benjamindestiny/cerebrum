@@ -29,7 +29,6 @@ const Leaderboard = () => {
     getCurrentUser();
   }, [location.key]);
 
-  // Real-time subscription for new quiz results
   useEffect(() => {
     const subscription = supabase
       .channel("leaderboard_updates")
@@ -61,7 +60,7 @@ const Leaderboard = () => {
   const loadLeaderboard = async () => {
     setLoading(true);
     try {
-      // Get all quiz results
+      // Step 1: Get all quiz results
       const { data: quizData, error: quizError } = await supabase
         .from("quiz_results")
         .select("*");
@@ -79,10 +78,10 @@ const Leaderboard = () => {
         return;
       }
 
-      // Get all user IDs
+      // Step 2: Get all user IDs from quiz results
       const userIds = [...new Set(quizData.map((q) => q.user_id))];
 
-      // Get user info
+      // Step 3: Get user info for all users who have taken quizzes
       const { data: usersData, error: usersError } = await supabase
         .from("users")
         .select("id, name, avatar_id, email, stats")
@@ -99,7 +98,7 @@ const Leaderboard = () => {
         });
       }
 
-      // Aggregate data by user
+      // Step 4: Aggregate data by user
       const playerMap = {};
       quizData.forEach((record) => {
         const userId = record.user_id;
@@ -145,7 +144,7 @@ const Leaderboard = () => {
         }
       });
 
-      // Convert to array and calculate averages
+      // Step 5: Convert to array and calculate averages
       const leaderboard = Object.values(playerMap).map((player) => ({
         ...player,
         averageScore:
@@ -154,7 +153,7 @@ const Leaderboard = () => {
             : 0,
       }));
 
-      // Sort by average score descending
+      // Step 6: Sort by average score descending
       leaderboard.sort((a, b) => {
         if (b.averageScore !== a.averageScore) {
           return b.averageScore - a.averageScore;
@@ -162,12 +161,12 @@ const Leaderboard = () => {
         return b.quizCount - a.quizCount;
       });
 
-      // Add ranks
+      // Step 7: Add ranks
       leaderboard.forEach((player, index) => {
         player.rank = index + 1;
       });
 
-      // Add avatars
+      // Step 8: Add avatars
       const avatarMap = {
         1: "🧠",
         2: "🚀",
@@ -190,6 +189,7 @@ const Leaderboard = () => {
         player.avatar = avatarMap[player.avatarId] || "🧠";
       });
 
+      console.log("📊 Leaderboard loaded:", leaderboard.length, "players");
       setPlayers(leaderboard);
     } catch (error) {
       console.error("Error loading leaderboard:", error);
