@@ -12,7 +12,6 @@ import {
   ArrowLeft,
   RefreshCw,
   Brain,
-  Zap,
   Sparkles,
   SkipForward,
 } from "lucide-react";
@@ -359,7 +358,7 @@ const Quiz = () => {
     };
     sessionStorage.setItem("quizResults", JSON.stringify(resultData));
 
-    // ✅ SAVE TO DATABASE
+    // ✅ SAVE TO DATABASE - FIXED (removed correct_answers column)
     if (user) {
       try {
         const quizData = {
@@ -367,7 +366,6 @@ const Quiz = () => {
           category: categoryInfo?.name || "General Knowledge",
           score: correct,
           total_questions: questions.length,
-          correct_answers: correct,
           percentage: parseFloat(percentage.toFixed(2)),
           time_taken: timeTaken,
           points: Math.floor(percentage / 10),
@@ -384,6 +382,7 @@ const Quiz = () => {
         if (error) {
           console.error("❌ Error saving quiz:", error);
           setSaveError(error.message);
+          return;
         } else {
           console.log("✅ Quiz saved successfully!", data);
         }
