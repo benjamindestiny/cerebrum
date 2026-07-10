@@ -11,6 +11,8 @@ import {
   Chrome,
   Github,
   ArrowLeft,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
 import { sendEmail, emailTemplates } from "../services/emailService";
@@ -24,6 +26,8 @@ const Auth = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [githubLoading, setGithubLoading] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -149,7 +153,7 @@ const Auth = () => {
           return;
         }
 
-        // ✅ Send welcome email
+        // Send welcome email
         try {
           await sendEmail({
             to: formData.email,
@@ -282,7 +286,7 @@ const Auth = () => {
                 value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
                 placeholder="Email Address"
-                className="input-theme pl-9 sm:pl-10 w-full text-sm sm:text-base"
+                className="w-full bg-[#2D2D5E] text-white px-4 py-2 pl-9 sm:pl-10 rounded-lg border border-white/10 focus:border-[#7c3aed] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 transition-all text-sm sm:text-base"
                 required
               />
             </div>
@@ -291,7 +295,7 @@ const Auth = () => {
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={loading}
-              className="w-full btn-primary flex items-center justify-center gap-2 py-2.5 sm:py-3 text-sm sm:text-base"
+              className="w-full bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors flex items-center justify-center gap-2 py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
@@ -341,7 +345,7 @@ const Auth = () => {
                 placeholder="Full Name"
                 value={formData.name}
                 onChange={handleChange}
-                className="input-theme pl-9 sm:pl-10 w-full text-sm sm:text-base"
+                className="w-full bg-[#2D2D5E] text-white px-4 py-2 pl-9 sm:pl-10 rounded-lg border border-white/10 focus:border-[#7c3aed] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 transition-all text-sm sm:text-base"
                 required={!isLogin}
               />
             </div>
@@ -354,34 +358,58 @@ const Auth = () => {
               placeholder="Email Address"
               value={formData.email}
               onChange={handleChange}
-              className="input-theme pl-9 sm:pl-10 w-full text-sm sm:text-base"
+              className="w-full bg-[#2D2D5E] text-white px-4 py-2 pl-9 sm:pl-10 rounded-lg border border-white/10 focus:border-[#7c3aed] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 transition-all text-sm sm:text-base"
               required
             />
           </div>
+
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               name="password"
               placeholder="Password"
               value={formData.password}
               onChange={handleChange}
-              className="input-theme pl-9 sm:pl-10 w-full text-sm sm:text-base"
+              className="w-full bg-[#2D2D5E] text-white px-4 py-2 pl-9 sm:pl-10 pr-10 rounded-lg border border-white/10 focus:border-[#7c3aed] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 transition-all text-sm sm:text-base"
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+            >
+              {showPassword ? (
+                <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
+              ) : (
+                <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
+              )}
+            </button>
           </div>
+
           {!isLogin && (
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
               <input
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 name="confirmPassword"
                 placeholder="Confirm Password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="input-theme pl-9 sm:pl-10 w-full text-sm sm:text-base"
+                className="w-full bg-[#2D2D5E] text-white px-4 py-2 pl-9 sm:pl-10 pr-10 rounded-lg border border-white/10 focus:border-[#7c3aed] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 transition-all text-sm sm:text-base"
                 required={!isLogin}
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
+                ) : (
+                  <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
+                )}
+              </button>
             </div>
           )}
 
@@ -402,7 +430,7 @@ const Auth = () => {
             whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={loading}
-            className="w-full btn-primary flex items-center justify-center gap-2 py-2.5 sm:py-3 text-sm sm:text-base"
+            className="w-full bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors flex items-center justify-center gap-2 py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50"
           >
             {loading ? (
               <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
