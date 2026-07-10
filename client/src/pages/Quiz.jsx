@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   RefreshCw,
   Brain,
+  Zap,
   Sparkles,
   SkipForward,
 } from "lucide-react";
