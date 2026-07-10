@@ -16,6 +16,7 @@ import {
   Home,
   Moon,
   Sun,
+  Award,
 } from "lucide-react";
 import { supabase } from "../../services/supabase";
 import { useTheme } from "../../hooks/useTheme";
@@ -61,13 +62,13 @@ const Header = () => {
     { path: "/read-and-test", icon: BookOpen, label: "Read & Test" },
   ];
 
-  // Navigation for logged-in users - NO HOME
+  // Navigation for logged-in users - NO HOME, includes Achievements
   const userNavLinks = [
     { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { path: "/categories", icon: FolderTree, label: "Categories" },
     { path: "/leaderboard", icon: Trophy, label: "Leaderboard" },
     { path: "/riddles", icon: Puzzle, label: "Riddles" },
-    { path: "/achievements", icon: Trophy, label: "Achievements" },
+    { path: "/achievements", icon: Award, label: "Achievements" },
     { path: "/read-and-test", icon: BookOpen, label: "Read & Test" },
   ];
 
