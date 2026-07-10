@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { supabase } from "../services/supabase";
 import { useAuth } from "../context/AuthContext";
+import EmailSubscribe from "../components/Email/EmailSubscribe";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -248,47 +249,8 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="glass-card p-4 sm:p-6 border border-white/5 mt-6">
-        <h3 className="text-white font-semibold text-sm flex items-center gap-2">
-          <Mail className="w-4 h-4 text-[#a78bfa]" />
-          📧 Get Email Updates
-        </h3>
-        <p className="text-gray-400 text-xs mt-1 mb-3">
-          Weekly quiz challenges and new categories!
-        </p>
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const email = e.target.email.value;
-            try {
-              await sendEmail({
-                to: email,
-                subject: "Welcome to Cerebrum Newsletter!",
-                html: "<h1>Welcome!</h1><p>You're now subscribed to Cerebrum updates.</p>",
-              });
-              alert("Subscribed successfully!");
-              e.target.reset();
-            } catch (error) {
-              alert("Failed to subscribe. Please try again.");
-            }
-          }}
-          className="flex flex-col sm:flex-row gap-2"
-        >
-          <input
-            type="email"
-            name="email"
-            placeholder="Enter your email"
-            className="flex-1 px-4 py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white placeholder-gray-500 focus:border-[#7c3aed] focus:outline-none text-sm"
-            required
-          />
-          <button
-            type="submit"
-            className="px-4 py-2 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors text-sm"
-          >
-            Subscribe
-          </button>
-        </form>
-      </div>
+      {/* Email Subscribe Component */}
+      <EmailSubscribe userEmail={currentUser?.email} />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="glass-card p-3 sm:p-4 text-center">
