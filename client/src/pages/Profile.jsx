@@ -18,8 +18,6 @@ import {
   Loader2,
   Edit2,
   X,
-  AlertCircle,
-  LayoutDashboard,
   Settings,
   ChevronRight,
   Star,
@@ -29,10 +27,8 @@ import {
   Puzzle,
   MapPin,
   Globe,
-  Lock,
   LogOut,
   Sparkles,
-  List,
   Plus,
   RefreshCw,
 } from "lucide-react";
@@ -223,11 +219,6 @@ const Profile = () => {
     readArticles: 0,
     totalTime: 0,
     perfectScores: 0,
-    totalCorrect: 0,
-    totalIncorrect: 0,
-    lastQuizDate: null,
-    quizzesByCategory: {},
-    achievements: [],
   });
   const [achievements, setAchievements] = useState([]);
   const [renderKey, setRenderKey] = useState(0);
@@ -303,13 +294,7 @@ const Profile = () => {
           readArticles: statsData.read_articles || 0,
           totalTime: statsData.total_time || 0,
           perfectScores: statsData.perfect_scores || 0,
-          totalCorrect: statsData.total_correct || 0,
-          totalIncorrect: statsData.total_incorrect || 0,
-          lastQuizDate: statsData.last_quiz_date || null,
-          quizzesByCategory: statsData.quizzes_by_category || {},
-          achievements: statsData.achievements || [],
         });
-
         setRenderKey((prev) => prev + 1);
       }
     } catch (error) {
@@ -330,7 +315,6 @@ const Profile = () => {
     if (!user) return;
     setRefreshing(true);
     try {
-      // Force refresh from database
       const { data: freshData, error } = await supabase
         .from("users")
         .select("*")
@@ -353,11 +337,6 @@ const Profile = () => {
           readArticles: statsData.read_articles || 0,
           totalTime: statsData.total_time || 0,
           perfectScores: statsData.perfect_scores || 0,
-          totalCorrect: statsData.total_correct || 0,
-          totalIncorrect: statsData.total_incorrect || 0,
-          lastQuizDate: statsData.last_quiz_date || null,
-          quizzesByCategory: statsData.quizzes_by_category || {},
-          achievements: statsData.achievements || [],
         });
         setRenderKey((prev) => prev + 1);
       }
@@ -407,15 +386,6 @@ const Profile = () => {
         .eq("id", user.id);
 
       if (updateError) throw updateError;
-
-      // Also update auth metadata
-      await supabase.auth.updateUser({
-        data: {
-          name: formData.name,
-          avatar_id: formData.avatar_id,
-          bio: finalBio,
-        },
-      });
 
       setEditing(false);
       await loadProfile();

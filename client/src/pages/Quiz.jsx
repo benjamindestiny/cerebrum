@@ -16,6 +16,7 @@ import {
   Zap,
   Brain,
   Sparkles,
+  SkipForward,
 } from "lucide-react";
 import { fetchQuestions, shuffleArray, decodeHTML } from "../services/quizApi";
 import {
@@ -81,17 +82,6 @@ const Quiz = () => {
   const [quizStartTime, setQuizStartTime] = useState(Date.now());
   const [isFinishing, setIsFinishing] = useState(false);
   const [timerStarted, setTimerStarted] = useState(false);
-  const [stats, setStats] = useState({
-    totalQuizzes: 0,
-    bestScore: 0,
-    averageScore: 0,
-    totalPoints: 0,
-    streak: 0,
-    riddlesSolved: 0,
-    readArticles: 0,
-    totalTime: 0,
-    perfectScores: 0,
-  });
 
   useEffect(() => {
     const storedCategory = sessionStorage.getItem("selectedCategory");
@@ -310,10 +300,8 @@ const Quiz = () => {
     if (!isAnswered && !isFinishing) {
       setIsAnswered(true);
       console.log("⏰ Time's up! Question failed.");
-      // Mark as failed (null answer)
       const updatedAnswers = { ...answers, [currentIndex]: null };
       setAnswers(updatedAnswers);
-      // Check if it's the last question
       if (currentIndex === questions.length - 1) {
         setIsFinishing(true);
         setTimeout(() => {
@@ -332,9 +320,11 @@ const Quiz = () => {
     setQuizStartTime(Date.now());
   };
 
+  // ✅ FIXED: Allow changing answers when going back
   const handleAnswerSelect = (answer) => {
-    if (isAnswered || isFinishing) return;
+    if (isFinishing) return;
 
+    // If the question was already answered, update the answer
     const updatedAnswers = { ...answers, [currentIndex]: answer };
     setAnswers(updatedAnswers);
     setSelectedAnswer(answer);
@@ -345,14 +335,23 @@ const Quiz = () => {
       `${isCorrect ? "✅" : "❌"} Question ${currentIndex + 1}: ${isCorrect ? "Correct!" : "Wrong"}`,
     );
 
-    if (currentIndex === questions.length - 1) {
-      console.log("🏁 Last question answered! Finishing quiz...");
-      setIsFinishing(true);
-      setTimeout(() => {
-        finishQuiz(updatedAnswers);
-      }, 1200);
+    // Don't auto-advance if the user is revisiting a question
+    // Only auto-advance if it's a new question (not previously answered)
+    if (answers[currentIndex] === undefined) {
+      // This is a new answer, advance to next
+      if (currentIndex === questions.length - 1) {
+        console.log("🏁 Last question answered! Finishing quiz...");
+        setIsFinishing(true);
+        setTimeout(() => {
+          finishQuiz(updatedAnswers);
+        }, 1200);
+      } else {
+        setTimeout(() => handleNext(updatedAnswers), 800);
+      }
     } else {
-      setTimeout(() => handleNext(updatedAnswers), 1200);
+      // User changed their answer, stay on the same question
+      console.log("🔄 Answer updated for question", currentIndex + 1);
+      // Show a brief indicator that answer was updated
     }
   };
 
@@ -360,8 +359,9 @@ const Quiz = () => {
     if (currentIndex < questions.length - 1) {
       const nextIndex = currentIndex + 1;
       setCurrentIndex(nextIndex);
-      setSelectedAnswer(answers[nextIndex] || null); // Highlight previous answer if exists
-      setIsAnswered(answers[nextIndex] !== undefined);
+      const existingAnswer = answers[nextIndex];
+      setSelectedAnswer(existingAnswer !== undefined ? existingAnswer : null);
+      setIsAnswered(existingAnswer !== undefined);
       setTimeLeft(selectedTimePerQuestion);
     } else {
       if (!isFinishing) {
@@ -375,10 +375,34 @@ const Quiz = () => {
     if (currentIndex > 0) {
       const prevIndex = currentIndex - 1;
       setCurrentIndex(prevIndex);
-      setSelectedAnswer(answers[prevIndex] || null); // Highlight previous answer
-      setIsAnswered(answers[prevIndex] !== undefined);
+      const existingAnswer = answers[prevIndex];
+      setSelectedAnswer(existingAnswer !== undefined ? existingAnswer : null);
+      setIsAnswered(existingAnswer !== undefined);
       setTimeLeft(selectedTimePerQuestion);
     }
+  };
+
+  // ✅ NEW: Go to current (first unanswered) question
+  const goToCurrent = () => {
+    // Find the first unanswered question
+    let firstUnanswered = -1;
+    for (let i = 0; i < questions.length; i++) {
+      if (answers[i] === undefined) {
+        firstUnanswered = i;
+        break;
+      }
+    }
+
+    // If all questions are answered, go to the last question
+    if (firstUnanswered === -1) {
+      firstUnanswered = questions.length - 1;
+    }
+
+    setCurrentIndex(firstUnanswered);
+    const existingAnswer = answers[firstUnanswered];
+    setSelectedAnswer(existingAnswer !== undefined ? existingAnswer : null);
+    setIsAnswered(existingAnswer !== undefined);
+    setTimeLeft(selectedTimePerQuestion);
   };
 
   const handleGoBack = () => {
@@ -471,8 +495,8 @@ const Quiz = () => {
           console.log("✅ Quiz saved with score:", percentage);
         }
 
-        // Update user stats (same as before)
-        // ... (keep the existing stats update code)
+        // Update user stats
+        // (keep existing stats update code)
       } catch (error) {
         console.error("❌ Save error:", error);
       }
@@ -696,6 +720,10 @@ const Quiz = () => {
   const progress = ((currentIndex + 1) / questions.length) * 100;
   const options = currentQuestion?.shuffledOptions || [];
 
+  // Check if there's any unanswered question
+  const hasUnanswered = questions.some((_, i) => answers[i] === undefined);
+  const allAnswered = !hasUnanswered;
+
   return (
     <div className="max-w-3xl mx-auto px-3 sm:px-4">
       <div className="flex items-center justify-between mb-3 sm:mb-4 flex-wrap gap-2">
@@ -726,6 +754,9 @@ const Quiz = () => {
           <span className="text-[10px] sm:text-xs text-gray-500">
             ⏱ {selectedTimePerQuestion}s
           </span>
+          <span className="text-[10px] sm:text-xs text-gray-500">
+            {Object.keys(answers).length}/{questions.length} answered
+          </span>
         </div>
       </div>
 
@@ -751,6 +782,21 @@ const Quiz = () => {
             transition={{ duration: 0.5 }}
           />
         </div>
+        {/* Mini progress dots */}
+        <div className="flex gap-1 mt-2 justify-center flex-wrap">
+          {questions.map((_, i) => (
+            <div
+              key={i}
+              className={`w-2 h-2 rounded-full transition-all ${
+                i === currentIndex
+                  ? "bg-[#7c3aed] scale-125"
+                  : answers[i] !== undefined
+                    ? "bg-green-500"
+                    : "bg-white/20"
+              }`}
+            />
+          ))}
+        </div>
       </div>
 
       <motion.div
@@ -774,20 +820,25 @@ const Quiz = () => {
               answers[currentIndex] !== undefined &&
               answers[currentIndex] === answer;
 
+            // Check if this question was previously answered (for showing the answer indicator)
+            const hasPreviousAnswer = answers[currentIndex] !== undefined;
+            const previousAnswer = answers[currentIndex];
+
             return (
               <motion.button
                 key={index}
-                whileHover={!isAnswered ? { scale: 1.01 } : {}}
-                whileTap={!isAnswered ? { scale: 0.98 } : {}}
+                whileHover={!isFinishing ? { scale: 1.01 } : {}}
+                whileTap={!isFinishing ? { scale: 0.98 } : {}}
                 onClick={() => handleAnswerSelect(answer)}
-                disabled={isAnswered}
+                disabled={isFinishing}
                 className={`w-full text-left px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg transition-all duration-200 text-xs sm:text-sm
-                  ${isAnswered ? "cursor-default" : "hover:bg-white/10 cursor-pointer"}
+                  ${isFinishing ? "cursor-default" : "hover:bg-white/10 cursor-pointer"}
                   ${isSelected && !isAnswered ? "bg-[#7c3aed]/30 border border-[#7c3aed] text-white" : ""}
                   ${showCorrect ? "bg-[#00C9A7]/30 border border-[#00C9A7] text-white" : ""}
                   ${showWrong ? "bg-red-500/30 border border-red-500 text-white" : ""}
                   ${!isSelected && !isAnswered && wasAnswered ? "bg-blue-500/20 border border-blue-500/30 text-white" : ""}
                   ${!isSelected && !isAnswered && !wasAnswered ? "bg-white/5 hover:bg-white/10 text-gray-300 border border-transparent" : ""}
+                  ${!isSelected && isAnswered && hasPreviousAnswer && previousAnswer === answer && !isCorrect ? "bg-blue-500/20 border border-blue-500/30 text-white line-through" : ""}
                 `}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -795,9 +846,16 @@ const Quiz = () => {
                     {decodeHTML(answer)}
                     {!isAnswered && wasAnswered && (
                       <span className="ml-2 text-[10px] text-blue-400">
-                        (Previous answer)
+                        (Current answer)
                       </span>
                     )}
+                    {hasPreviousAnswer &&
+                      previousAnswer === answer &&
+                      !isAnswered && (
+                        <span className="ml-2 text-[10px] text-blue-400">
+                          (Previously selected)
+                        </span>
+                      )}
                   </span>
                   {isAnswered && (
                     <span className="flex-shrink-0">
@@ -821,7 +879,7 @@ const Quiz = () => {
         </div>
       </motion.div>
 
-      <div className="flex justify-between gap-3 sm:gap-4">
+      <div className="flex justify-between gap-3 sm:gap-4 flex-wrap">
         <button
           onClick={handlePrevious}
           disabled={currentIndex === 0}
@@ -829,11 +887,30 @@ const Quiz = () => {
         >
           <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" /> Back
         </button>
+
+        {/* ✅ NEW: Go to Current button */}
+        {(hasUnanswered || allAnswered) && (
+          <button
+            onClick={goToCurrent}
+            className={`text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg flex items-center gap-1 sm:gap-2 transition-colors ${
+              allAnswered
+                ? "bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30"
+                : "bg-[#7c3aed]/20 text-[#a78bfa] hover:bg-[#7c3aed]/30 border border-[#7c3aed]/30"
+            }`}
+          >
+            <SkipForward className="w-3 h-3 sm:w-4 sm:h-4" />
+            {allAnswered
+              ? "Review Answers"
+              : `Go to Current (${Object.keys(answers).length}/${questions.length})`}
+          </button>
+        )}
+
         <span className="text-[10px] sm:text-xs text-gray-500 flex items-center">
-          {isAnswered ? "✓ Answered" : "Select an answer"}
-          {answers[currentIndex] !== undefined && !isAnswered && (
-            <span className="ml-2 text-blue-400">(Previously answered)</span>
-          )}
+          {isAnswered
+            ? "✓ Answered"
+            : answers[currentIndex] !== undefined
+              ? "📝 Answer saved"
+              : "Select an answer"}
         </span>
       </div>
     </div>

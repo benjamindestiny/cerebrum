@@ -21,15 +21,13 @@ const Leaderboard = () => {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [timeFilter, setTimeFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
 
-  // Load leaderboard on mount, filter change, and navigation
   useEffect(() => {
     loadLeaderboard();
     getCurrentUser();
-  }, [timeFilter, location.key]);
+  }, [location.key]);
 
   // Real-time subscription for new quiz results
   useEffect(() => {
@@ -39,17 +37,6 @@ const Leaderboard = () => {
         "postgres_changes",
         {
           event: "INSERT",
-          schema: "public",
-          table: "quiz_results",
-        },
-        () => {
-          refreshLeaderboard();
-        },
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
           schema: "public",
           table: "quiz_results",
         },
@@ -74,17 +61,7 @@ const Leaderboard = () => {
   const loadLeaderboard = async () => {
     setLoading(true);
     try {
-      await loadLeaderboardManual();
-    } catch (error) {
-      console.error("Error loading leaderboard:", error);
-      setPlayers([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadLeaderboardManual = async () => {
-    try {
+      // Get all quiz results
       const { data: quizData, error: quizError } = await supabase
         .from("quiz_results")
         .select("*");
@@ -92,16 +69,20 @@ const Leaderboard = () => {
       if (quizError) {
         console.error("Error fetching quiz results:", quizError);
         setPlayers([]);
+        setLoading(false);
         return;
       }
 
       if (!quizData || quizData.length === 0) {
         setPlayers([]);
+        setLoading(false);
         return;
       }
 
+      // Get all user IDs
       const userIds = [...new Set(quizData.map((q) => q.user_id))];
 
+      // Get user info
       const { data: usersData, error: usersError } = await supabase
         .from("users")
         .select("id, name, avatar_id, email, stats")
@@ -118,6 +99,7 @@ const Leaderboard = () => {
         });
       }
 
+      // Aggregate data by user
       const playerMap = {};
       quizData.forEach((record) => {
         const userId = record.user_id;
@@ -163,6 +145,7 @@ const Leaderboard = () => {
         }
       });
 
+      // Convert to array and calculate averages
       const leaderboard = Object.values(playerMap).map((player) => ({
         ...player,
         averageScore:
@@ -171,6 +154,7 @@ const Leaderboard = () => {
             : 0,
       }));
 
+      // Sort by average score descending
       leaderboard.sort((a, b) => {
         if (b.averageScore !== a.averageScore) {
           return b.averageScore - a.averageScore;
@@ -178,10 +162,12 @@ const Leaderboard = () => {
         return b.quizCount - a.quizCount;
       });
 
+      // Add ranks
       leaderboard.forEach((player, index) => {
         player.rank = index + 1;
       });
 
+      // Add avatars
       const avatarMap = {
         1: "🧠",
         2: "🚀",
@@ -206,8 +192,10 @@ const Leaderboard = () => {
 
       setPlayers(leaderboard);
     } catch (error) {
-      console.error("Manual query error:", error);
+      console.error("Error loading leaderboard:", error);
       setPlayers([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -351,32 +339,15 @@ const Leaderboard = () => {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-between">
-        <div className="flex gap-1 sm:gap-2 overflow-x-auto pb-1 w-full sm:w-auto">
-          {["all", "month", "week", "today"].map((filter) => (
-            <button
-              key={filter}
-              onClick={() => setTimeFilter(filter)}
-              className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs md:text-sm transition-all whitespace-nowrap ${
-                timeFilter === filter
-                  ? "bg-[#7c3aed]/20 text-[#a78bfa] border border-[#7c3aed]/30"
-                  : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              {filter.charAt(0).toUpperCase() + filter.slice(1)}
-            </button>
-          ))}
-        </div>
-        <div className="relative w-full sm:w-auto">
-          <Search className="absolute left-2.5 sm:left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500" />
-          <input
-            type="text"
-            placeholder="Search players..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full sm:w-40 md:w-48 pl-8 sm:pl-9 pr-3 sm:pr-4 py-1.5 sm:py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white placeholder-gray-500 focus:border-[#7c3aed] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 transition-all text-xs sm:text-sm"
-          />
-        </div>
+      <div className="relative w-full sm:w-auto">
+        <Search className="absolute left-2.5 sm:left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500" />
+        <input
+          type="text"
+          placeholder="Search players..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full sm:w-40 md:w-48 pl-8 sm:pl-9 pr-3 sm:pr-4 py-1.5 sm:py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white placeholder-gray-500 focus:border-[#7c3aed] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 transition-all text-xs sm:text-sm"
+        />
       </div>
 
       {filteredPlayers.length > 0 && (
