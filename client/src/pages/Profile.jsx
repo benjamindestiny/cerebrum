@@ -161,8 +161,40 @@ const Profile = () => {
           setSelectedBioType("predefined");
         }
 
-        // Load stats
+        // Load stats from database
         const statsData = freshData.stats || {};
+        
+        // Also get riddles from riddle_history table
+        let riddlesSolved = statsData.riddles_solved || 0;
+        try {
+          const { data: riddleHistory } = await supabase
+            .from('riddle_history')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('solved', true);
+          
+          if (riddleHistory) {
+            riddlesSolved = riddleHistory.length;
+          }
+        } catch (error) {
+          console.error('Error fetching riddle history:', error);
+        }
+
+        // Also get articles from article_history table
+        let readArticles = statsData.read_articles || 0;
+        try {
+          const { data: articleHistory } = await supabase
+            .from('article_history')
+            .select('*')
+            .eq('user_id', user.id);
+          
+          if (articleHistory) {
+            readArticles = articleHistory.length;
+          }
+        } catch (error) {
+          console.error('Error fetching article history:', error);
+        }
+
         setStats({
           totalQuizzes: statsData.total_quizzes || 0,
           bestScore: statsData.best_score || 0,
@@ -170,8 +202,8 @@ const Profile = () => {
           totalPoints: statsData.total_points || 0,
           streak: statsData.streak || 0,
           longestStreak: statsData.longest_streak || 0,
-          riddlesSolved: statsData.riddles_solved || 0,
-          readArticles: statsData.read_articles || 0,
+          riddlesSolved: riddlesSolved,
+          readArticles: readArticles,
           totalTime: statsData.total_time || 0,
           perfectScores: statsData.perfect_scores || 0,
         });
@@ -249,6 +281,32 @@ const Profile = () => {
       if (freshData) {
         setProfile(freshData);
         const statsData = freshData.stats || {};
+        
+        // Get riddles from riddle_history
+        let riddlesSolved = statsData.riddles_solved || 0;
+        try {
+          const { data: riddleHistory } = await supabase
+            .from('riddle_history')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('solved', true);
+          if (riddleHistory) {
+            riddlesSolved = riddleHistory.length;
+          }
+        } catch (e) {}
+
+        // Get articles from article_history
+        let readArticles = statsData.read_articles || 0;
+        try {
+          const { data: articleHistory } = await supabase
+            .from('article_history')
+            .select('*')
+            .eq('user_id', user.id);
+          if (articleHistory) {
+            readArticles = articleHistory.length;
+          }
+        } catch (e) {}
+
         setStats({
           totalQuizzes: statsData.total_quizzes || 0,
           bestScore: statsData.best_score || 0,
@@ -256,8 +314,8 @@ const Profile = () => {
           totalPoints: statsData.total_points || 0,
           streak: statsData.streak || 0,
           longestStreak: statsData.longest_streak || 0,
-          riddlesSolved: statsData.riddles_solved || 0,
-          readArticles: statsData.read_articles || 0,
+          riddlesSolved: riddlesSolved,
+          readArticles: readArticles,
           totalTime: statsData.total_time || 0,
           perfectScores: statsData.perfect_scores || 0,
         });

@@ -1,11 +1,30 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Puzzle, Brain, Lightbulb, Sparkles, Trophy, Clock, Zap,
-  Check, X, Send, Eye, EyeOff, Star, Medal,
-  Award, Users, Loader2, BookOpen, ChevronDown, ChevronUp, Timer
+  Puzzle,
+  Brain,
+  Lightbulb,
+  Sparkles,
+  Trophy,
+  Clock,
+  Zap,
+  Check,
+  X,
+  Send,
+  Eye,
+  EyeOff,
+  Star,
+  Medal,
+  Award,
+  Users,
+  Loader2,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  Timer,
 } from "lucide-react";
 import { riddles, getDailyRiddle } from "../data/riddles";
+import { supabase } from "../services/supabase";
 
 const Riddles = () => {
   const [answer, setAnswer] = useState("");
@@ -30,13 +49,22 @@ const Riddles = () => {
   const [dailySolved, setDailySolved] = useState(false);
   const [timeUntilNext, setTimeUntilNext] = useState("");
   const [dailyRiddleData, setDailyRiddleData] = useState(null);
+  const [user, setUser] = useState(null);
 
   const inputRefs = useRef({});
 
   useEffect(() => {
     loadDailyRiddle();
     setIsLoading(false);
+    getCurrentUser();
   }, []);
+
+  const getCurrentUser = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    setUser(user);
+  };
 
   useEffect(() => {
     if (expandedRiddle && inputRefs.current[expandedRiddle]) {
@@ -82,13 +110,57 @@ const Riddles = () => {
     setDailySolved(false);
   };
 
+  const saveRiddleToHistory = async (riddleId, solved) => {
+    if (!user) return;
+    try {
+      const { error } = await supabase.from("riddle_history").insert({
+        user_id: user.id,
+        riddle_id: riddleId,
+        solved: solved,
+        solved_at: solved ? new Date().toISOString() : null,
+      });
+      if (error) console.error("Error saving riddle history:", error);
+    } catch (error) {
+      console.error("Error saving riddle history:", error);
+    }
+  };
+
+  const updateUserStats = async () => {
+    if (!user) return;
+    try {
+      // Get current stats
+      const { data: userData } = await supabase
+        .from("users")
+        .select("stats")
+        .eq("id", user.id)
+        .single();
+
+      const currentStats = userData?.stats || {};
+      const updatedStats = {
+        ...currentStats,
+        riddles_solved: solvedCount,
+        total_points: (currentStats.total_points || 0) + points,
+      };
+
+      await supabase
+        .from("users")
+        .update({ stats: updatedStats })
+        .eq("id", user.id);
+    } catch (error) {
+      console.error("Error updating user stats:", error);
+    }
+  };
+
   const handleDailySubmit = () => {
     if (dailySolved) return;
     const userAnswer = answer.trim().toLowerCase();
     if (!userAnswer) return;
     const correctAnswer = dailyRiddleData.answer.toLowerCase();
-    const isCorrectAnswer = userAnswer === correctAnswer || userAnswer.includes(correctAnswer) || correctAnswer.includes(userAnswer);
-    setDailyAttempts(prev => prev + 1);
+    const isCorrectAnswer =
+      userAnswer === correctAnswer ||
+      userAnswer.includes(correctAnswer) ||
+      correctAnswer.includes(userAnswer);
+    setDailyAttempts((prev) => prev + 1);
     if (isCorrectAnswer) {
       setIsCorrect(true);
       setShowAnswer(true);
@@ -96,27 +168,35 @@ const Riddles = () => {
       setSolvedCount((prev) => prev + 1);
       setPoints((prev) => prev + dailyRiddleData.points);
       setStreak((prev) => prev + 1);
-      setHistory((prev) => [{
-        id: dailyRiddleData.id,
-        question: dailyRiddleData.question,
-        answer: dailyRiddleData.answer,
-        userAnswer: userAnswer,
-        solved: true,
-        points: dailyRiddleData.points,
-        timestamp: new Date().toISOString()
-      }, ...prev]);
+      setHistory((prev) => [
+        {
+          id: dailyRiddleData.id,
+          question: dailyRiddleData.question,
+          answer: dailyRiddleData.answer,
+          userAnswer: userAnswer,
+          solved: true,
+          points: dailyRiddleData.points,
+          timestamp: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
+      saveRiddleToHistory(dailyRiddleData.id, true);
+      updateUserStats();
     } else {
       setIsCorrect(false);
       setStreak(0);
-      setHistory((prev) => [{
-        id: dailyRiddleData.id,
-        question: dailyRiddleData.question,
-        answer: dailyRiddleData.answer,
-        userAnswer: userAnswer,
-        solved: false,
-        points: 0,
-        timestamp: new Date().toISOString()
-      }, ...prev]);
+      setHistory((prev) => [
+        {
+          id: dailyRiddleData.id,
+          question: dailyRiddleData.question,
+          answer: dailyRiddleData.answer,
+          userAnswer: userAnswer,
+          solved: false,
+          points: 0,
+          timestamp: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
       if (dailyAttempts + 1 >= 3) {
         setShowAnswer(true);
       }
@@ -167,38 +247,52 @@ const Riddles = () => {
     if (!riddle) return;
     const userAnswer = inputValues[riddleId]?.trim().toLowerCase() || "";
     if (!userAnswer) return;
-    setAttemptsMap((prev) => ({ ...prev, [riddleId]: (prev[riddleId] || 0) + 1 }));
+    setAttemptsMap((prev) => ({
+      ...prev,
+      [riddleId]: (prev[riddleId] || 0) + 1,
+    }));
     const correctAnswer = riddle.answer.toLowerCase();
-    const isCorrectAnswer = userAnswer === correctAnswer || userAnswer.includes(correctAnswer) || correctAnswer.includes(userAnswer);
+    const isCorrectAnswer =
+      userAnswer === correctAnswer ||
+      userAnswer.includes(correctAnswer) ||
+      correctAnswer.includes(userAnswer);
     setResultMap((prev) => ({ ...prev, [riddleId]: isCorrectAnswer }));
     if (isCorrectAnswer) {
       setShowAnswerMap((prev) => ({ ...prev, [riddleId]: true }));
       setSolvedCount((prev) => prev + 1);
       setPoints((prev) => prev + riddle.points);
       setStreak((prev) => prev + 1);
-      setHistory((prev) => [{
-        id: riddle.id,
-        question: riddle.question,
-        answer: riddle.answer,
-        userAnswer: userAnswer,
-        solved: true,
-        points: riddle.points,
-        timestamp: new Date().toISOString()
-      }, ...prev]);
+      setHistory((prev) => [
+        {
+          id: riddle.id,
+          question: riddle.question,
+          answer: riddle.answer,
+          userAnswer: userAnswer,
+          solved: true,
+          points: riddle.points,
+          timestamp: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
+      saveRiddleToHistory(riddle.id, true);
+      updateUserStats();
     } else {
       setStreak(0);
       if ((attemptsMap[riddleId] || 0) + 1 >= 3) {
         setShowAnswerMap((prev) => ({ ...prev, [riddleId]: true }));
       }
-      setHistory((prev) => [{
-        id: riddle.id,
-        question: riddle.question,
-        answer: riddle.answer,
-        userAnswer: userAnswer,
-        solved: false,
-        points: 0,
-        timestamp: new Date().toISOString()
-      }, ...prev]);
+      setHistory((prev) => [
+        {
+          id: riddle.id,
+          question: riddle.question,
+          answer: riddle.answer,
+          userAnswer: userAnswer,
+          solved: false,
+          points: 0,
+          timestamp: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
     }
   };
 
@@ -221,9 +315,12 @@ const Riddles = () => {
   };
 
   const getDifficultyColor = (difficulty) => {
-    if (difficulty === "easy") return "bg-green-500/20 text-green-400 border-green-500/30";
-    if (difficulty === "medium") return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
-    if (difficulty === "hard") return "bg-red-500/20 text-red-400 border-red-500/30";
+    if (difficulty === "easy")
+      return "bg-green-500/20 text-green-400 border-green-500/30";
+    if (difficulty === "medium")
+      return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+    if (difficulty === "hard")
+      return "bg-red-500/20 text-red-400 border-red-500/30";
     return "bg-gray-500/20 text-gray-400 border-gray-500/30";
   };
 
@@ -241,10 +338,14 @@ const Riddles = () => {
   const getFilteredRiddles = () => {
     if (filter === "all") return riddles;
     if (filter === "solved") return riddles.filter((r) => isRiddleSolved(r.id));
-    if (filter === "unsolved") return riddles.filter((r) => !isRiddleSolved(r.id));
-    if (filter === "easy") return riddles.filter((r) => r.difficulty === "easy");
-    if (filter === "medium") return riddles.filter((r) => r.difficulty === "medium");
-    if (filter === "hard") return riddles.filter((r) => r.difficulty === "hard");
+    if (filter === "unsolved")
+      return riddles.filter((r) => !isRiddleSolved(r.id));
+    if (filter === "easy")
+      return riddles.filter((r) => r.difficulty === "easy");
+    if (filter === "medium")
+      return riddles.filter((r) => r.difficulty === "medium");
+    if (filter === "hard")
+      return riddles.filter((r) => r.difficulty === "hard");
     return riddles;
   };
 
@@ -269,7 +370,9 @@ const Riddles = () => {
             <Puzzle className="w-8 h-8 text-[#6C2BD9]" />
             Riddle Challenge
           </h1>
-          <p className="text-gray-400 mt-1">Test your lateral thinking skills</p>
+          <p className="text-gray-400 mt-1">
+            Test your lateral thinking skills
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="glass-card px-4 py-2 flex items-center gap-2">
@@ -301,7 +404,9 @@ const Riddles = () => {
           <div className="text-xs text-gray-400">Streak</div>
         </div>
         <div className="glass-card p-4 text-center">
-          <div className="text-2xl font-bold text-[#00C9A7]">{riddles.length}</div>
+          <div className="text-2xl font-bold text-[#00C9A7]">
+            {riddles.length}
+          </div>
           <div className="text-xs text-gray-400">Total Riddles</div>
         </div>
       </div>
@@ -313,7 +418,9 @@ const Riddles = () => {
               <span className="text-3xl">⭐</span>
               <div>
                 <div className="flex items-center gap-3 flex-wrap">
-                  <span className="text-xs text-yellow-400 font-semibold">✨ RIDDLE OF THE DAY</span>
+                  <span className="text-xs text-yellow-400 font-semibold">
+                    ✨ RIDDLE OF THE DAY
+                  </span>
                   {dailySolved && (
                     <span className="text-xs text-[#00C9A7] flex items-center gap-1">
                       <Check className="w-3 h-3" /> Solved!
@@ -324,7 +431,9 @@ const Riddles = () => {
                     Next: {timeUntilNext}
                   </span>
                 </div>
-                <p className="text-white font-medium mt-1">{dailyRiddleData.question}</p>
+                <p className="text-white font-medium mt-1">
+                  {dailyRiddleData.question}
+                </p>
               </div>
             </div>
           </div>
@@ -346,7 +455,11 @@ const Riddles = () => {
                   disabled={dailySolved}
                   className={`absolute right-2 top-1/2 transform -translate-y-1/2 px-4 py-1.5 rounded-lg transition-all ${dailySolved ? "bg-green-500/20 text-green-400 cursor-not-allowed" : "bg-[#6C2BD9] text-white hover:bg-[#5A1BB8]"}`}
                 >
-                  {dailySolved ? <Check className="w-5 h-5" /> : <Send className="w-4 h-4" />}
+                  {dailySolved ? (
+                    <Check className="w-5 h-5" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
                 </button>
               </div>
               {!dailySolved && (
@@ -373,7 +486,11 @@ const Riddles = () => {
                 disabled={dailySolved}
                 className={`text-sm px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${dailySolved || dailyAttempts < 3 ? "bg-gray-700/50 text-gray-500 cursor-not-allowed" : showAnswer ? "bg-blue-500/20 text-blue-400 border border-blue-400/30 cursor-pointer hover:bg-blue-500/30" : "bg-gray-700 text-gray-400 cursor-not-allowed"}`}
               >
-                {showAnswer ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showAnswer ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
                 {showAnswer ? "Hide" : "Reveal"}
               </button>
             </div>
@@ -381,15 +498,20 @@ const Riddles = () => {
 
           {showHint && (
             <div className="mt-3 p-3 bg-yellow-400/10 border border-yellow-400/20 rounded-lg">
-              <p className="text-yellow-400 text-sm">💡 {dailyRiddleData.hint}</p>
+              <p className="text-yellow-400 text-sm">
+                💡 {dailyRiddleData.hint}
+              </p>
             </div>
           )}
           {showAnswer && (
             <div className="mt-3 p-3 bg-[#00C9A7]/10 border border-[#00C9A7]/20 rounded-lg">
               <p className="text-[#00C9A7] text-sm">
-                <span className="font-semibold">Answer:</span> {dailyRiddleData.answer}
+                <span className="font-semibold">Answer:</span>{" "}
+                {dailyRiddleData.answer}
               </p>
-              <p className="text-gray-400 text-xs mt-1">{dailyRiddleData.explanation}</p>
+              <p className="text-gray-400 text-xs mt-1">
+                {dailyRiddleData.explanation}
+              </p>
             </div>
           )}
         </div>
@@ -441,8 +563,11 @@ const Riddles = () => {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${getDifficultyColor(riddle.difficulty)}`}>
-                          {getDifficultyEmoji(riddle.difficulty)} {riddle.difficulty}
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full ${getDifficultyColor(riddle.difficulty)}`}
+                        >
+                          {getDifficultyEmoji(riddle.difficulty)}{" "}
+                          {riddle.difficulty}
                         </span>
                         {isSolved && (
                           <span className="text-xs text-[#00C9A7] flex items-center gap-1">
@@ -450,15 +575,29 @@ const Riddles = () => {
                           </span>
                         )}
                         {!isSolved && attempts > 0 && (
-                          <span className="text-xs text-gray-400">{attempts}/3 attempts</span>
+                          <span className="text-xs text-gray-400">
+                            {attempts}/3 attempts
+                          </span>
                         )}
-                        <span className="text-xs text-gray-500">{riddle.points} pts</span>
+                        <span className="text-xs text-gray-500">
+                          {riddle.points} pts
+                        </span>
                       </div>
-                      <p className="text-white font-medium">{riddle.question}</p>
+                      <p className="text-white font-medium">
+                        {riddle.question}
+                      </p>
                     </div>
                     <div className="flex items-center gap-2 ml-4">
-                      {isSolved ? <Trophy className="w-4 h-4 text-yellow-400" /> : <Brain className="w-4 h-4 text-gray-500" />}
-                      {isExpanded ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                      {isSolved ? (
+                        <Trophy className="w-4 h-4 text-yellow-400" />
+                      ) : (
+                        <Brain className="w-4 h-4 text-gray-500" />
+                      )}
+                      {isExpanded ? (
+                        <ChevronUp className="w-5 h-5 text-gray-400" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-gray-400" />
+                      )}
                     </div>
                   </div>
                 </div>
@@ -477,11 +616,17 @@ const Riddles = () => {
                           <div className="flex-1">
                             <div className="relative">
                               <input
-                                ref={(el) => (inputRefs.current[riddle.id] = el)}
+                                ref={(el) =>
+                                  (inputRefs.current[riddle.id] = el)
+                                }
                                 type="text"
                                 value={inputValue}
-                                onChange={(e) => handleInputChange(riddle.id, e.target.value)}
-                                onKeyPress={(e) => handleKeyPressRiddle(riddle.id, e)}
+                                onChange={(e) =>
+                                  handleInputChange(riddle.id, e.target.value)
+                                }
+                                onKeyPress={(e) =>
+                                  handleKeyPressRiddle(riddle.id, e)
+                                }
                                 placeholder="Type your answer..."
                                 className="w-full px-4 py-3 bg-[#2D2D5E] rounded-lg border border-white/10 text-white placeholder-gray-500 focus:border-[#6C2BD9] focus:outline-none focus:ring-2 focus:ring-[#6C2BD9]/20 transition-all"
                                 disabled={result === true}
@@ -491,7 +636,11 @@ const Riddles = () => {
                                 disabled={result === true}
                                 className={`absolute right-2 top-1/2 transform -translate-y-1/2 px-4 py-1.5 rounded-lg transition-all ${result === true ? "bg-green-500/20 text-green-400 cursor-not-allowed" : "bg-[#6C2BD9] text-white hover:bg-[#5A1BB8]"}`}
                               >
-                                {result === true ? <Check className="w-5 h-5" /> : <Send className="w-4 h-4" />}
+                                {result === true ? (
+                                  <Check className="w-5 h-5" />
+                                ) : (
+                                  <Send className="w-4 h-4" />
+                                )}
                               </button>
                             </div>
                             {!isSolved && (
@@ -518,7 +667,11 @@ const Riddles = () => {
                               disabled={result === true}
                               className={`text-sm px-3 py-2 rounded-lg flex items-center gap-1 transition-all ${result === true || attempts < 3 ? "bg-gray-700/50 text-gray-500 cursor-not-allowed" : showAnswerForRiddle ? "bg-blue-500/20 text-blue-400 border border-blue-400/30 cursor-pointer hover:bg-blue-500/30" : "bg-gray-700 text-gray-400 cursor-not-allowed"}`}
                             >
-                              {showAnswerForRiddle ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              {showAnswerForRiddle ? (
+                                <EyeOff className="w-4 h-4" />
+                              ) : (
+                                <Eye className="w-4 h-4" />
+                              )}
                               {showAnswerForRiddle ? "Hide" : "Reveal"}
                             </button>
                           </div>
@@ -526,26 +679,43 @@ const Riddles = () => {
 
                         {showHintForRiddle && (
                           <div className="p-3 bg-yellow-400/10 border border-yellow-400/20 rounded-lg">
-                            <p className="text-yellow-400 text-sm">💡 {riddle.hint}</p>
+                            <p className="text-yellow-400 text-sm">
+                              💡 {riddle.hint}
+                            </p>
                           </div>
                         )}
 
                         {showAnswerForRiddle && (
-                          <div className={`p-3 rounded-lg border ${result === true ? "bg-[#00C9A7]/10 border-[#00C9A7]/20" : result === false ? "bg-red-500/10 border-red-500/20" : "bg-[#00C9A7]/10 border-[#00C9A7]/20"}`}>
-                            <p className={`text-sm ${result === true ? "text-[#00C9A7]" : result === false ? "text-red-400" : "text-[#00C9A7]"}`}>
-                              <span className="font-semibold">Answer:</span> {riddle.answer}
+                          <div
+                            className={`p-3 rounded-lg border ${result === true ? "bg-[#00C9A7]/10 border-[#00C9A7]/20" : result === false ? "bg-red-500/10 border-red-500/20" : "bg-[#00C9A7]/10 border-[#00C9A7]/20"}`}
+                          >
+                            <p
+                              className={`text-sm ${result === true ? "text-[#00C9A7]" : result === false ? "text-red-400" : "text-[#00C9A7]"}`}
+                            >
+                              <span className="font-semibold">Answer:</span>{" "}
+                              {riddle.answer}
                             </p>
-                            <p className="text-gray-400 text-xs mt-1">{riddle.explanation}</p>
+                            <p className="text-gray-400 text-xs mt-1">
+                              {riddle.explanation}
+                            </p>
                           </div>
                         )}
 
                         {result !== null && (
-                          <div className={`p-3 rounded-lg border ${result ? "border-[#00C9A7]/30 bg-[#00C9A7]/5 text-[#00C9A7]" : "border-red-400/30 bg-red-400/5 text-red-400"}`}>
+                          <div
+                            className={`p-3 rounded-lg border ${result ? "border-[#00C9A7]/30 bg-[#00C9A7]/5 text-[#00C9A7]" : "border-red-400/30 bg-red-400/5 text-red-400"}`}
+                          >
                             <div className="flex items-center gap-2">
                               {result ? (
-                                <><Check className="w-5 h-5" /> <span>Correct! +{riddle.points} points</span></>
+                                <>
+                                  <Check className="w-5 h-5" />{" "}
+                                  <span>Correct! +{riddle.points} points</span>
+                                </>
                               ) : (
-                                <><X className="w-5 h-5" /> <span>Not quite right. Try again!</span></>
+                                <>
+                                  <X className="w-5 h-5" />{" "}
+                                  <span>Not quite right. Try again!</span>
+                                </>
                               )}
                             </div>
                           </div>
