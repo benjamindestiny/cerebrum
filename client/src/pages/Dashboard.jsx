@@ -18,11 +18,8 @@ import {
   Sparkles,
   Loader2,
   ChevronRight,
-  UserCircle,
-  BarChart3,
   Puzzle,
   Play,
-  Settings,
   RefreshCw,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
@@ -32,7 +29,9 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, loading } = useAuth();
-  const [stats, setStats] = useState({
+
+  // Single state object for all stats
+  const [dashboardData, setDashboardData] = useState({
     totalQuizzes: 0,
     totalPoints: 0,
     averageScore: 0,
@@ -43,11 +42,12 @@ const Dashboard = () => {
     totalTime: 0,
     perfectScores: 0,
   });
+
   const [recentActivity, setRecentActivity] = useState([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingStats, setLoadingStats] = useState(true);
-  const [updateKey, setUpdateKey] = useState(0); // Force re-render
+  const [renderKey, setRenderKey] = useState(0);
 
   // Load data on mount, location change, and user change
   useEffect(() => {
@@ -64,7 +64,10 @@ const Dashboard = () => {
   useEffect(() => {
     if (!currentUser) return;
 
-    console.log("📡 Setting up real-time subscription for user:", currentUser.id);
+    console.log(
+      "📡 Setting up real-time subscription for user:",
+      currentUser.id,
+    );
 
     const subscription = supabase
       .channel("dashboard_updates")
@@ -92,10 +95,14 @@ const Dashboard = () => {
     try {
       console.log("📊 Loading dashboard data...");
       setLoadingStats(true);
+
+      // Load stats and activity
       await loadUserStats();
       await loadRecentActivity();
-      // Force re-render after data is loaded
-      setUpdateKey(prev => prev + 1);
+
+      // Force re-render
+      setRenderKey((prev) => prev + 1);
+
       console.log("✅ Dashboard data loaded");
     } catch (error) {
       console.error("❌ Error loading dashboard data:", error);
@@ -127,7 +134,7 @@ const Dashboard = () => {
       console.log(`📊 Found ${quizResults?.length || 0} quiz results`);
 
       // Calculate stats from quiz results
-      let totalQuizzes = 0;
+      let totalQuizzes = quizResults?.length || 0;
       let totalPoints = 0;
       let totalScore = 0;
       let bestScore = 0;
@@ -135,8 +142,6 @@ const Dashboard = () => {
       let totalTime = 0;
 
       if (quizResults && quizResults.length > 0) {
-        totalQuizzes = quizResults.length;
-
         quizResults.forEach((quiz) => {
           let percentage = parseFloat(quiz.percentage) || 0;
           if (percentage === 0 && quiz.score && quiz.total_questions) {
@@ -154,9 +159,10 @@ const Dashboard = () => {
         });
       }
 
-      const averageScore = totalQuizzes > 0 ? Math.round(totalScore / totalQuizzes) : 0;
+      const averageScore =
+        totalQuizzes > 0 ? Math.round(totalScore / totalQuizzes) : 0;
 
-      // Calculate streak
+      // Calculate streak from quiz dates
       let streak = 0;
       if (quizResults && quizResults.length > 0) {
         const dates = quizResults
@@ -176,7 +182,9 @@ const Dashboard = () => {
             let currentDate = new Date(lastDate);
             for (let i = uniqueDates.length - 2; i >= 0; i--) {
               const prevDate = new Date(uniqueDates[i]);
-              const diffDays = Math.floor((currentDate - prevDate) / (1000 * 60 * 60 * 24));
+              const diffDays = Math.floor(
+                (currentDate - prevDate) / (1000 * 60 * 60 * 24),
+              );
               if (diffDays === 1) {
                 streak++;
                 currentDate = prevDate;
@@ -191,7 +199,7 @@ const Dashboard = () => {
       // Get riddles and articles (ignore 404 errors)
       let riddlesSolved = 0;
       let readArticles = 0;
-      
+
       try {
         const { data: riddlesData } = await supabase
           .from("riddle_history")
@@ -227,8 +235,8 @@ const Dashboard = () => {
 
       console.log("📊 New stats calculated:", newStats);
 
-      // ✅ Force update stats state
-      setStats(newStats);
+      // ✅ Update state with new values
+      setDashboardData(newStats);
 
       // Update users table with stats
       const updatedStats = {
@@ -241,7 +249,8 @@ const Dashboard = () => {
         read_articles: readArticles,
         total_time: totalTime,
         perfect_scores: perfectScores,
-        last_quiz_date: quizResults?.length > 0 ? new Date().toISOString() : null,
+        last_quiz_date:
+          quizResults?.length > 0 ? new Date().toISOString() : null,
       };
 
       const { error: updateError } = await supabase
@@ -257,7 +266,6 @@ const Dashboard = () => {
       } else {
         console.log("✅ User stats updated in database");
       }
-
     } catch (error) {
       console.error("❌ Error loading user stats:", error);
     }
@@ -309,7 +317,8 @@ const Dashboard = () => {
               Welcome to <span className="text-[#7c3aed]">Cerebrum</span>
             </h1>
             <p className="text-gray-400 text-sm sm:text-base md:text-lg max-w-2xl mx-auto">
-              Challenge your mind with interactive quizzes, riddles, and brain teasers. Sign up to track your progress and compete with others!
+              Challenge your mind with interactive quizzes, riddles, and brain
+              teasers. Sign up to track your progress and compete with others!
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-3 sm:pt-4">
               <button
@@ -334,41 +343,67 @@ const Dashboard = () => {
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-400/10 flex items-center justify-center mx-auto mb-2 sm:mb-3">
               <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
             </div>
-            <h3 className="text-white font-semibold text-sm sm:text-base">Interactive Quizzes</h3>
-            <p className="text-gray-400 text-xs sm:text-sm mt-1">Test your knowledge across various subjects</p>
+            <h3 className="text-white font-semibold text-sm sm:text-base">
+              Interactive Quizzes
+            </h3>
+            <p className="text-gray-400 text-xs sm:text-sm mt-1">
+              Test your knowledge across various subjects
+            </p>
           </div>
           <div className="glass-card p-4 sm:p-6 text-center hover:border-[#7c3aed]/30 transition-all">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-purple-400/10 flex items-center justify-center mx-auto mb-2 sm:mb-3">
               <Puzzle className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" />
             </div>
-            <h3 className="text-white font-semibold text-sm sm:text-base">Brain Teasers</h3>
-            <p className="text-gray-400 text-xs sm:text-sm mt-1">Solve challenging riddles and puzzles</p>
+            <h3 className="text-white font-semibold text-sm sm:text-base">
+              Brain Teasers
+            </h3>
+            <p className="text-gray-400 text-xs sm:text-sm mt-1">
+              Solve challenging riddles and puzzles
+            </p>
           </div>
           <div className="glass-card p-4 sm:p-6 text-center hover:border-[#7c3aed]/30 transition-all">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-green-400/10 flex items-center justify-center mx-auto mb-2 sm:mb-3">
               <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
             </div>
-            <h3 className="text-white font-semibold text-sm sm:text-base">Track Progress</h3>
-            <p className="text-gray-400 text-xs sm:text-sm mt-1">Monitor your scores and achievements</p>
+            <h3 className="text-white font-semibold text-sm sm:text-base">
+              Track Progress
+            </h3>
+            <p className="text-gray-400 text-xs sm:text-sm mt-1">
+              Monitor your scores and achievements
+            </p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           <div className="glass-card p-3 sm:p-4 text-center">
-            <div className="text-xl sm:text-2xl font-bold text-[#7c3aed]">50+</div>
-            <div className="text-[10px] sm:text-xs text-gray-400">Quizzes Available</div>
+            <div className="text-xl sm:text-2xl font-bold text-[#7c3aed]">
+              50+
+            </div>
+            <div className="text-[10px] sm:text-xs text-gray-400">
+              Quizzes Available
+            </div>
           </div>
           <div className="glass-card p-3 sm:p-4 text-center">
-            <div className="text-xl sm:text-2xl font-bold text-yellow-400">100+</div>
+            <div className="text-xl sm:text-2xl font-bold text-yellow-400">
+              100+
+            </div>
             <div className="text-[10px] sm:text-xs text-gray-400">Riddles</div>
           </div>
           <div className="glass-card p-3 sm:p-4 text-center">
-            <div className="text-xl sm:text-2xl font-bold text-green-400">10+</div>
-            <div className="text-[10px] sm:text-xs text-gray-400">Categories</div>
+            <div className="text-xl sm:text-2xl font-bold text-green-400">
+              10+
+            </div>
+            <div className="text-[10px] sm:text-xs text-gray-400">
+              Categories
+            </div>
           </div>
           <div className="glass-card p-3 sm:p-4 text-center">
-            <div className="text-xl sm:text-2xl font-bold text-blue-400">500+</div>
-            <div className="text-[10px] sm:text-xs text-gray-400">Active Users</div>
+            <div className="text-xl sm:text-2xl font-bold text-blue-400">
+              500+
+            </div>
+            <div className="text-[10px] sm:text-xs text-gray-400">
+              Active Users
+            </div>
           </div>
         </div>
       </div>
@@ -387,7 +422,9 @@ const Dashboard = () => {
     );
   }
 
-  // Show current stats
+  // Use dashboardData for rendering
+  const stats = dashboardData;
+
   return (
     <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12">
       {/* Welcome Header with Refresh Button */}
@@ -412,7 +449,9 @@ const Dashboard = () => {
               disabled={refreshing}
               className="px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-xs sm:text-sm flex items-center gap-2"
             >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+              />
               {refreshing ? "Refreshing..." : "Refresh"}
             </button>
             <button
@@ -426,8 +465,11 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Stats Grid with updateKey to force re-render */}
-      <div key={`stats-${updateKey}`} className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      {/* Stats Grid - Force re-render with key */}
+      <div
+        key={`stats-${renderKey}-${stats.totalQuizzes}-${stats.totalPoints}`}
+        className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4"
+      >
         <div className="glass-card p-3 sm:p-4 text-center">
           <div className="flex items-center justify-center gap-1 text-yellow-400">
             <Trophy className="w-4 h-4" />
@@ -435,7 +477,9 @@ const Dashboard = () => {
           <div className="text-lg sm:text-xl md:text-2xl font-bold text-white mt-1">
             {stats.totalPoints || 0}
           </div>
-          <div className="text-[10px] sm:text-xs text-gray-400">Total Points</div>
+          <div className="text-[10px] sm:text-xs text-gray-400">
+            Total Points
+          </div>
         </div>
         <div className="glass-card p-3 sm:p-4 text-center">
           <div className="flex items-center justify-center gap-1 text-orange-400">
@@ -453,7 +497,9 @@ const Dashboard = () => {
           <div className="text-lg sm:text-xl md:text-2xl font-bold text-white mt-1">
             {stats.totalQuizzes || 0}
           </div>
-          <div className="text-[10px] sm:text-xs text-gray-400">Quizzes Taken</div>
+          <div className="text-[10px] sm:text-xs text-gray-400">
+            Quizzes Taken
+          </div>
         </div>
         <div className="glass-card p-3 sm:p-4 text-center">
           <div className="flex items-center justify-center gap-1 text-green-400">
@@ -475,8 +521,12 @@ const Dashboard = () => {
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#7c3aed]/10 flex items-center justify-center mx-auto mb-1 sm:mb-2 group-hover:bg-[#7c3aed]/20 transition-all">
             <Play className="w-4 h-4 sm:w-5 sm:h-5 text-[#7c3aed]" />
           </div>
-          <span className="text-white text-xs sm:text-sm font-medium">Take Quiz</span>
-          <p className="text-gray-400 text-[10px] sm:text-xs">Test your knowledge</p>
+          <span className="text-white text-xs sm:text-sm font-medium">
+            Take Quiz
+          </span>
+          <p className="text-gray-400 text-[10px] sm:text-xs">
+            Test your knowledge
+          </p>
         </button>
         <button
           onClick={() => navigate("/riddles")}
@@ -485,8 +535,12 @@ const Dashboard = () => {
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-purple-400/10 flex items-center justify-center mx-auto mb-1 sm:mb-2 group-hover:bg-purple-400/20 transition-all">
             <Puzzle className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
           </div>
-          <span className="text-white text-xs sm:text-sm font-medium">Riddles</span>
-          <p className="text-gray-400 text-[10px] sm:text-xs">Solve brain teasers</p>
+          <span className="text-white text-xs sm:text-sm font-medium">
+            Riddles
+          </span>
+          <p className="text-gray-400 text-[10px] sm:text-xs">
+            Solve brain teasers
+          </p>
         </button>
         <button
           onClick={() => navigate("/read-and-test")}
@@ -495,7 +549,9 @@ const Dashboard = () => {
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-green-400/10 flex items-center justify-center mx-auto mb-1 sm:mb-2 group-hover:bg-green-400/20 transition-all">
             <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
           </div>
-          <span className="text-white text-xs sm:text-sm font-medium">Read & Test</span>
+          <span className="text-white text-xs sm:text-sm font-medium">
+            Read & Test
+          </span>
           <p className="text-gray-400 text-[10px] sm:text-xs">Learn and quiz</p>
         </button>
         <button
@@ -505,8 +561,12 @@ const Dashboard = () => {
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-yellow-400/10 flex items-center justify-center mx-auto mb-1 sm:mb-2 group-hover:bg-yellow-400/20 transition-all">
             <Users className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
           </div>
-          <span className="text-white text-xs sm:text-sm font-medium">Leaderboard</span>
-          <p className="text-gray-400 text-[10px] sm:text-xs">See top players</p>
+          <span className="text-white text-xs sm:text-sm font-medium">
+            Leaderboard
+          </span>
+          <p className="text-gray-400 text-[10px] sm:text-xs">
+            See top players
+          </p>
         </button>
       </div>
 
