@@ -192,6 +192,11 @@ const Quiz = () => {
       }
 
       setQuestions(fetchedQuestions);
+      // Reset answers when loading new questions
+      setAnswers({});
+      setCurrentIndex(0);
+      setSelectedAnswer(null);
+      setIsAnswered(false);
     } catch (error) {
       console.error("Error loading questions:", error);
     } finally {
@@ -259,18 +264,29 @@ const Quiz = () => {
   const handleAnswerSelect = (answer) => {
     if (isFinishing) return;
 
+    // ✅ FIX: When user selects an answer on a previous question
+    // Update the answer for the current index
     const updatedAnswers = { ...answers, [currentIndex]: answer };
     setAnswers(updatedAnswers);
     setSelectedAnswer(answer);
     setIsAnswered(true);
 
-    if (answers[currentIndex] === undefined) {
-      if (currentIndex === questions.length - 1) {
-        setIsFinishing(true);
-        setTimeout(() => finishQuiz(updatedAnswers), 1200);
-      } else {
-        setTimeout(() => handleNext(updatedAnswers), 800);
-      }
+    // ✅ FIX: Check if we're on the last question
+    if (currentIndex === questions.length - 1) {
+      // Last question - finish quiz
+      setIsFinishing(true);
+      setTimeout(() => finishQuiz(updatedAnswers), 1200);
+    } else {
+      // ✅ FIX: Auto-advance to next question after selection
+      setTimeout(() => {
+        const nextIndex = currentIndex + 1;
+        setCurrentIndex(nextIndex);
+        // Check if next question already has an answer
+        const nextAnswer = updatedAnswers[nextIndex];
+        setSelectedAnswer(nextAnswer !== undefined ? nextAnswer : null);
+        setIsAnswered(nextAnswer !== undefined);
+        setTimeLeft(selectedTimePerQuestion);
+      }, 800);
     }
   };
 
@@ -296,6 +312,7 @@ const Quiz = () => {
       setCurrentIndex(prevIndex);
       const existingAnswer = answers[prevIndex];
       setSelectedAnswer(existingAnswer !== undefined ? existingAnswer : null);
+      // ✅ FIX: Don't mark as answered if no answer exists
       setIsAnswered(existingAnswer !== undefined);
       setTimeLeft(selectedTimePerQuestion);
     }
@@ -329,6 +346,8 @@ const Quiz = () => {
     setIsFinishing(false);
     setTimerStarted(false);
     setSaveError(null);
+    setSelectedAnswer(null);
+    setIsAnswered(false);
   };
 
   const finishQuiz = async (finalAnswers) => {
@@ -764,43 +783,47 @@ const Quiz = () => {
           {options.map((answer, index) => {
             const isSelected = selectedAnswer === answer;
             const isCorrect = answer === currentQuestion.correct_answer;
-            const showCorrect = isAnswered && isCorrect;
+            const showCorrect = isAnswered && isCorrect && isSelected;
             const showWrong = isAnswered && isSelected && !isCorrect;
-            const wasAnswered =
-              answers[currentIndex] !== undefined &&
-              answers[currentIndex] === answer;
+            const hasAnswer = answers[currentIndex] !== undefined;
+            const wasAnswered = hasAnswer && answers[currentIndex] === answer;
 
             return (
               <motion.button
                 key={index}
-                whileHover={!isFinishing ? { scale: 1.01 } : {}}
-                whileTap={!isFinishing ? { scale: 0.98 } : {}}
-                onClick={() => handleAnswerSelect(answer)}
+                whileHover={!isAnswered && !isFinishing ? { scale: 1.01 } : {}}
+                whileTap={!isAnswered && !isFinishing ? { scale: 0.98 } : {}}
+                onClick={() => {
+                  // ✅ FIX: Allow selecting an answer even if already answered
+                  if (!isFinishing) {
+                    handleAnswerSelect(answer);
+                  }
+                }}
                 disabled={isFinishing}
                 className={`w-full text-left px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg transition-all duration-200 text-xs sm:text-sm
                   ${isFinishing ? "cursor-default" : "hover:bg-white/10 cursor-pointer"}
                   ${isSelected && !isAnswered ? "bg-[#7c3aed]/30 border border-[#7c3aed] text-white" : ""}
                   ${showCorrect ? "bg-[#00C9A7]/30 border border-[#00C9A7] text-white" : ""}
                   ${showWrong ? "bg-red-500/30 border border-red-500 text-white" : ""}
-                  ${!isSelected && !isAnswered && wasAnswered ? "bg-blue-500/20 border border-blue-500/30 text-white" : ""}
-                  ${!isSelected && !isAnswered && !wasAnswered ? "bg-white/5 hover:bg-white/10 text-gray-300 border border-transparent" : ""}
+                  ${wasAnswered && !isSelected && hasAnswer && !isAnswered ? "bg-blue-500/20 border border-blue-500/30 text-white" : ""}
+                  ${!isSelected && !wasAnswered && !hasAnswer ? "bg-white/5 hover:bg-white/10 text-gray-300 border border-transparent" : ""}
+                  ${!isSelected && wasAnswered && isAnswered ? "bg-white/5 border border-white/10 text-gray-400" : ""}
                 `}
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs sm:text-sm break-words">
                     {decodeHTML(answer)}
                   </span>
-                  {isAnswered && (
+                  {isAnswered && isSelected && (
                     <span className="flex-shrink-0">
-                      {isCorrect && (
+                      {isCorrect ? (
                         <Check className="w-4 h-4 sm:w-5 sm:h-5 text-[#00C9A7]" />
-                      )}
-                      {isSelected && !isCorrect && (
+                      ) : (
                         <X className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
                       )}
                     </span>
                   )}
-                  {!isAnswered && wasAnswered && (
+                  {!isAnswered && wasAnswered && hasAnswer && (
                     <span className="flex-shrink-0 text-blue-400 text-xs">
                       ✓
                     </span>
@@ -821,17 +844,15 @@ const Quiz = () => {
           <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" /> Back
         </button>
 
-        {currentIndex < Object.keys(answers).length - 1 && (
-          <button
-            onClick={goToCurrent}
-            className="text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg flex items-center gap-1 sm:gap-2 transition-colors bg-[#7c3aed]/20 text-[#a78bfa] hover:bg-[#7c3aed]/30 border border-[#7c3aed]/30"
-          >
-            <SkipForward className="w-3 h-3 sm:w-4 sm:h-4" /> Go to Current
-          </button>
-        )}
+        <button
+          onClick={goToCurrent}
+          className="text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg flex items-center gap-1 sm:gap-2 transition-colors bg-[#7c3aed]/20 text-[#a78bfa] hover:bg-[#7c3aed]/30 border border-[#7c3aed]/30"
+        >
+          <SkipForward className="w-3 h-3 sm:w-4 sm:h-4" /> Go to Current
+        </button>
 
         <span className="text-[10px] sm:text-xs text-gray-500 flex items-center">
-          {isAnswered
+          {isAnswered && answers[currentIndex] !== undefined
             ? "✓ Answered"
             : answers[currentIndex] !== undefined
               ? "📝 Answer saved"

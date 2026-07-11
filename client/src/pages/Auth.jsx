@@ -13,6 +13,8 @@ import {
   ArrowLeft,
   Eye,
   EyeOff,
+  AlertCircle,
+  CheckCircle,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
 import { sendEmail, emailTemplates } from "../services/emailService";
@@ -28,6 +30,8 @@ const Auth = () => {
   const [resetEmail, setResetEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -59,6 +63,7 @@ const Auth = () => {
             await supabase.auth.exchangeCodeForSession(code);
           if (error) {
             console.error("Verification error:", error);
+            setError("Verification failed. Please try again.");
             window.history.replaceState(
               {},
               document.title,
@@ -77,6 +82,7 @@ const Auth = () => {
           }
         } catch (error) {
           console.error("Verification error:", error);
+          setError("Verification failed. Please try again.");
           window.history.replaceState(
             {},
             document.title,
@@ -95,82 +101,126 @@ const Auth = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
+    // Clear errors when user types
+    setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setSuccess("");
     setLoading(true);
 
     try {
+      // Validation
+      if (!formData.email || !formData.password) {
+        setError("Please fill in all required fields.");
+        setLoading(false);
+        return;
+      }
+
       if (isLogin) {
+        // 🔐 LOGIN
         const { data, error } = await supabase.auth.signInWithPassword({
-          email: formData.email,
+          email: formData.email.trim(),
           password: formData.password,
         });
 
         if (error) {
           console.error("Login error:", error.message);
+          if (error.message.includes("Invalid login credentials")) {
+            setError("Invalid email or password. Please try again.");
+          } else if (error.message.includes("Email not confirmed")) {
+            setError("Please verify your email before logging in.");
+          } else {
+            setError(error.message);
+          }
           setLoading(false);
           return;
         }
 
         if (data?.user) {
-          navigate("/dashboard");
+          console.log("✅ Login successful:", data.user.email);
+          setSuccess("Login successful! Redirecting...");
+          setTimeout(() => {
+            navigate("/dashboard");
+          }, 500);
         }
       } else {
+        // 📝 SIGNUP
         if (formData.password !== formData.confirmPassword) {
-          console.error("Passwords do not match");
+          setError("Passwords do not match.");
           setLoading(false);
           return;
         }
 
         if (formData.password.length < 6) {
-          console.error("Password must be at least 6 characters");
+          setError("Password must be at least 6 characters.");
+          setLoading(false);
+          return;
+        }
+
+        if (!formData.name) {
+          setError("Please enter your full name.");
           setLoading(false);
           return;
         }
 
         const { data, error } = await supabase.auth.signUp({
-          email: formData.email,
+          email: formData.email.trim(),
           password: formData.password,
           options: {
             data: {
-              name: formData.name || formData.email.split("@")[0],
-              full_name: formData.name || formData.email.split("@")[0],
+              name: formData.name,
+              full_name: formData.name,
             },
           },
         });
 
         if (error) {
           console.error("Signup error:", error.message);
+          if (error.message.includes("already registered")) {
+            setError("This email is already registered. Please login instead.");
+          } else {
+            setError(error.message);
+          }
           setLoading(false);
           return;
         }
 
-        if (data.user?.identities?.length === 0) {
-          console.error("Account already exists");
-          setLoading(false);
-          return;
-        }
+        if (data.user) {
+          console.log("✅ Signup successful:", data.user.email);
 
-        // Send welcome email
-        try {
-          await sendEmail({
-            to: formData.email,
-            subject: "🎉 Welcome to Cerebrum!",
-            html: emailTemplates.welcome(
-              formData.name || formData.email.split("@")[0],
-            ).html,
-          });
-          console.log("✅ Welcome email sent");
-        } catch (emailError) {
-          console.error("❌ Welcome email failed:", emailError);
-        }
+          // Check if email confirmation is required
+          if (data.user.identities?.length === 0) {
+            setError("This email is already registered. Please login.");
+            setLoading(false);
+            return;
+          }
 
-        navigate("/dashboard");
+          // Send welcome email
+          try {
+            await sendEmail({
+              to: formData.email,
+              subject: "🎉 Welcome to Cerebrum!",
+              html: emailTemplates.welcome(
+                formData.name || formData.email.split("@")[0],
+              ).html,
+            });
+            console.log("✅ Welcome email sent");
+          } catch (emailError) {
+            console.error("❌ Welcome email failed:", emailError);
+          }
+
+          setSuccess("Account created successfully! Redirecting...");
+          setTimeout(() => {
+            navigate("/dashboard");
+          }, 500);
+        }
       }
     } catch (error) {
       console.error("Auth error:", error);
+      setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -178,8 +228,11 @@ const Auth = () => {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
+    setError("");
+    setSuccess("");
+
     if (!resetEmail) {
-      console.error("Please enter your email address");
+      setError("Please enter your email address.");
       return;
     }
 
@@ -189,18 +242,33 @@ const Auth = () => {
         redirectTo: `${window.location.origin}/auth`,
       });
 
-      if (error) throw error;
-      setShowReset(false);
+      if (error) {
+        console.error("Reset error:", error);
+        if (error.message.includes("not found")) {
+          setError("No account found with this email address.");
+        } else {
+          setError(error.message);
+        }
+        setLoading(false);
+        return;
+      }
+
+      setSuccess("Password reset email sent! Check your inbox.");
       setResetEmail("");
-      console.log("Reset email sent");
+      setTimeout(() => {
+        setShowReset(false);
+        setSuccess("");
+      }, 3000);
     } catch (error) {
       console.error("Reset error:", error);
+      setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
+    setError("");
     setGoogleLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -212,6 +280,7 @@ const Auth = () => {
 
       if (error) {
         console.error("Google login error:", error);
+        setError("Failed to sign in with Google. Please try again.");
         setGoogleLoading(false);
         return;
       }
@@ -221,11 +290,13 @@ const Auth = () => {
       }
     } catch (error) {
       console.error("Google login error:", error);
+      setError("Failed to sign in with Google. Please try again.");
       setGoogleLoading(false);
     }
   };
 
   const handleGithubLogin = async () => {
+    setError("");
     setGithubLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -237,6 +308,7 @@ const Auth = () => {
 
       if (error) {
         console.error("GitHub login error:", error);
+        setError("Failed to sign in with GitHub. Please try again.");
         setGithubLoading(false);
         return;
       }
@@ -246,16 +318,24 @@ const Auth = () => {
       }
     } catch (error) {
       console.error("GitHub login error:", error);
+      setError("Failed to sign in with GitHub. Please try again.");
       setGithubLoading(false);
     }
   };
 
+  // ============================================
+  // RESET PASSWORD SCREEN
+  // ============================================
   if (showReset) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0f0f1a] p-3 sm:p-4">
         <div className="glass-card p-5 sm:p-6 md:p-8 max-w-md w-full">
           <button
-            onClick={() => setShowReset(false)}
+            onClick={() => {
+              setShowReset(false);
+              setError("");
+              setSuccess("");
+            }}
             className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-4 sm:mb-6 text-sm sm:text-base"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -275,6 +355,20 @@ const Auth = () => {
             </p>
           </div>
 
+          {error && (
+            <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs sm:text-sm flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {success && (
+            <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400 text-xs sm:text-sm flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{success}</span>
+            </div>
+          )}
+
           <form
             onSubmit={handleResetPassword}
             className="space-y-3 sm:space-y-4"
@@ -284,7 +378,10 @@ const Auth = () => {
               <input
                 type="email"
                 value={resetEmail}
-                onChange={(e) => setResetEmail(e.target.value)}
+                onChange={(e) => {
+                  setResetEmail(e.target.value);
+                  setError("");
+                }}
                 placeholder="Email Address"
                 className="w-full bg-[#2D2D5E] text-white px-4 py-2 pl-9 sm:pl-10 rounded-lg border border-white/10 focus:border-[#7c3aed] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 transition-all text-sm sm:text-base"
                 required
@@ -309,6 +406,9 @@ const Auth = () => {
     );
   }
 
+  // ============================================
+  // MAIN AUTH SCREEN
+  // ============================================
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -327,13 +427,21 @@ const Auth = () => {
           <p className="text-gray-400 text-xs sm:text-sm">
             {isLogin ? "Welcome back!" : "Create your account"}
           </p>
-          {loading && (
-            <div className="mt-2 flex items-center justify-center gap-2 text-[#a78bfa] text-xs sm:text-sm">
-              <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
-              Processing...
-            </div>
-          )}
         </div>
+
+        {error && (
+          <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs sm:text-sm flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400 text-xs sm:text-sm flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{success}</span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
           {!isLogin && (
@@ -373,6 +481,7 @@ const Auth = () => {
               onChange={handleChange}
               className="w-full bg-[#2D2D5E] text-white px-4 py-2 pl-9 sm:pl-10 pr-10 rounded-lg border border-white/10 focus:border-[#7c3aed] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 transition-all text-sm sm:text-base"
               required
+              minLength={6}
             />
             <button
               type="button"
@@ -417,7 +526,11 @@ const Auth = () => {
             <div className="text-right">
               <button
                 type="button"
-                onClick={() => setShowReset(true)}
+                onClick={() => {
+                  setShowReset(true);
+                  setError("");
+                  setSuccess("");
+                }}
                 className="text-xs sm:text-sm text-gray-400 hover:text-[#a78bfa] transition-colors"
               >
                 Forgot Password?
@@ -460,7 +573,7 @@ const Auth = () => {
             whileTap={{ scale: 0.98 }}
             onClick={handleGithubLogin}
             disabled={githubLoading}
-            className="w-full py-2.5 sm:py-3 rounded-xl border border-gray-700 hover:border-[#7c3aed] bg-[#1a1a2e] hover:bg-[#2d2d5e] transition-all duration-300 flex items-center justify-center gap-3 text-gray-300 font-medium text-sm sm:text-base"
+            className="w-full py-2.5 sm:py-3 rounded-xl border border-gray-700 hover:border-[#7c3aed] bg-[#1a1a2e] hover:bg-[#2d2d5e] transition-all duration-300 flex items-center justify-center gap-3 text-gray-300 font-medium text-sm sm:text-base disabled:opacity-50"
           >
             {githubLoading ? (
               <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-[#a78bfa]" />
@@ -475,7 +588,7 @@ const Auth = () => {
             whileTap={{ scale: 0.98 }}
             onClick={handleGoogleLogin}
             disabled={googleLoading}
-            className="w-full py-2.5 sm:py-3 rounded-xl border border-gray-700 hover:border-[#7c3aed] bg-[#1a1a2e] hover:bg-[#2d2d5e] transition-all duration-300 flex items-center justify-center gap-3 text-gray-300 font-medium text-sm sm:text-base"
+            className="w-full py-2.5 sm:py-3 rounded-xl border border-gray-700 hover:border-[#7c3aed] bg-[#1a1a2e] hover:bg-[#2d2d5e] transition-all duration-300 flex items-center justify-center gap-3 text-gray-300 font-medium text-sm sm:text-base disabled:opacity-50"
           >
             {googleLoading ? (
               <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-[#a78bfa]" />
@@ -490,6 +603,8 @@ const Auth = () => {
           <button
             onClick={() => {
               setIsLogin(!isLogin);
+              setError("");
+              setSuccess("");
               setFormData({
                 name: "",
                 email: "",
