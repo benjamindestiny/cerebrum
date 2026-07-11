@@ -160,56 +160,8 @@ const Profile = () => {
         } else {
           setSelectedBioType("predefined");
         }
-
-        // Load stats from database
-        const statsData = freshData.stats || {};
-        
-        // Also get riddles from riddle_history table
-        let riddlesSolved = statsData.riddles_solved || 0;
-        try {
-          const { data: riddleHistory } = await supabase
-            .from('riddle_history')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('solved', true);
-          
-          if (riddleHistory) {
-            riddlesSolved = riddleHistory.length;
-          }
-        } catch (error) {
-          console.error('Error fetching riddle history:', error);
-        }
-
-        // Also get articles from article_history table
-        let readArticles = statsData.read_articles || 0;
-        try {
-          const { data: articleHistory } = await supabase
-            .from('article_history')
-            .select('*')
-            .eq('user_id', user.id);
-          
-          if (articleHistory) {
-            readArticles = articleHistory.length;
-          }
-        } catch (error) {
-          console.error('Error fetching article history:', error);
-        }
-
-        setStats({
-          totalQuizzes: statsData.total_quizzes || 0,
-          bestScore: statsData.best_score || 0,
-          averageScore: statsData.average_score || 0,
-          totalPoints: statsData.total_points || 0,
-          streak: statsData.streak || 0,
-          longestStreak: statsData.longest_streak || 0,
-          riddlesSolved: riddlesSolved,
-          readArticles: readArticles,
-          totalTime: statsData.total_time || 0,
-          perfectScores: statsData.perfect_scores || 0,
-        });
-        setRenderKey(prev => prev + 1);
       } else {
-        // If no profile, create one with default stats
+        // If no profile, create one
         const defaultStats = {
           total_quizzes: 0,
           best_score: 0,
@@ -238,25 +190,152 @@ const Profile = () => {
 
         if (insertError) {
           console.error("Error creating profile:", insertError);
-        } else {
-          setStats({
-            totalQuizzes: 0,
-            bestScore: 0,
-            averageScore: 0,
-            totalPoints: 0,
-            streak: 0,
-            longestStreak: 0,
-            riddlesSolved: 0,
-            readArticles: 0,
-            totalTime: 0,
-            perfectScores: 0,
-          });
         }
       }
+
+      // 🔥 FIX: Load stats from quiz_results (same as Dashboard)
+      await loadStatsFromQuizzes(user.id);
+
     } catch (error) {
       console.error("Error loading profile:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 🔥 NEW: Load stats directly from quiz_results table
+  const loadStatsFromQuizzes = async (userId) => {
+    try {
+      // Get quiz results
+      const { data: quizResults, error } = await supabase
+        .from("quiz_results")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("❌ Error fetching quiz results:", error);
+        return;
+      }
+
+      console.log(`📊 Found ${quizResults?.length || 0} quiz results for profile`);
+
+      if (!quizResults || quizResults.length === 0) {
+        setStats({
+          totalQuizzes: 0,
+          totalPoints: 0,
+          averageScore: 0,
+          streak: 0,
+          bestScore: 0,
+          perfectScores: 0,
+          longestStreak: 0,
+          riddlesSolved: 0,
+          readArticles: 0,
+          totalTime: 0,
+        });
+        return;
+      }
+
+      // Calculate stats (same logic as Dashboard)
+      let totalQuizzes = quizResults.length;
+      let totalPoints = 0;
+      let totalScore = 0;
+      let bestScore = 0;
+      let perfectScores = 0;
+
+      quizResults.forEach((q) => {
+        let pct = parseFloat(q.percentage) || 0;
+        if (pct === 0 && q.score && q.total_questions) {
+          pct = Math.round((q.score / q.total_questions) * 100);
+        }
+        totalScore += pct;
+        totalPoints += q.points || Math.floor(pct / 10) || 0;
+        bestScore = Math.max(bestScore, pct);
+        if (pct === 100) perfectScores++;
+      });
+
+      const averageScore = Math.round(totalScore / totalQuizzes);
+
+      // Calculate streak (same as Dashboard)
+      let streak = 0;
+      const dates = quizResults
+        .map((q) => new Date(q.created_at).toISOString().split("T")[0])
+        .filter((v, i, a) => a.indexOf(v) === i)
+        .sort();
+
+      if (dates.length > 0) {
+        const today = new Date().toISOString().split("T")[0];
+        const yesterday = new Date(Date.now() - 86400000)
+          .toISOString()
+          .split("T")[0];
+        const lastDate = dates[dates.length - 1];
+
+        if (lastDate === today || lastDate === yesterday) {
+          streak = 1;
+          let current = new Date(lastDate);
+          for (let i = dates.length - 2; i >= 0; i--) {
+            const prev = new Date(dates[i]);
+            const diff = Math.floor((current - prev) / 86400000);
+            if (diff === 1) {
+              streak++;
+              current = prev;
+            } else {
+              break;
+            }
+          }
+        }
+      }
+
+      // Get riddles solved count
+      let riddlesSolved = 0;
+      try {
+        const { data: riddleHistory } = await supabase
+          .from('riddle_history')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('solved', true);
+        
+        if (riddleHistory) {
+          riddlesSolved = riddleHistory.length;
+        }
+      } catch (error) {
+        console.error('Error fetching riddle history:', error);
+      }
+
+      // Get articles read count
+      let readArticles = 0;
+      try {
+        const { data: articleHistory } = await supabase
+          .from('article_history')
+          .select('*')
+          .eq('user_id', userId);
+        
+        if (articleHistory) {
+          readArticles = articleHistory.length;
+        }
+      } catch (error) {
+        console.error('Error fetching article history:', error);
+      }
+
+      const newStats = {
+        totalQuizzes,
+        totalPoints,
+        averageScore,
+        streak,
+        bestScore,
+        perfectScores,
+        longestStreak: streak, // We'll calculate this properly later
+        riddlesSolved,
+        readArticles,
+        totalTime: 0,
+      };
+
+      console.log("📊 Profile stats calculated:", newStats);
+      setStats(newStats);
+      setRenderKey(prev => prev + 1);
+
+    } catch (error) {
+      console.error("Error loading stats from quizzes:", error);
     }
   };
 
@@ -269,58 +348,7 @@ const Profile = () => {
     if (!user) return;
     setRefreshing(true);
     try {
-      // Force refresh from database
-      const { data: freshData, error } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (error) throw error;
-      
-      if (freshData) {
-        setProfile(freshData);
-        const statsData = freshData.stats || {};
-        
-        // Get riddles from riddle_history
-        let riddlesSolved = statsData.riddles_solved || 0;
-        try {
-          const { data: riddleHistory } = await supabase
-            .from('riddle_history')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('solved', true);
-          if (riddleHistory) {
-            riddlesSolved = riddleHistory.length;
-          }
-        } catch (e) {}
-
-        // Get articles from article_history
-        let readArticles = statsData.read_articles || 0;
-        try {
-          const { data: articleHistory } = await supabase
-            .from('article_history')
-            .select('*')
-            .eq('user_id', user.id);
-          if (articleHistory) {
-            readArticles = articleHistory.length;
-          }
-        } catch (e) {}
-
-        setStats({
-          totalQuizzes: statsData.total_quizzes || 0,
-          bestScore: statsData.best_score || 0,
-          averageScore: statsData.average_score || 0,
-          totalPoints: statsData.total_points || 0,
-          streak: statsData.streak || 0,
-          longestStreak: statsData.longest_streak || 0,
-          riddlesSolved: riddlesSolved,
-          readArticles: readArticles,
-          totalTime: statsData.total_time || 0,
-          perfectScores: statsData.perfect_scores || 0,
-        });
-        setRenderKey(prev => prev + 1);
-      }
+      await loadStatsFromQuizzes(user.id);
     } catch (error) {
       console.error("Error refreshing stats:", error);
     } finally {
@@ -484,12 +512,12 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Stats Grid - Force re-render with key */}
+      {/* Stats Grid - Now matches Dashboard */}
       <div key={`profile-stats-${renderKey}`} className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
         <div className="bg-[#1a1a2e] rounded-xl p-3 text-center border border-white/5">
           <Trophy className="w-5 h-5 text-yellow-400 mx-auto mb-1" />
-          <div className="text-lg font-bold text-white">{stats.bestScore}%</div>
-          <div className="text-[10px] text-gray-400">Best Score</div>
+          <div className="text-lg font-bold text-white">{stats.totalPoints}</div>
+          <div className="text-[10px] text-gray-400">Total Points</div>
         </div>
         <div className="bg-[#1a1a2e] rounded-xl p-3 text-center border border-white/5">
           <Award className="w-5 h-5 text-[#a78bfa] mx-auto mb-1" />
@@ -497,14 +525,14 @@ const Profile = () => {
           <div className="text-[10px] text-gray-400">Average Score</div>
         </div>
         <div className="bg-[#1a1a2e] rounded-xl p-3 text-center border border-white/5">
-          <Zap className="w-5 h-5 text-yellow-400 mx-auto mb-1" />
-          <div className="text-lg font-bold text-white">{stats.totalPoints || 0}</div>
-          <div className="text-[10px] text-gray-400">Total Points</div>
-        </div>
-        <div className="bg-[#1a1a2e] rounded-xl p-3 text-center border border-white/5">
           <Flame className="w-5 h-5 text-orange-400 mx-auto mb-1" />
           <div className="text-lg font-bold text-white">{stats.streak || 0}</div>
           <div className="text-[10px] text-gray-400">Day Streak</div>
+        </div>
+        <div className="bg-[#1a1a2e] rounded-xl p-3 text-center border border-white/5">
+          <Brain className="w-5 h-5 text-[#7c3aed] mx-auto mb-1" />
+          <div className="text-lg font-bold text-white">{stats.totalQuizzes}</div>
+          <div className="text-[10px] text-gray-400">Quizzes Taken</div>
         </div>
       </div>
 
