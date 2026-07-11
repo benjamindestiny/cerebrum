@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Check,
+  Zap,
   X,
   Loader2,
   AlertCircle,

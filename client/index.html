@@ -6,50 +6,53 @@
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0A0A1A" />
-    <meta name="description" content="Cerebrum - Interactive Quiz Platform" />
-    <title>Cerebrum - Quiz App</title>
+    
+    <!-- Primary SEO Meta Tags -->
+    <title>Cerebrum - Learn, Quiz, and Challenge Your Brain</title>
+    <meta name="title" content="Cerebrum - Learn, Quiz, and Challenge Your Brain" />
+    <meta name="description" content="Test your knowledge with interactive quizzes, brain-teasing riddles, and informative reads. Learn something new every day on Cerebrum." />
+    <meta name="keywords" content="quiz, riddles, trivia, brain games, learning, knowledge test, interactive quiz, educational games" />
+    <link rel="canonical" href="https://cerebrum-three.vercel.app" />
+    
+    <!-- Open Graph / Social Media Meta Tags -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://cerebrum-three.vercel.app" />
+    <meta property="og:title" content="Cerebrum - Learn, Quiz, and Challenge Your Brain" />
+    <meta property="og:description" content="Test your knowledge with interactive quizzes, brain-teasing riddles, and informative reads. Learn something new every day." />
+    <meta property="og:image" content="https://cerebrum-three.vercel.app/og-image.jpg" />
+    
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://cerebrum-three.vercel.app" />
+    <meta name="twitter:title" content="Cerebrum - Learn, Quiz, and Challenge Your Brain" />
+    <meta name="twitter:description" content="Test your knowledge with interactive quizzes, brain-teasing riddles, and informative reads." />
+    <meta name="twitter:image" content="https://cerebrum-three.vercel.app/og-image.jpg" />
+    
+    <!-- Schema.org Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Cerebrum",
+        "description": "Interactive quiz platform for learning and brain training",
+        "applicationCategory": "Educational Application",
+        "operatingSystem": "All",
+        "browserRequirements": "Requires JavaScript",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-
-    <!-- Ezoic Integration -->
-    <script>
-      // Ezoic service worker registration
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker
-          .register("/service-worker.js")
-          .then(function (registration) {
-            console.log(
-              "Service Worker registered successfully:",
-              registration,
-            );
-          })
-          .catch(function (error) {
-            console.log("Service Worker registration failed:", error);
-          });
-      }
-    </script>
-
-    <!-- Ezoic Ad Script -->
-    <script src="//www.ezojs.com/ezoic/ezoads.js" async></script>
-
-    <!-- Ezoic Verification -->
-    <script>
-      (function () {
-        // Ezoic publisher setup
-        window.ezoic = window.ezoic || {};
-        window.ezoic.publisher_id = "YOUR_PUBLISHER_ID"; // Replace with your actual publisher ID
-
-        // Load Ezoic script
-        var ezoicScript = document.createElement("script");
-        ezoicScript.src = "https://5gvci.com/act/files/ezoic.js";
-        ezoicScript.async = true;
-        document.head.appendChild(ezoicScript);
-      })();
-    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
