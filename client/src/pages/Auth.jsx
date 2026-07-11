@@ -15,6 +15,7 @@ import {
   EyeOff,
   AlertCircle,
   CheckCircle,
+  WifiOff,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
 import { sendEmail, emailTemplates } from "../services/emailService";
@@ -39,13 +40,35 @@ const Auth = () => {
     confirmPassword: "",
   });
 
+  // Check if Supabase is configured
+  const [isSupabaseConfigured, setIsSupabaseConfigured] = useState(true);
+
+  useEffect(() => {
+    // Check Supabase configuration
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      setIsSupabaseConfigured(false);
+      setError(
+        "⚠️ Supabase is not configured. Please check your environment variables.",
+      );
+      console.error("❌ Missing Supabase environment variables!");
+    }
+  }, []);
+
   useEffect(() => {
     const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        navigate("/dashboard");
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          navigate("/dashboard");
+        }
+      } catch (err) {
+        console.error("Error checking user:", err);
+        // Don't redirect on error, let user try to login
       }
     };
     checkUser();
@@ -101,7 +124,6 @@ const Auth = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
-    // Clear errors when user types
     setError("");
   };
 
@@ -112,6 +134,15 @@ const Auth = () => {
     setLoading(true);
 
     try {
+      // Validate Supabase configuration
+      if (!isSupabaseConfigured) {
+        setError(
+          "⚠️ Supabase is not configured. Please check your environment variables.",
+        );
+        setLoading(false);
+        return;
+      }
+
       // Validation
       if (!formData.email || !formData.password) {
         setError("Please fill in all required fields.");
@@ -121,19 +152,25 @@ const Auth = () => {
 
       if (isLogin) {
         // 🔐 LOGIN
+        console.log("Attempting login for:", formData.email);
+
         const { data, error } = await supabase.auth.signInWithPassword({
           email: formData.email.trim(),
           password: formData.password,
         });
 
         if (error) {
-          console.error("Login error:", error.message);
-          if (error.message.includes("Invalid login credentials")) {
+          console.error("Login error:", error);
+
+          // Handle specific error types
+          if (error.message?.includes("Invalid login credentials")) {
             setError("Invalid email or password. Please try again.");
-          } else if (error.message.includes("Email not confirmed")) {
+          } else if (error.message?.includes("Email not confirmed")) {
             setError("Please verify your email before logging in.");
+          } else if (error.message?.includes("network")) {
+            setError("Network error. Please check your internet connection.");
           } else {
-            setError(error.message);
+            setError(error.message || "Login failed. Please try again.");
           }
           setLoading(false);
           return;
@@ -148,6 +185,8 @@ const Auth = () => {
         }
       } else {
         // 📝 SIGNUP
+        console.log("Attempting signup for:", formData.email);
+
         if (formData.password !== formData.confirmPassword) {
           setError("Passwords do not match.");
           setLoading(false);
@@ -178,11 +217,14 @@ const Auth = () => {
         });
 
         if (error) {
-          console.error("Signup error:", error.message);
-          if (error.message.includes("already registered")) {
+          console.error("Signup error:", error);
+
+          if (error.message?.includes("already registered")) {
             setError("This email is already registered. Please login instead.");
+          } else if (error.message?.includes("network")) {
+            setError("Network error. Please check your internet connection.");
           } else {
-            setError(error.message);
+            setError(error.message || "Signup failed. Please try again.");
           }
           setLoading(false);
           return;
@@ -191,14 +233,13 @@ const Auth = () => {
         if (data.user) {
           console.log("✅ Signup successful:", data.user.email);
 
-          // Check if email confirmation is required
           if (data.user.identities?.length === 0) {
             setError("This email is already registered. Please login.");
             setLoading(false);
             return;
           }
 
-          // Send welcome email
+          // Send welcome email (don't block if it fails)
           try {
             await sendEmail({
               to: formData.email,
@@ -210,6 +251,7 @@ const Auth = () => {
             console.log("✅ Welcome email sent");
           } catch (emailError) {
             console.error("❌ Welcome email failed:", emailError);
+            // Continue anyway - user can still use the app
           }
 
           setSuccess("Account created successfully! Redirecting...");
@@ -220,7 +262,17 @@ const Auth = () => {
       }
     } catch (error) {
       console.error("Auth error:", error);
-      setError("Something went wrong. Please try again.");
+
+      if (
+        error.message?.includes("fetch") ||
+        error.message?.includes("network")
+      ) {
+        setError(
+          "Network error. Please check your internet connection and try again.",
+        );
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -244,10 +296,10 @@ const Auth = () => {
 
       if (error) {
         console.error("Reset error:", error);
-        if (error.message.includes("not found")) {
+        if (error.message?.includes("not found")) {
           setError("No account found with this email address.");
         } else {
-          setError(error.message);
+          setError(error.message || "Reset failed. Please try again.");
         }
         setLoading(false);
         return;
@@ -427,6 +479,12 @@ const Auth = () => {
           <p className="text-gray-400 text-xs sm:text-sm">
             {isLogin ? "Welcome back!" : "Create your account"}
           </p>
+          {!isSupabaseConfigured && (
+            <div className="mt-2 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-400 text-xs flex items-center gap-2 justify-center">
+              <WifiOff className="w-4 h-4" />
+              <span>Supabase not configured. Check your .env file.</span>
+            </div>
+          )}
         </div>
 
         {error && (
@@ -542,7 +600,7 @@ const Auth = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             type="submit"
-            disabled={loading}
+            disabled={loading || !isSupabaseConfigured}
             className="w-full bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors flex items-center justify-center gap-2 py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50"
           >
             {loading ? (
@@ -572,7 +630,7 @@ const Auth = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleGithubLogin}
-            disabled={githubLoading}
+            disabled={githubLoading || !isSupabaseConfigured}
             className="w-full py-2.5 sm:py-3 rounded-xl border border-gray-700 hover:border-[#7c3aed] bg-[#1a1a2e] hover:bg-[#2d2d5e] transition-all duration-300 flex items-center justify-center gap-3 text-gray-300 font-medium text-sm sm:text-base disabled:opacity-50"
           >
             {githubLoading ? (
@@ -587,7 +645,7 @@ const Auth = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleGoogleLogin}
-            disabled={googleLoading}
+            disabled={googleLoading || !isSupabaseConfigured}
             className="w-full py-2.5 sm:py-3 rounded-xl border border-gray-700 hover:border-[#7c3aed] bg-[#1a1a2e] hover:bg-[#2d2d5e] transition-all duration-300 flex items-center justify-center gap-3 text-gray-300 font-medium text-sm sm:text-base disabled:opacity-50"
           >
             {googleLoading ? (
