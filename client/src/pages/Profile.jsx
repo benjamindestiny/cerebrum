@@ -51,26 +51,176 @@ const PREDEFINED_BIOS = [
 ];
 
 // Achievement definitions
+// In Profile.jsx - replace the ACHIEVEMENT_DEFINITIONS section (around line 25-55)
+
 const ACHIEVEMENT_DEFINITIONS = [
-  { id: "first_quiz", name: "First Quiz", description: "Completed your first quiz", icon: "🎯", check: (stats) => stats.totalQuizzes >= 1 },
-  { id: "quiz_enthusiast", name: "Quiz Enthusiast", description: "Completed 10+ quizzes", icon: "📚", check: (stats) => stats.totalQuizzes >= 10 },
-  { id: "quiz_master", name: "Quiz Master", description: "Completed 50+ quizzes", icon: "👑", check: (stats) => stats.totalQuizzes >= 50 },
-  { id: "quiz_legend", name: "Quiz Legend", description: "Completed 100+ quizzes", icon: "🏆", check: (stats) => stats.totalQuizzes >= 100 },
-  { id: "perfect_score", name: "Perfect Score", description: "Scored 100% on a quiz", icon: "⭐", check: (stats) => stats.bestScore === 100 },
-  { id: "perfect_score_5", name: "Perfect Streak", description: "Got 5 perfect scores", icon: "🌟", check: (stats) => stats.perfectScores >= 5 },
-  { id: "on_fire", name: "On Fire!", description: "5+ day streak", icon: "🔥", check: (stats) => stats.streak >= 5 },
-  { id: "dedicated_learner", name: "Dedicated Learner", description: "30+ day streak", icon: "🌟", check: (stats) => stats.streak >= 30 },
-  { id: "learning_monster", name: "Learning Monster", description: "100+ day streak", icon: "💪", check: (stats) => stats.streak >= 100 },
-  { id: "riddle_master", name: "Riddle Master", description: "Solved 5+ riddles", icon: "🧩", check: (stats) => stats.riddlesSolved >= 5 },
-  { id: "riddle_legend", name: "Riddle Legend", description: "Solved 25+ riddles", icon: "🧠", check: (stats) => stats.riddlesSolved >= 25 },
-  { id: "avid_reader", name: "Avid Reader", description: "Read 10+ articles", icon: "📖", check: (stats) => stats.readArticles >= 10 },
-  { id: "bookworm", name: "Bookworm", description: "Read 50+ articles", icon: "📚", check: (stats) => stats.readArticles >= 50 },
-  { id: "point_collector", name: "Point Collector", description: "Earned 1000+ points", icon: "💎", check: (stats) => stats.totalPoints >= 1000 },
-  { id: "point_millionaire", name: "Point Millionaire", description: "Earned 10,000+ points", icon: "💰", check: (stats) => stats.totalPoints >= 10000 },
-  { id: "category_master", name: "Category Master", description: "Played quizzes in 5+ categories", icon: "🎯", check: (stats) => Object.keys(stats.quizzesByCategory || {}).length >= 5 },
-  { id: "all_rounder", name: "All Rounder", description: "Played quizzes in 10+ categories", icon: "🌟", check: (stats) => Object.keys(stats.quizzesByCategory || {}).length >= 10 },
-  { id: "high_scorer", name: "High Scorer", description: "Average score above 80%", icon: "📈", check: (stats) => stats.averageScore >= 80 && stats.totalQuizzes >= 5 },
-  { id: "genius", name: "Genius", description: "Average score above 90%", icon: "🧠", check: (stats) => stats.averageScore >= 90 && stats.totalQuizzes >= 10 },
+  // Quiz-based achievements
+  {
+    id: "first_quiz",
+    name: "First Quiz",
+    description: "Completed your first quiz",
+    icon: "🎯",
+    check: (stats) => stats.totalQuizzes >= 1,
+  },
+  {
+    id: "quiz_enthusiast",
+    name: "Quiz Enthusiast",
+    description: "Completed 10+ quizzes",
+    icon: "📚",
+    check: (stats) => stats.totalQuizzes >= 10,
+  },
+  {
+    id: "quiz_master",
+    name: "Quiz Master",
+    description: "Completed 50+ quizzes",
+    icon: "👑",
+    check: (stats) => stats.totalQuizzes >= 50,
+  },
+  {
+    id: "quiz_legend",
+    name: "Quiz Legend",
+    description: "Completed 100+ quizzes",
+    icon: "🏆",
+    check: (stats) => stats.totalQuizzes >= 100,
+  },
+
+  // Score-based achievements
+  {
+    id: "perfect_score",
+    name: "Perfect Score",
+    description: "Scored 100% on a quiz",
+    icon: "⭐",
+    check: (stats) => stats.bestScore === 100,
+  },
+  {
+    id: "perfect_score_5",
+    name: "Perfect Streak",
+    description: "Got 5 perfect scores",
+    icon: "🌟",
+    check: (stats) => stats.perfectScores >= 5,
+  },
+  {
+    id: "high_scorer",
+    name: "High Scorer",
+    description: "Average score above 80%",
+    icon: "📈",
+    check: (stats) => stats.averageScore >= 80 && stats.totalQuizzes >= 5,
+  },
+  {
+    id: "genius",
+    name: "Genius",
+    description: "Average score above 90%",
+    icon: "🧠",
+    check: (stats) => stats.averageScore >= 90 && stats.totalQuizzes >= 10,
+  },
+  {
+    id: "score_50",
+    name: "Half Century",
+    description: "Scored 50% or higher on a quiz",
+    icon: "🎯",
+    check: (stats) => stats.bestScore >= 50,
+  },
+  {
+    id: "score_80",
+    name: "Star Student",
+    description: "Scored 80% or higher on a quiz",
+    icon: "⭐",
+    check: (stats) => stats.bestScore >= 80,
+  },
+
+  // Streak-based achievements
+  {
+    id: "on_fire",
+    name: "On Fire!",
+    description: "5+ day streak",
+    icon: "🔥",
+    check: (stats) => stats.streak >= 5,
+  },
+  {
+    id: "dedicated_learner",
+    name: "Dedicated Learner",
+    description: "30+ day streak",
+    icon: "🌟",
+    check: (stats) => stats.streak >= 30,
+  },
+  {
+    id: "learning_monster",
+    name: "Learning Monster",
+    description: "100+ day streak",
+    icon: "💪",
+    check: (stats) => stats.streak >= 100,
+  },
+
+  // Riddle-based achievements
+  {
+    id: "riddle_master",
+    name: "Riddle Master",
+    description: "Solved 5+ riddles",
+    icon: "🧩",
+    check: (stats) => stats.riddlesSolved >= 5,
+  },
+  {
+    id: "riddle_legend",
+    name: "Riddle Legend",
+    description: "Solved 25+ riddles",
+    icon: "🧠",
+    check: (stats) => stats.riddlesSolved >= 25,
+  },
+
+  // Article-based achievements
+  {
+    id: "avid_reader",
+    name: "Avid Reader",
+    description: "Read 10+ articles",
+    icon: "📖",
+    check: (stats) => stats.readArticles >= 10,
+  },
+  {
+    id: "bookworm",
+    name: "Bookworm",
+    description: "Read 50+ articles",
+    icon: "📚",
+    check: (stats) => stats.readArticles >= 50,
+  },
+
+  // Point-based achievements
+  {
+    id: "point_collector",
+    name: "Point Collector",
+    description: "Earned 1000+ points",
+    icon: "💎",
+    check: (stats) => stats.totalPoints >= 1000,
+  },
+  {
+    id: "point_millionaire",
+    name: "Point Millionaire",
+    description: "Earned 10,000+ points",
+    icon: "💰",
+    check: (stats) => stats.totalPoints >= 10000,
+  },
+
+  // Quiz count achievements (additional)
+  {
+    id: "five_quizzes",
+    name: "Five Quizzes",
+    description: "Completed 5 quizzes",
+    icon: "📝",
+    check: (stats) => stats.totalQuizzes >= 5,
+  },
+  {
+    id: "ten_quizzes",
+    name: "Ten Quizzes",
+    description: "Completed 10 quizzes",
+    icon: "📚",
+    check: (stats) => stats.totalQuizzes >= 10,
+  },
+  {
+    id: "twenty_quizzes",
+    name: "Twenty Quizzes",
+    description: "Completed 20 quizzes",
+    icon: "📖",
+    check: (stats) => stats.totalQuizzes >= 20,
+  },
 ];
 
 const Profile = () => {
@@ -122,12 +272,18 @@ const Profile = () => {
   const loadProfile = async () => {
     setLoading(true);
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
       if (userError) throw userError;
-      if (!user) { navigate("/auth"); return; }
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
 
       setUser(user);
-      
+
       // Get profile from database
       const { data: freshData, error: freshError } = await supabase
         .from("users")
@@ -141,7 +297,7 @@ const Profile = () => {
 
       if (freshData) {
         setProfile(freshData);
-        
+
         setFormData({
           name: freshData.name || user.user_metadata?.name || "",
           email: user.email || "",
@@ -176,17 +332,15 @@ const Profile = () => {
           last_quiz_date: null,
         };
 
-        const { error: insertError } = await supabase
-          .from("users")
-          .insert({
-            id: user.id,
-            name: user.user_metadata?.name || "",
-            email: user.email,
-            avatar_id: 1,
-            stats: defaultStats,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
+        const { error: insertError } = await supabase.from("users").insert({
+          id: user.id,
+          name: user.user_metadata?.name || "",
+          email: user.email,
+          avatar_id: 1,
+          stats: defaultStats,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
 
         if (insertError) {
           console.error("Error creating profile:", insertError);
@@ -195,7 +349,6 @@ const Profile = () => {
 
       // 🔥 FIX: Load stats from quiz_results (same as Dashboard)
       await loadStatsFromQuizzes(user.id);
-
     } catch (error) {
       console.error("Error loading profile:", error);
     } finally {
@@ -218,7 +371,9 @@ const Profile = () => {
         return;
       }
 
-      console.log(`📊 Found ${quizResults?.length || 0} quiz results for profile`);
+      console.log(
+        `📊 Found ${quizResults?.length || 0} quiz results for profile`,
+      );
 
       if (!quizResults || quizResults.length === 0) {
         setStats({
@@ -290,31 +445,31 @@ const Profile = () => {
       let riddlesSolved = 0;
       try {
         const { data: riddleHistory } = await supabase
-          .from('riddle_history')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('solved', true);
-        
+          .from("riddle_history")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("solved", true);
+
         if (riddleHistory) {
           riddlesSolved = riddleHistory.length;
         }
       } catch (error) {
-        console.error('Error fetching riddle history:', error);
+        console.error("Error fetching riddle history:", error);
       }
 
       // Get articles read count
       let readArticles = 0;
       try {
         const { data: articleHistory } = await supabase
-          .from('article_history')
-          .select('*')
-          .eq('user_id', userId);
-        
+          .from("article_history")
+          .select("*")
+          .eq("user_id", userId);
+
         if (articleHistory) {
           readArticles = articleHistory.length;
         }
       } catch (error) {
-        console.error('Error fetching article history:', error);
+        console.error("Error fetching article history:", error);
       }
 
       const newStats = {
@@ -332,15 +487,16 @@ const Profile = () => {
 
       console.log("📊 Profile stats calculated:", newStats);
       setStats(newStats);
-      setRenderKey(prev => prev + 1);
-
+      setRenderKey((prev) => prev + 1);
     } catch (error) {
       console.error("Error loading stats from quizzes:", error);
     }
   };
 
   const calculateAchievements = () => {
-    const unlockedAchievements = ACHIEVEMENT_DEFINITIONS.filter(def => def.check(stats));
+    const unlockedAchievements = ACHIEVEMENT_DEFINITIONS.filter((def) =>
+      def.check(stats),
+    );
     setAchievements(unlockedAchievements);
   };
 
@@ -380,13 +536,13 @@ const Profile = () => {
     setSaving(true);
     try {
       const finalBio = selectedBioType === "custom" ? customBio : formData.bio;
-      const updates = { 
-        name: formData.name, 
-        avatar_id: formData.avatar_id, 
-        bio: finalBio, 
-        location: formData.location, 
+      const updates = {
+        name: formData.name,
+        avatar_id: formData.avatar_id,
+        bio: finalBio,
+        location: formData.location,
         website: formData.website,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
       const { error: updateError } = await supabase
@@ -405,7 +561,8 @@ const Profile = () => {
     }
   };
 
-  const getAvatar = () => getAvatarById(formData.avatar_id) || defaultAvatars[0];
+  const getAvatar = () =>
+    getAvatarById(formData.avatar_id) || defaultAvatars[0];
   const currentAvatar = getAvatar();
 
   if (loading) {
@@ -424,7 +581,10 @@ const Profile = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 sm:gap-4">
-          <button onClick={() => navigate("/dashboard")} className="p-1.5 sm:p-2 rounded-lg hover:bg-white/5 transition-colors">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="p-1.5 sm:p-2 rounded-lg hover:bg-white/5 transition-colors"
+          >
             <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
           </button>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
@@ -433,22 +593,46 @@ const Profile = () => {
           </h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={refreshStats} disabled={refreshing} className="px-3 py-1.5 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-xs flex items-center gap-1.5">
-            <RefreshCw className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`} />
+          <button
+            onClick={refreshStats}
+            disabled={refreshing}
+            className="px-3 py-1.5 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-xs flex items-center gap-1.5"
+          >
+            <RefreshCw
+              className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`}
+            />
             Refresh
           </button>
           {editing ? (
             <>
-              <button onClick={() => { setEditing(false); loadProfile(); }} className="px-3 py-1.5 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-xs flex items-center gap-1.5" disabled={saving}>
+              <button
+                onClick={() => {
+                  setEditing(false);
+                  loadProfile();
+                }}
+                className="px-3 py-1.5 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-xs flex items-center gap-1.5"
+                disabled={saving}
+              >
                 <X className="w-3 h-3" /> Cancel
               </button>
-              <button onClick={handleSave} disabled={saving} className="px-3 py-1.5 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors text-xs flex items-center gap-1.5">
-                {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-3 py-1.5 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors text-xs flex items-center gap-1.5"
+              >
+                {saving ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Save className="w-3 h-3" />
+                )}
                 {saving ? "Saving..." : "Save"}
               </button>
             </>
           ) : (
-            <button onClick={() => setEditing(true)} className="px-3 py-1.5 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-xs flex items-center gap-1.5">
+            <button
+              onClick={() => setEditing(true)}
+              className="px-3 py-1.5 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-xs flex items-center gap-1.5"
+            >
               <Edit2 className="w-3 h-3" /> Edit
             </button>
           )}
@@ -459,11 +643,17 @@ const Profile = () => {
       <div className="bg-[#1a1a2e] rounded-xl p-4 sm:p-6 border border-white/5">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="relative">
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-2xl sm:text-3xl shadow-lg" style={{ backgroundColor: currentAvatar?.bg || "#2d2d5e" }}>
+            <div
+              className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-2xl sm:text-3xl shadow-lg"
+              style={{ backgroundColor: currentAvatar?.bg || "#2d2d5e" }}
+            >
               {currentAvatar?.emoji || "🧠"}
             </div>
             {editing && (
-              <button onClick={() => setShowAvatarSelector(true)} className="absolute bottom-0 right-0 p-1.5 bg-[#7c3aed] rounded-full border-2 border-[#1a1a2e] hover:bg-[#6d28d9] transition-all">
+              <button
+                onClick={() => setShowAvatarSelector(true)}
+                className="absolute bottom-0 right-0 p-1.5 bg-[#7c3aed] rounded-full border-2 border-[#1a1a2e] hover:bg-[#6d28d9] transition-all"
+              >
                 <Camera className="w-3 h-3 text-white" />
               </button>
             )}
@@ -472,31 +662,76 @@ const Profile = () => {
           <div className="flex-1 w-full">
             {editing ? (
               <div className="space-y-2">
-                <input type="text" name="name" value={formData.name} onChange={handleChange} placeholder="Full Name" className="w-full bg-[#2d2d44] text-white px-3 py-2 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-[#7c3aed] text-sm" />
-                <button onClick={() => setShowBioSelector(!showBioSelector)} className="w-full bg-[#2d2d44] text-white px-3 py-2 rounded-lg border border-gray-700 hover:border-[#7c3aed] transition-colors text-left text-sm flex items-center gap-2">
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Full Name"
+                  className="w-full bg-[#2d2d44] text-white px-3 py-2 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-[#7c3aed] text-sm"
+                />
+                <button
+                  onClick={() => setShowBioSelector(!showBioSelector)}
+                  className="w-full bg-[#2d2d44] text-white px-3 py-2 rounded-lg border border-gray-700 hover:border-[#7c3aed] transition-colors text-left text-sm flex items-center gap-2"
+                >
                   <Sparkles className="w-3 h-3 text-[#a78bfa]" />
-                  <span className="truncate">{formData.bio || "Select or write a bio"}</span>
+                  <span className="truncate">
+                    {formData.bio || "Select or write a bio"}
+                  </span>
                 </button>
                 {showBioSelector && (
                   <div className="bg-[#2d2d44] rounded-lg p-2 max-h-48 overflow-y-auto">
                     {PREDEFINED_BIOS.map((bio) => (
-                      <button key={bio.id} onClick={() => handleBioSelect(bio.text)} className={`w-full text-left px-2 py-1.5 rounded text-sm ${formData.bio === bio.text && selectedBioType === "predefined" ? "bg-[#7c3aed]" : "hover:bg-[#3d3d54]"}`}>
+                      <button
+                        key={bio.id}
+                        onClick={() => handleBioSelect(bio.text)}
+                        className={`w-full text-left px-2 py-1.5 rounded text-sm ${formData.bio === bio.text && selectedBioType === "predefined" ? "bg-[#7c3aed]" : "hover:bg-[#3d3d54]"}`}
+                      >
                         {bio.emoji} {bio.text}
                       </button>
                     ))}
-                    <input type="text" value={customBio} onChange={(e) => setCustomBio(e.target.value)} placeholder="Custom bio..." className="w-full bg-[#1a1a2e] text-white px-2 py-1.5 rounded border border-gray-700 text-sm mt-1" />
-                    <button onClick={handleCustomBio} className="w-full bg-[#7c3aed] text-white py-1.5 rounded text-sm mt-1">Use Custom Bio</button>
+                    <input
+                      type="text"
+                      value={customBio}
+                      onChange={(e) => setCustomBio(e.target.value)}
+                      placeholder="Custom bio..."
+                      className="w-full bg-[#1a1a2e] text-white px-2 py-1.5 rounded border border-gray-700 text-sm mt-1"
+                    />
+                    <button
+                      onClick={handleCustomBio}
+                      className="w-full bg-[#7c3aed] text-white py-1.5 rounded text-sm mt-1"
+                    >
+                      Use Custom Bio
+                    </button>
                   </div>
                 )}
               </div>
             ) : (
               <>
-                <h2 className="text-lg sm:text-xl font-bold text-white">{profile?.name || user?.user_metadata?.name || "User"}</h2>
-                <p className="text-gray-400 text-xs sm:text-sm">{user?.email}</p>
-                {profile?.bio && <p className="text-gray-300 text-sm mt-1 flex items-center gap-2"><Sparkles className="w-3 h-3 text-[#a78bfa]" /> {profile.bio}</p>}
+                <h2 className="text-lg sm:text-xl font-bold text-white">
+                  {profile?.name || user?.user_metadata?.name || "User"}
+                </h2>
+                <p className="text-gray-400 text-xs sm:text-sm">
+                  {user?.email}
+                </p>
+                {profile?.bio && (
+                  <p className="text-gray-300 text-sm mt-1 flex items-center gap-2">
+                    <Sparkles className="w-3 h-3 text-[#a78bfa]" />{" "}
+                    {profile.bio}
+                  </p>
+                )}
                 <div className="flex flex-wrap gap-3 mt-1 text-xs text-gray-500">
-                  <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Joined {new Date(user?.created_at || Date.now()).toLocaleDateString()}</span>
-                  {profile?.location && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {profile.location}</span>}
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" /> Joined{" "}
+                    {new Date(
+                      user?.created_at || Date.now(),
+                    ).toLocaleDateString()}
+                  </span>
+                  {profile?.location && (
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> {profile.location}
+                    </span>
+                  )}
                 </div>
               </>
             )}
@@ -504,34 +739,60 @@ const Profile = () => {
 
           {!editing && (
             <div className="flex gap-4 w-full sm:w-auto justify-center sm:justify-end">
-              <div className="text-center"><div className="text-lg font-bold text-white">{stats.totalQuizzes}</div><div className="text-[10px] text-gray-400">Quizzes</div></div>
-              <div className="text-center"><div className="text-lg font-bold text-yellow-400">{stats.bestScore}%</div><div className="text-[10px] text-gray-400">Best Score</div></div>
-              <div className="text-center"><div className="text-lg font-bold text-orange-400">{stats.streak}</div><div className="text-[10px] text-gray-400">Streak</div></div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-white">
+                  {stats.totalQuizzes}
+                </div>
+                <div className="text-[10px] text-gray-400">Quizzes</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-yellow-400">
+                  {stats.bestScore}%
+                </div>
+                <div className="text-[10px] text-gray-400">Best Score</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-orange-400">
+                  {stats.streak}
+                </div>
+                <div className="text-[10px] text-gray-400">Streak</div>
+              </div>
             </div>
           )}
         </div>
       </div>
 
       {/* Stats Grid - Now matches Dashboard */}
-      <div key={`profile-stats-${renderKey}`} className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+      <div
+        key={`profile-stats-${renderKey}`}
+        className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3"
+      >
         <div className="bg-[#1a1a2e] rounded-xl p-3 text-center border border-white/5">
           <Trophy className="w-5 h-5 text-yellow-400 mx-auto mb-1" />
-          <div className="text-lg font-bold text-white">{stats.totalPoints}</div>
+          <div className="text-lg font-bold text-white">
+            {stats.totalPoints}
+          </div>
           <div className="text-[10px] text-gray-400">Total Points</div>
         </div>
         <div className="bg-[#1a1a2e] rounded-xl p-3 text-center border border-white/5">
           <Award className="w-5 h-5 text-[#a78bfa] mx-auto mb-1" />
-          <div className="text-lg font-bold text-white">{stats.averageScore || 0}%</div>
+          <div className="text-lg font-bold text-white">
+            {stats.averageScore || 0}%
+          </div>
           <div className="text-[10px] text-gray-400">Average Score</div>
         </div>
         <div className="bg-[#1a1a2e] rounded-xl p-3 text-center border border-white/5">
           <Flame className="w-5 h-5 text-orange-400 mx-auto mb-1" />
-          <div className="text-lg font-bold text-white">{stats.streak || 0}</div>
+          <div className="text-lg font-bold text-white">
+            {stats.streak || 0}
+          </div>
           <div className="text-[10px] text-gray-400">Day Streak</div>
         </div>
         <div className="bg-[#1a1a2e] rounded-xl p-3 text-center border border-white/5">
           <Brain className="w-5 h-5 text-[#7c3aed] mx-auto mb-1" />
-          <div className="text-lg font-bold text-white">{stats.totalQuizzes}</div>
+          <div className="text-lg font-bold text-white">
+            {stats.totalQuizzes}
+          </div>
           <div className="text-[10px] text-gray-400">Quizzes Taken</div>
         </div>
       </div>
@@ -539,23 +800,35 @@ const Profile = () => {
       {/* Additional Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
         <div className="bg-[#1a1a2e] rounded-xl p-3 flex items-center gap-3 border border-white/5">
-          <div className="p-2 bg-blue-400/10 rounded-lg"><Brain className="w-5 h-5 text-blue-400" /></div>
+          <div className="p-2 bg-blue-400/10 rounded-lg">
+            <Brain className="w-5 h-5 text-blue-400" />
+          </div>
           <div>
-            <div className="text-lg font-bold text-white">{stats.riddlesSolved || 0}</div>
+            <div className="text-lg font-bold text-white">
+              {stats.riddlesSolved || 0}
+            </div>
             <div className="text-[10px] text-gray-400">Riddles Solved</div>
           </div>
         </div>
         <div className="bg-[#1a1a2e] rounded-xl p-3 flex items-center gap-3 border border-white/5">
-          <div className="p-2 bg-green-400/10 rounded-lg"><BookOpen className="w-5 h-5 text-green-400" /></div>
+          <div className="p-2 bg-green-400/10 rounded-lg">
+            <BookOpen className="w-5 h-5 text-green-400" />
+          </div>
           <div>
-            <div className="text-lg font-bold text-white">{stats.readArticles || 0}</div>
+            <div className="text-lg font-bold text-white">
+              {stats.readArticles || 0}
+            </div>
             <div className="text-[10px] text-gray-400">Articles Read</div>
           </div>
         </div>
         <div className="bg-[#1a1a2e] rounded-xl p-3 flex items-center gap-3 border border-white/5">
-          <div className="p-2 bg-purple-400/10 rounded-lg"><Star className="w-5 h-5 text-purple-400" /></div>
+          <div className="p-2 bg-purple-400/10 rounded-lg">
+            <Star className="w-5 h-5 text-purple-400" />
+          </div>
           <div>
-            <div className="text-lg font-bold text-white">{stats.perfectScores || 0}</div>
+            <div className="text-lg font-bold text-white">
+              {stats.perfectScores || 0}
+            </div>
             <div className="text-[10px] text-gray-400">Perfect Scores</div>
           </div>
         </div>
@@ -564,19 +837,44 @@ const Profile = () => {
       {/* Achievements */}
       <div className="bg-[#1a1a2e] rounded-xl p-4 border border-white/5">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2"><Medal className="w-4 h-4 text-yellow-400" /> Achievements ({achievements.length})</h3>
-          <button onClick={refreshStats} disabled={refreshing} className="text-xs text-[#a78bfa] hover:text-white transition-colors flex items-center gap-1">
-            <RefreshCw className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`} /> Refresh
+          <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <Medal className="w-4 h-4 text-yellow-400" /> Achievements (
+            {achievements.length})
+          </h3>
+          <button
+            onClick={refreshStats}
+            disabled={refreshing}
+            className="text-xs text-[#a78bfa] hover:text-white transition-colors flex items-center gap-1"
+          >
+            <RefreshCw
+              className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`}
+            />{" "}
+            Refresh
           </button>
         </div>
         {achievements.length === 0 ? (
-          <div className="text-center py-6"><div className="text-3xl mb-2">🏆</div><p className="text-gray-400 text-sm">No achievements yet. Start learning!</p></div>
+          <div className="text-center py-6">
+            <div className="text-3xl mb-2">🏆</div>
+            <p className="text-gray-400 text-sm">
+              No achievements yet. Start learning!
+            </p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
             {achievements.map((achievement) => (
-              <div key={achievement.id} className="flex items-center gap-2 p-2 bg-white/5 rounded-lg border border-white/5">
+              <div
+                key={achievement.id}
+                className="flex items-center gap-2 p-2 bg-white/5 rounded-lg border border-white/5"
+              >
                 <span className="text-xl">{achievement.icon}</span>
-                <div><div className="text-white text-xs font-medium">{achievement.name}</div><div className="text-[10px] text-gray-400">{achievement.description}</div></div>
+                <div>
+                  <div className="text-white text-xs font-medium">
+                    {achievement.name}
+                  </div>
+                  <div className="text-[10px] text-gray-400">
+                    {achievement.description}
+                  </div>
+                </div>
                 <CheckCircle className="w-3 h-3 text-green-400 ml-auto" />
               </div>
             ))}
@@ -586,16 +884,35 @@ const Profile = () => {
 
       {/* Account Settings */}
       <div className="bg-[#1a1a2e] rounded-xl p-4 border border-white/5">
-        <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2"><Settings className="w-4 h-4 text-gray-400" /> Account Settings</h3>
-        <button onClick={() => { if (confirm("Are you sure you want to sign out?")) { supabase.auth.signOut(); navigate("/auth"); } }} className="flex items-center justify-between p-3 bg-red-500/10 rounded-lg hover:bg-red-500/20 transition-colors group w-full">
-          <div className="flex items-center gap-3"><LogOut className="w-4 h-4 text-red-400" /><span className="text-red-400 text-sm">Sign Out</span></div>
+        <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+          <Settings className="w-4 h-4 text-gray-400" /> Account Settings
+        </h3>
+        <button
+          onClick={() => {
+            if (confirm("Are you sure you want to sign out?")) {
+              supabase.auth.signOut();
+              navigate("/auth");
+            }
+          }}
+          className="flex items-center justify-between p-3 bg-red-500/10 rounded-lg hover:bg-red-500/20 transition-colors group w-full"
+        >
+          <div className="flex items-center gap-3">
+            <LogOut className="w-4 h-4 text-red-400" />
+            <span className="text-red-400 text-sm">Sign Out</span>
+          </div>
           <ChevronRight className="w-4 h-4 text-red-400/50 group-hover:translate-x-1 transition-transform" />
         </button>
       </div>
 
       {/* Avatar Selector Modal */}
       <AnimatePresence>
-        {showAvatarSelector && <AvatarSelector currentAvatar={currentAvatar} onSelect={handleAvatarSelect} onClose={() => setShowAvatarSelector(false)} />}
+        {showAvatarSelector && (
+          <AvatarSelector
+            currentAvatar={currentAvatar}
+            onSelect={handleAvatarSelect}
+            onClose={() => setShowAvatarSelector(false)}
+          />
+        )}
       </AnimatePresence>
     </div>
   );

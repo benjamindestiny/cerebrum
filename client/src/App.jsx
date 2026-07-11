@@ -74,7 +74,7 @@ function App() {
             <Route path="leaderboard" element={<Leaderboard />} />
             <Route path="riddles" element={<Riddles />} />
             <Route path="achievements" element={<Achievements />} />
-            <Route path="test-groq" element={<TestGroq />} />
+            {/* <Route path="test-groq" element={<TestGroq />} /> */}
             <Route path="read-and-test" element={<ReadAndTest />} />
             <Route
               path="read-and-test-results"

@@ -18,6 +18,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
+import { authService } from "../services/authService";
 import { sendEmail, emailTemplates } from "../services/emailService";
 
 const Auth = () => {
@@ -40,11 +41,9 @@ const Auth = () => {
     confirmPassword: "",
   });
 
-  // Check if Supabase is configured
   const [isSupabaseConfigured, setIsSupabaseConfigured] = useState(true);
 
   useEffect(() => {
-    // Check Supabase configuration
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -68,7 +67,6 @@ const Auth = () => {
         }
       } catch (err) {
         console.error("Error checking user:", err);
-        // Don't redirect on error, let user try to login
       }
     };
     checkUser();
@@ -134,7 +132,6 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      // Validate Supabase configuration
       if (!isSupabaseConfigured) {
         setError(
           "⚠️ Supabase is not configured. Please check your environment variables.",
@@ -143,7 +140,6 @@ const Auth = () => {
         return;
       }
 
-      // Validation
       if (!formData.email || !formData.password) {
         setError("Please fill in all required fields.");
         setLoading(false);
@@ -151,7 +147,6 @@ const Auth = () => {
       }
 
       if (isLogin) {
-        // 🔐 LOGIN
         console.log("Attempting login for:", formData.email);
 
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -162,7 +157,6 @@ const Auth = () => {
         if (error) {
           console.error("Login error:", error);
 
-          // Handle specific error types
           if (error.message?.includes("Invalid login credentials")) {
             setError("Invalid email or password. Please try again.");
           } else if (error.message?.includes("Email not confirmed")) {
@@ -184,7 +178,6 @@ const Auth = () => {
           }, 500);
         }
       } else {
-        // 📝 SIGNUP
         console.log("Attempting signup for:", formData.email);
 
         if (formData.password !== formData.confirmPassword) {
@@ -205,16 +198,12 @@ const Auth = () => {
           return;
         }
 
-        const { data, error } = await supabase.auth.signUp({
-          email: formData.email.trim(),
-          password: formData.password,
-          options: {
-            data: {
-              name: formData.name,
-              full_name: formData.name,
-            },
-          },
-        });
+        // ✅ FIX: Use authService to save name properly
+        const { data, error } = await authService.signUp(
+          formData.email.trim(),
+          formData.password,
+          formData.name
+        );
 
         if (error) {
           console.error("Signup error:", error);
@@ -239,7 +228,6 @@ const Auth = () => {
             return;
           }
 
-          // Send welcome email (don't block if it fails)
           try {
             await sendEmail({
               to: formData.email,
@@ -251,7 +239,6 @@ const Auth = () => {
             console.log("✅ Welcome email sent");
           } catch (emailError) {
             console.error("❌ Welcome email failed:", emailError);
-            // Continue anyway - user can still use the app
           }
 
           setSuccess("Account created successfully! Redirecting...");
@@ -375,12 +362,9 @@ const Auth = () => {
     }
   };
 
-  // ============================================
-  // RESET PASSWORD SCREEN
-  // ============================================
   if (showReset) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0f0f1a] p-3 sm:p-4">
+      <div className="min-h-screen flex items-center justify-center p-3 sm:p-4" style={{ backgroundColor: 'var(--app-bg)' }}>
         <div className="glass-card p-5 sm:p-6 md:p-8 max-w-md w-full">
           <button
             onClick={() => {
@@ -388,20 +372,20 @@ const Auth = () => {
               setError("");
               setSuccess("");
             }}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-4 sm:mb-6 text-sm sm:text-base"
+            className="flex items-center gap-2 text-muted hover:text-white transition-colors mb-4 sm:mb-6 text-sm sm:text-base"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Sign In
           </button>
 
           <div className="text-center mb-5 sm:mb-6 md:mb-8">
-            <div className="inline-block p-2.5 sm:p-3 bg-[#7c3aed]/20 rounded-full mb-3 sm:mb-4">
-              <Mail className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-[#a78bfa]" />
+            <div className="inline-block p-2.5 sm:p-3 bg-accent/20 rounded-full mb-3 sm:mb-4">
+              <Mail className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-accent" />
             </div>
             <h2 className="text-xl sm:text-2xl font-bold text-white">
               Reset Password
             </h2>
-            <p className="text-gray-400 text-xs sm:text-sm mt-1 sm:mt-2">
+            <p className="text-muted text-xs sm:text-sm mt-1 sm:mt-2">
               Enter your email address and we'll send you a link to reset your
               password.
             </p>
@@ -426,7 +410,7 @@ const Auth = () => {
             className="space-y-3 sm:space-y-4"
           >
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted" />
               <input
                 type="email"
                 value={resetEmail}
@@ -435,7 +419,7 @@ const Auth = () => {
                   setError("");
                 }}
                 placeholder="Email Address"
-                className="w-full bg-[#2D2D5E] text-white px-4 py-2 pl-9 sm:pl-10 rounded-lg border border-white/10 focus:border-[#7c3aed] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 transition-all text-sm sm:text-base"
+                className="w-full bg-surface-2 text-white px-4 py-2 pl-9 sm:pl-10 rounded-lg border border-border focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm sm:text-base"
                 required
               />
             </div>
@@ -444,7 +428,7 @@ const Auth = () => {
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={loading}
-              className="w-full bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors flex items-center justify-center gap-2 py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50"
+              className="w-full bg-accent text-white rounded-lg hover:bg-[#6d28d9] transition-colors flex items-center justify-center gap-2 py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
@@ -458,25 +442,23 @@ const Auth = () => {
     );
   }
 
-  // ============================================
-  // MAIN AUTH SCREEN
-  // ============================================
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="min-h-screen flex items-center justify-center bg-[#0f0f1a] p-3 sm:p-4"
+      className="min-h-screen flex items-center justify-center p-3 sm:p-4"
+      style={{ backgroundColor: 'var(--app-bg)' }}
     >
       <div className="glass-card p-5 sm:p-6 md:p-8 max-w-md w-full">
         <div className="text-center mb-5 sm:mb-6 md:mb-8">
-          <div className="inline-block p-2.5 sm:p-3 bg-[#7c3aed]/20 rounded-full mb-3 sm:mb-4">
-            <Brain className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-[#a78bfa]" />
+          <div className="inline-block p-2.5 sm:p-3 bg-accent/20 rounded-full mb-3 sm:mb-4">
+            <Brain className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-accent" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white">
             Cerebrum
           </h1>
-          <p className="text-gray-400 text-xs sm:text-sm">
+          <p className="text-muted text-xs sm:text-sm">
             {isLogin ? "Welcome back!" : "Create your account"}
           </p>
           {!isSupabaseConfigured && (
@@ -504,47 +486,47 @@ const Auth = () => {
         <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
           {!isLogin && (
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted" />
               <input
                 type="text"
                 name="name"
                 placeholder="Full Name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full bg-[#2D2D5E] text-white px-4 py-2 pl-9 sm:pl-10 rounded-lg border border-white/10 focus:border-[#7c3aed] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 transition-all text-sm sm:text-base"
+                className="w-full bg-surface-2 text-white px-4 py-2 pl-9 sm:pl-10 rounded-lg border border-border focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm sm:text-base"
                 required={!isLogin}
               />
             </div>
           )}
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted" />
             <input
               type="email"
               name="email"
               placeholder="Email Address"
               value={formData.email}
               onChange={handleChange}
-              className="w-full bg-[#2D2D5E] text-white px-4 py-2 pl-9 sm:pl-10 rounded-lg border border-white/10 focus:border-[#7c3aed] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 transition-all text-sm sm:text-base"
+              className="w-full bg-surface-2 text-white px-4 py-2 pl-9 sm:pl-10 rounded-lg border border-border focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm sm:text-base"
               required
             />
           </div>
 
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted" />
             <input
               type={showPassword ? "text" : "password"}
               name="password"
               placeholder="Password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full bg-[#2D2D5E] text-white px-4 py-2 pl-9 sm:pl-10 pr-10 rounded-lg border border-white/10 focus:border-[#7c3aed] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 transition-all text-sm sm:text-base"
+              className="w-full bg-surface-2 text-white px-4 py-2 pl-9 sm:pl-10 pr-10 rounded-lg border border-border focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm sm:text-base"
               required
               minLength={6}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white transition-colors"
             >
               {showPassword ? (
                 <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -556,20 +538,20 @@ const Auth = () => {
 
           {!isLogin && (
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted" />
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 name="confirmPassword"
                 placeholder="Confirm Password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="w-full bg-[#2D2D5E] text-white px-4 py-2 pl-9 sm:pl-10 pr-10 rounded-lg border border-white/10 focus:border-[#7c3aed] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 transition-all text-sm sm:text-base"
+                className="w-full bg-surface-2 text-white px-4 py-2 pl-9 sm:pl-10 pr-10 rounded-lg border border-border focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm sm:text-base"
                 required={!isLogin}
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white transition-colors"
               >
                 {showConfirmPassword ? (
                   <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -589,7 +571,7 @@ const Auth = () => {
                   setError("");
                   setSuccess("");
                 }}
-                className="text-xs sm:text-sm text-gray-400 hover:text-[#a78bfa] transition-colors"
+                className="text-xs sm:text-sm text-muted hover:text-accent transition-colors"
               >
                 Forgot Password?
               </button>
@@ -601,7 +583,7 @@ const Auth = () => {
             whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={loading || !isSupabaseConfigured}
-            className="w-full bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors flex items-center justify-center gap-2 py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50"
+            className="w-full bg-accent text-white rounded-lg hover:bg-[#6d28d9] transition-colors flex items-center justify-center gap-2 py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50"
           >
             {loading ? (
               <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
@@ -616,10 +598,10 @@ const Auth = () => {
 
         <div className="relative my-5 sm:my-6 md:my-8">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-700"></div>
+            <div className="w-full border-t border-border"></div>
           </div>
           <div className="relative flex justify-center">
-            <span className="px-3 sm:px-4 bg-[#1a1a2e] text-gray-500 text-[10px] sm:text-xs font-medium tracking-wider">
+            <span className="px-3 sm:px-4 bg-surface text-muted text-[10px] sm:text-xs font-medium tracking-wider">
               OR CONTINUE WITH
             </span>
           </div>
@@ -631,10 +613,10 @@ const Auth = () => {
             whileTap={{ scale: 0.98 }}
             onClick={handleGithubLogin}
             disabled={githubLoading || !isSupabaseConfigured}
-            className="w-full py-2.5 sm:py-3 rounded-xl border border-gray-700 hover:border-[#7c3aed] bg-[#1a1a2e] hover:bg-[#2d2d5e] transition-all duration-300 flex items-center justify-center gap-3 text-gray-300 font-medium text-sm sm:text-base disabled:opacity-50"
+            className="w-full py-2.5 sm:py-3 rounded-xl border border-border hover:border-accent bg-surface hover:bg-surface-2 transition-all duration-300 flex items-center justify-center gap-3 text-gray-300 font-medium text-sm sm:text-base disabled:opacity-50"
           >
             {githubLoading ? (
-              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-[#a78bfa]" />
+              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-accent" />
             ) : (
               <Github className="w-4 h-4 sm:w-5 sm:h-5" />
             )}
@@ -646,10 +628,10 @@ const Auth = () => {
             whileTap={{ scale: 0.98 }}
             onClick={handleGoogleLogin}
             disabled={googleLoading || !isSupabaseConfigured}
-            className="w-full py-2.5 sm:py-3 rounded-xl border border-gray-700 hover:border-[#7c3aed] bg-[#1a1a2e] hover:bg-[#2d2d5e] transition-all duration-300 flex items-center justify-center gap-3 text-gray-300 font-medium text-sm sm:text-base disabled:opacity-50"
+            className="w-full py-2.5 sm:py-3 rounded-xl border border-border hover:border-accent bg-surface hover:bg-surface-2 transition-all duration-300 flex items-center justify-center gap-3 text-gray-300 font-medium text-sm sm:text-base disabled:opacity-50"
           >
             {googleLoading ? (
-              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-[#a78bfa]" />
+              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-accent" />
             ) : (
               <Chrome className="w-4 h-4 sm:w-5 sm:h-5" />
             )}
@@ -670,17 +652,17 @@ const Auth = () => {
                 confirmPassword: "",
               });
             }}
-            className="text-xs sm:text-sm text-gray-400 hover:text-[#a78bfa] transition-colors"
+            className="text-xs sm:text-sm text-muted hover:text-accent transition-colors"
           >
             {isLogin ? (
               <span>
                 Don't have an account?{" "}
-                <span className="text-[#a78bfa] font-medium">Sign Up</span>
+                <span className="text-accent font-medium">Sign Up</span>
               </span>
             ) : (
               <span>
                 Already have an account?{" "}
-                <span className="text-[#a78bfa] font-medium">Sign In</span>
+                <span className="text-accent font-medium">Sign In</span>
               </span>
             )}
           </button>
