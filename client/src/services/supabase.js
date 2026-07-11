@@ -1,12 +1,17 @@
-import { createClient } from '@supabase/supabase-js';
+// services/supabase.js
+import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+// Debug: Check if env variables exist
+console.log('🔍 Supabase URL:', supabaseUrl)
+console.log('🔍 Supabase Key exists:', !!supabaseAnonKey)
+console.log('🔍 Supabase Key preview:', supabaseAnonKey?.substring(0, 20) + '...')
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('❌ Missing Supabase environment variables. Check your .env file.');
-  console.error('URL:', supabaseUrl);
-  console.error('Key:', supabaseAnonKey ? 'Present' : 'Missing');
+  console.error('❌ Missing Supabase environment variables!')
+  console.error('Check your .env file has VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY')
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -14,31 +19,39 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce'
+    flowType: 'pkce',
+  },
+  global: {
+    headers: {
+      'x-application-name': 'cerebrum',
+    },
+  },
+})
+
+// Test connection function
+export const testSupabaseConnection = async () => {
+  try {
+    console.log('🔄 Testing Supabase connection...')
+    const startTime = Date.now()
+    
+    const { data, error } = await supabase
+      .from('users')
+      .select('count')
+      .limit(1)
+      .timeout(10000) // 10 second timeout
+    
+    const elapsed = Date.now() - startTime
+    console.log(`⏱️ Connection test took ${elapsed}ms`)
+    
+    if (error) {
+      console.error('❌ Supabase connection failed:', error)
+      return { success: false, error, elapsed }
+    }
+    
+    console.log('✅ Supabase connection successful!')
+    return { success: true, data, elapsed }
+  } catch (err) {
+    console.error('❌ Supabase connection error:', err)
+    return { success: false, error: err, elapsed: 0 }
   }
-});
-
-// For testing in browser console
-if (typeof window !== 'undefined') {
-  window.supabase = supabase;
 }
-
-// Helper function to get current user
-export const getCurrentUser = async () => {
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error) throw error;
-  return user;
-};
-
-// Helper function to get session
-export const getSession = async () => {
-  const { data: { session }, error } = await supabase.auth.getSession();
-  if (error) throw error;
-  return session;
-};
-
-// Helper function to sign out
-export const signOut = async () => {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
-};
