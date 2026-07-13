@@ -22,6 +22,7 @@ import {
   ChevronDown,
   ChevronUp,
   Timer,
+  RefreshCw,
 } from "lucide-react";
 import { riddles, getDailyRiddle } from "../data/riddles";
 import { supabase } from "../services/supabase";
@@ -50,29 +51,416 @@ const Riddles = () => {
   const [timeUntilNext, setTimeUntilNext] = useState("");
   const [dailyRiddleData, setDailyRiddleData] = useState(null);
   const [user, setUser] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const inputRefs = useRef({});
 
   useEffect(() => {
-    loadDailyRiddle();
-    setIsLoading(false);
     getCurrentUser();
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      loadUserRiddleStats();
+      loadDailyRiddle();
+    }
+  }, [user]);
+
   const getCurrentUser = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    setUser(user);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+      if (!user) {
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error("Error getting user:", error);
+      setIsLoading(false);
+    }
   };
 
-  useEffect(() => {
-    if (expandedRiddle && inputRefs.current[expandedRiddle]) {
-      setTimeout(() => {
-        inputRefs.current[expandedRiddle]?.focus();
-      }, 100);
+  // ✅ FIX: Load user's riddle stats from database
+  const loadUserRiddleStats = async () => {
+    if (!user) return;
+    try {
+      // Get user stats
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("stats")
+        .eq("id", user.id)
+        .single();
+
+      if (userError) {
+        console.error("Error loading user stats:", userError);
+        return;
+      }
+
+      if (userData?.stats) {
+        const stats = userData.stats;
+        setSolvedCount(stats.riddles_solved || 0);
+        setPoints(stats.total_points || 0);
+        // Streak might be stored elsewhere, use local for now
+      }
+
+      // ✅ FIX: Load riddle history
+      const { data: historyData, error: historyError } = await supabase
+        .from("riddle_history")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("solved_at", { ascending: false });
+
+      if (historyError) {
+        // Table might not exist, create it
+        console.warn("Riddle history table may not exist:", historyError);
+        return;
+      }
+
+      if (historyData) {
+        // Calculate stats from history
+        const solved = historyData.filter((h) => h.solved === true).length;
+        const totalPoints = historyData.reduce(
+          (sum, h) => sum + (h.points || 0),
+          0,
+        );
+        setSolvedCount(solved);
+        setPoints(totalPoints);
+        setHistory(historyData);
+      }
+    } catch (error) {
+      console.error("Error loading riddle stats:", error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [expandedRiddle]);
+  };
+
+  // ✅ FIX: Load daily riddle with saved state
+  const loadDailyRiddle = () => {
+    const daily = getDailyRiddle();
+    setDailyRiddleData(daily);
+    setAnswer("");
+    setShowHint(false);
+    setShowAnswer(false);
+    setIsCorrect(null);
+    setDailyAttempts(0);
+    setDailyHintUsed(false);
+    setDailyAnswerRevealed(false);
+    setDailySolved(false);
+
+    // Check if daily riddle was already solved today
+    const today = new Date().toISOString().split("T")[0];
+    const dailySolvedToday = history.some(
+      (h) =>
+        h.riddle_id === daily.id &&
+        h.solved === true &&
+        h.solved_at?.split("T")[0] === today,
+    );
+
+    if (dailySolvedToday) {
+      setDailySolved(true);
+      setIsCorrect(true);
+      setShowAnswer(true);
+    }
+  };
+
+  // ✅ FIX: Save riddle to history
+  const saveRiddleToHistory = async (riddleId, solved, pointsEarned = 0) => {
+    if (!user) return;
+    try {
+      // Check if entry already exists
+      const { data: existing } = await supabase
+        .from("riddle_history")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("riddle_id", riddleId)
+        .maybeSingle();
+
+      if (existing) {
+        // Update existing
+        const { error } = await supabase
+          .from("riddle_history")
+          .update({
+            solved: solved,
+            solved_at: solved ? new Date().toISOString() : null,
+            points: pointsEarned,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existing.id);
+
+        if (error) throw error;
+      } else {
+        // Insert new
+        const { error } = await supabase.from("riddle_history").insert({
+          user_id: user.id,
+          riddle_id: riddleId,
+          solved: solved,
+          solved_at: solved ? new Date().toISOString() : null,
+          points: pointsEarned,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error("Error saving riddle history:", error);
+    }
+  };
+
+  // ✅ FIX: Update user stats
+  const updateUserStats = async () => {
+    if (!user) return;
+    try {
+      // Get current user stats
+      const { data: userData } = await supabase
+        .from("users")
+        .select("stats")
+        .eq("id", user.id)
+        .single();
+
+      const currentStats = userData?.stats || {};
+
+      // Get all solved riddles
+      const { data: historyData } = await supabase
+        .from("riddle_history")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("solved", true);
+
+      const solvedCount = historyData?.length || 0;
+      const totalPoints = historyData?.reduce((sum, h) => sum + (h.points || 0), 0) || 0;
+
+      const updatedStats = {
+        ...currentStats,
+        riddles_solved: solvedCount,
+        total_points: (currentStats.total_points || 0) + totalPoints,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from("users")
+        .update({ stats: updatedStats })
+        .eq("id", user.id);
+
+      if (error) {
+        console.error("Error updating user stats:", error);
+        return;
+      }
+
+      console.log("✅ User stats updated:", updatedStats);
+    } catch (error) {
+      console.error("Error updating user stats:", error);
+    }
+  };
+
+  // ✅ FIX: Handle daily riddle submit
+  const handleDailySubmit = async () => {
+    if (dailySolved || !dailyRiddleData) return;
+    const userAnswer = answer.trim().toLowerCase();
+    if (!userAnswer) return;
+
+    const correctAnswer = dailyRiddleData.answer.toLowerCase();
+    const isCorrectAnswer =
+      userAnswer === correctAnswer ||
+      userAnswer.includes(correctAnswer) ||
+      correctAnswer.includes(userAnswer);
+
+    setDailyAttempts((prev) => prev + 1);
+
+    if (isCorrectAnswer) {
+      setIsCorrect(true);
+      setShowAnswer(true);
+      setDailySolved(true);
+      setSolvedCount((prev) => prev + 1);
+      setPoints((prev) => prev + dailyRiddleData.points);
+      setStreak((prev) => prev + 1);
+
+      const newHistory = {
+        id: Date.now(),
+        riddle_id: dailyRiddleData.id,
+        question: dailyRiddleData.question,
+        answer: dailyRiddleData.answer,
+        userAnswer: userAnswer,
+        solved: true,
+        points: dailyRiddleData.points,
+        solved_at: new Date().toISOString(),
+      };
+      setHistory((prev) => [newHistory, ...prev]);
+
+      // ✅ Save to database
+      await saveRiddleToHistory(dailyRiddleData.id, true, dailyRiddleData.points);
+      await updateUserStats();
+    } else {
+      setIsCorrect(false);
+      setStreak(0);
+      setHistory((prev) => [
+        {
+          id: Date.now(),
+          riddle_id: dailyRiddleData.id,
+          question: dailyRiddleData.question,
+          answer: dailyRiddleData.answer,
+          userAnswer: userAnswer,
+          solved: false,
+          points: 0,
+          solved_at: null,
+        },
+        ...prev,
+      ]);
+
+      if (dailyAttempts + 1 >= 3) {
+        setShowAnswer(true);
+      }
+    }
+  };
+
+  // ✅ FIX: Handle regular riddle submit
+  const handleSubmitRiddle = async (riddleId) => {
+    const riddle = riddles.find((r) => r.id === riddleId);
+    if (!riddle) return;
+
+    const userAnswer = inputValues[riddleId]?.trim().toLowerCase() || "";
+    if (!userAnswer) return;
+
+    setAttemptsMap((prev) => ({
+      ...prev,
+      [riddleId]: (prev[riddleId] || 0) + 1,
+    }));
+
+    const correctAnswer = riddle.answer.toLowerCase();
+    const isCorrectAnswer =
+      userAnswer === correctAnswer ||
+      userAnswer.includes(correctAnswer) ||
+      correctAnswer.includes(userAnswer);
+
+    setResultMap((prev) => ({ ...prev, [riddleId]: isCorrectAnswer }));
+
+    if (isCorrectAnswer) {
+      setShowAnswerMap((prev) => ({ ...prev, [riddleId]: true }));
+      setSolvedCount((prev) => prev + 1);
+      setPoints((prev) => prev + riddle.points);
+      setStreak((prev) => prev + 1);
+      setHistory((prev) => [
+        {
+          id: Date.now(),
+          riddle_id: riddle.id,
+          question: riddle.question,
+          answer: riddle.answer,
+          userAnswer: userAnswer,
+          solved: true,
+          points: riddle.points,
+          solved_at: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
+
+      await saveRiddleToHistory(riddle.id, true, riddle.points);
+      await updateUserStats();
+    } else {
+      setStreak(0);
+      if ((attemptsMap[riddleId] || 0) + 1 >= 3) {
+        setShowAnswerMap((prev) => ({ ...prev, [riddleId]: true }));
+      }
+    }
+  };
+
+  // ✅ FIX: Refresh stats
+  const refreshStats = async () => {
+    setRefreshing(true);
+    await loadUserRiddleStats();
+    setRefreshing(false);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleDailySubmit();
+    }
+  };
+
+  const handleKeyPressRiddle = (riddleId, e) => {
+    if (e.key === "Enter") {
+      handleSubmitRiddle(riddleId);
+    }
+  };
+
+  const toggleRiddle = (riddleId) => {
+    if (expandedRiddle === riddleId) {
+      setExpandedRiddle(null);
+    } else {
+      setExpandedRiddle(riddleId);
+      setInputValues((prev) => ({ ...prev, [riddleId]: "" }));
+      setShowHintMap((prev) => ({ ...prev, [riddleId]: false }));
+      setShowAnswerMap((prev) => ({ ...prev, [riddleId]: false }));
+      setResultMap((prev) => ({ ...prev, [riddleId]: null }));
+      setAttemptsMap((prev) => ({ ...prev, [riddleId]: 0 }));
+    }
+  };
+
+  const handleDailyHint = () => {
+    if (dailySolved) return;
+    if (dailyHintUsed) return;
+    if (dailyAttempts < 2) return;
+    setShowHint(true);
+    setDailyHintUsed(true);
+  };
+
+  const handleDailyReveal = () => {
+    if (dailySolved) return;
+    if (dailyAnswerRevealed) return;
+    if (dailyAttempts < 3) return;
+    setShowAnswer(true);
+    setDailyAnswerRevealed(true);
+  };
+
+  const handleRiddleHint = (riddleId) => {
+    const attempts = attemptsMap[riddleId] || 0;
+    if (attempts < 2) return;
+    setShowHintMap((prev) => ({ ...prev, [riddleId]: !prev[riddleId] }));
+  };
+
+  const handleRiddleReveal = (riddleId) => {
+    const attempts = attemptsMap[riddleId] || 0;
+    if (attempts < 3) return;
+    setShowAnswerMap((prev) => ({ ...prev, [riddleId]: !prev[riddleId] }));
+  };
+
+  const getDifficultyColor = (difficulty) => {
+    if (difficulty === "easy")
+      return "bg-green-500/20 text-green-400 border-green-500/30";
+    if (difficulty === "medium")
+      return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+    if (difficulty === "hard")
+      return "bg-red-500/20 text-red-400 border-red-500/30";
+    return "bg-gray-500/20 text-gray-400 border-gray-500/30";
+  };
+
+  const getDifficultyEmoji = (difficulty) => {
+    if (difficulty === "easy") return "🌱";
+    if (difficulty === "medium") return "⚡";
+    if (difficulty === "hard") return "🔥";
+    return "📚";
+  };
+
+  const isRiddleSolved = (riddleId) => {
+    return history.some((h) => h.riddle_id === riddleId && h.solved === true);
+  };
+
+  const getFilteredRiddles = () => {
+    if (filter === "all") return riddles;
+    if (filter === "solved") return riddles.filter((r) => isRiddleSolved(r.id));
+    if (filter === "unsolved")
+      return riddles.filter((r) => !isRiddleSolved(r.id));
+    if (filter === "easy")
+      return riddles.filter((r) => r.difficulty === "easy");
+    if (filter === "medium")
+      return riddles.filter((r) => r.difficulty === "medium");
+    if (filter === "hard")
+      return riddles.filter((r) => r.difficulty === "hard");
+    return riddles;
+  };
+
+  const filteredRiddles = getFilteredRiddles();
 
   useEffect(() => {
     if (dailyRiddleData) {
@@ -97,260 +485,6 @@ const Riddles = () => {
     }
   }, [dailyRiddleData]);
 
-  const loadDailyRiddle = () => {
-    const daily = getDailyRiddle();
-    setDailyRiddleData(daily);
-    setAnswer("");
-    setShowHint(false);
-    setShowAnswer(false);
-    setIsCorrect(null);
-    setDailyAttempts(0);
-    setDailyHintUsed(false);
-    setDailyAnswerRevealed(false);
-    setDailySolved(false);
-  };
-
-  const saveRiddleToHistory = async (riddleId, solved) => {
-    if (!user) return;
-    try {
-      const { error } = await supabase.from("riddle_history").insert({
-        user_id: user.id,
-        riddle_id: riddleId,
-        solved: solved,
-        solved_at: solved ? new Date().toISOString() : null,
-      });
-      if (error) console.error("Error saving riddle history:", error);
-    } catch (error) {
-      console.error("Error saving riddle history:", error);
-    }
-  };
-
-  const updateUserStats = async () => {
-    if (!user) return;
-    try {
-      // Get current stats
-      const { data: userData } = await supabase
-        .from("users")
-        .select("stats")
-        .eq("id", user.id)
-        .single();
-
-      const currentStats = userData?.stats || {};
-      const updatedStats = {
-        ...currentStats,
-        riddles_solved: solvedCount,
-        total_points: (currentStats.total_points || 0) + points,
-      };
-
-      await supabase
-        .from("users")
-        .update({ stats: updatedStats })
-        .eq("id", user.id);
-    } catch (error) {
-      console.error("Error updating user stats:", error);
-    }
-  };
-
-  const handleDailySubmit = () => {
-    if (dailySolved) return;
-    const userAnswer = answer.trim().toLowerCase();
-    if (!userAnswer) return;
-    const correctAnswer = dailyRiddleData.answer.toLowerCase();
-    const isCorrectAnswer =
-      userAnswer === correctAnswer ||
-      userAnswer.includes(correctAnswer) ||
-      correctAnswer.includes(userAnswer);
-    setDailyAttempts((prev) => prev + 1);
-    if (isCorrectAnswer) {
-      setIsCorrect(true);
-      setShowAnswer(true);
-      setDailySolved(true);
-      setSolvedCount((prev) => prev + 1);
-      setPoints((prev) => prev + dailyRiddleData.points);
-      setStreak((prev) => prev + 1);
-      setHistory((prev) => [
-        {
-          id: dailyRiddleData.id,
-          question: dailyRiddleData.question,
-          answer: dailyRiddleData.answer,
-          userAnswer: userAnswer,
-          solved: true,
-          points: dailyRiddleData.points,
-          timestamp: new Date().toISOString(),
-        },
-        ...prev,
-      ]);
-      saveRiddleToHistory(dailyRiddleData.id, true);
-      updateUserStats();
-    } else {
-      setIsCorrect(false);
-      setStreak(0);
-      setHistory((prev) => [
-        {
-          id: dailyRiddleData.id,
-          question: dailyRiddleData.question,
-          answer: dailyRiddleData.answer,
-          userAnswer: userAnswer,
-          solved: false,
-          points: 0,
-          timestamp: new Date().toISOString(),
-        },
-        ...prev,
-      ]);
-      if (dailyAttempts + 1 >= 3) {
-        setShowAnswer(true);
-      }
-    }
-  };
-
-  const handleDailyHint = () => {
-    if (dailySolved) return;
-    if (dailyHintUsed) return;
-    if (dailyAttempts < 2) return;
-    setShowHint(true);
-    setDailyHintUsed(true);
-  };
-
-  const handleDailyReveal = () => {
-    if (dailySolved) return;
-    if (dailyAnswerRevealed) return;
-    if (dailyAttempts < 3) return;
-    setShowAnswer(true);
-    setDailyAnswerRevealed(true);
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleDailySubmit();
-    }
-  };
-
-  const toggleRiddle = (riddleId) => {
-    if (expandedRiddle === riddleId) {
-      setExpandedRiddle(null);
-    } else {
-      setExpandedRiddle(riddleId);
-      setInputValues((prev) => ({ ...prev, [riddleId]: "" }));
-      setShowHintMap((prev) => ({ ...prev, [riddleId]: false }));
-      setShowAnswerMap((prev) => ({ ...prev, [riddleId]: false }));
-      setResultMap((prev) => ({ ...prev, [riddleId]: null }));
-      setAttemptsMap((prev) => ({ ...prev, [riddleId]: 0 }));
-    }
-  };
-
-  const handleInputChange = (riddleId, value) => {
-    setInputValues((prev) => ({ ...prev, [riddleId]: value }));
-  };
-
-  const handleSubmitRiddle = (riddleId) => {
-    const riddle = riddles.find((r) => r.id === riddleId);
-    if (!riddle) return;
-    const userAnswer = inputValues[riddleId]?.trim().toLowerCase() || "";
-    if (!userAnswer) return;
-    setAttemptsMap((prev) => ({
-      ...prev,
-      [riddleId]: (prev[riddleId] || 0) + 1,
-    }));
-    const correctAnswer = riddle.answer.toLowerCase();
-    const isCorrectAnswer =
-      userAnswer === correctAnswer ||
-      userAnswer.includes(correctAnswer) ||
-      correctAnswer.includes(userAnswer);
-    setResultMap((prev) => ({ ...prev, [riddleId]: isCorrectAnswer }));
-    if (isCorrectAnswer) {
-      setShowAnswerMap((prev) => ({ ...prev, [riddleId]: true }));
-      setSolvedCount((prev) => prev + 1);
-      setPoints((prev) => prev + riddle.points);
-      setStreak((prev) => prev + 1);
-      setHistory((prev) => [
-        {
-          id: riddle.id,
-          question: riddle.question,
-          answer: riddle.answer,
-          userAnswer: userAnswer,
-          solved: true,
-          points: riddle.points,
-          timestamp: new Date().toISOString(),
-        },
-        ...prev,
-      ]);
-      saveRiddleToHistory(riddle.id, true);
-      updateUserStats();
-    } else {
-      setStreak(0);
-      if ((attemptsMap[riddleId] || 0) + 1 >= 3) {
-        setShowAnswerMap((prev) => ({ ...prev, [riddleId]: true }));
-      }
-      setHistory((prev) => [
-        {
-          id: riddle.id,
-          question: riddle.question,
-          answer: riddle.answer,
-          userAnswer: userAnswer,
-          solved: false,
-          points: 0,
-          timestamp: new Date().toISOString(),
-        },
-        ...prev,
-      ]);
-    }
-  };
-
-  const handleRiddleHint = (riddleId) => {
-    const attempts = attemptsMap[riddleId] || 0;
-    if (attempts < 2) return;
-    setShowHintMap((prev) => ({ ...prev, [riddleId]: !prev[riddleId] }));
-  };
-
-  const handleRiddleReveal = (riddleId) => {
-    const attempts = attemptsMap[riddleId] || 0;
-    if (attempts < 3) return;
-    setShowAnswerMap((prev) => ({ ...prev, [riddleId]: !prev[riddleId] }));
-  };
-
-  const handleKeyPressRiddle = (riddleId, e) => {
-    if (e.key === "Enter") {
-      handleSubmitRiddle(riddleId);
-    }
-  };
-
-  const getDifficultyColor = (difficulty) => {
-    if (difficulty === "easy")
-      return "bg-green-500/20 text-green-400 border-green-500/30";
-    if (difficulty === "medium")
-      return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
-    if (difficulty === "hard")
-      return "bg-red-500/20 text-red-400 border-red-500/30";
-    return "bg-gray-500/20 text-gray-400 border-gray-500/30";
-  };
-
-  const getDifficultyEmoji = (difficulty) => {
-    if (difficulty === "easy") return "🌱";
-    if (difficulty === "medium") return "⚡";
-    if (difficulty === "hard") return "🔥";
-    return "📚";
-  };
-
-  const isRiddleSolved = (riddleId) => {
-    return history.some((h) => h.id === riddleId && h.solved);
-  };
-
-  const getFilteredRiddles = () => {
-    if (filter === "all") return riddles;
-    if (filter === "solved") return riddles.filter((r) => isRiddleSolved(r.id));
-    if (filter === "unsolved")
-      return riddles.filter((r) => !isRiddleSolved(r.id));
-    if (filter === "easy")
-      return riddles.filter((r) => r.difficulty === "easy");
-    if (filter === "medium")
-      return riddles.filter((r) => r.difficulty === "medium");
-    if (filter === "hard")
-      return riddles.filter((r) => r.difficulty === "hard");
-    return riddles;
-  };
-
-  const filteredRiddles = getFilteredRiddles();
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -374,11 +508,15 @@ const Riddles = () => {
             Test your lateral thinking skills
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="glass-card px-4 py-2 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-yellow-400" />
-            <span className="text-sm text-gray-300">Daily Riddle</span>
-          </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={refreshStats}
+            disabled={refreshing}
+            className="glass-card px-4 py-2 flex items-center gap-2 hover:border-[#6C2BD9] transition-colors"
+          >
+            <RefreshCw className={`w-4 h-4 text-gray-400 ${refreshing ? "animate-spin" : ""}`} />
+            <span className="text-sm text-gray-300">Refresh</span>
+          </button>
           <div className="glass-card px-4 py-2 flex items-center gap-2">
             <Trophy className="w-4 h-4 text-yellow-400" />
             <span className="text-sm text-gray-300">{points} pts</span>
