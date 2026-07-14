@@ -21,6 +21,7 @@ import Categories from "./pages/Categories";
 import Achievements from "./pages/Achievements";
 import ReadAndTest from "./pages/ReadAndTest";
 import AdminEmailTemplates from "./pages/AdminEmailTemplates";
+import AdminSendMessage from "./pages/AdminSendMessage"; // ✅ NEW
 import ReadAndTestResults from "./pages/ReadAndTestResults";
 import Privacy from "./pages/Privacy";
 import About from "./pages/About";
@@ -31,7 +32,7 @@ import TestGroq from "./pages/TestGroq";
 import CookieConsent from "./components/Common/CookieConsent";
 import { supabase } from "./services/supabase";
 
-// ✅ NEW: Admin imports
+// ✅ Admin imports
 import AdminProvider from "./context/AdminContext";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -67,15 +68,15 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   return (
     <Router>
-      {/* ✅ NEW: Wrap with AdminProvider */}
       <AdminProvider>
         <div className="min-h-screen bg-[#0f0f1a]">
           <Routes>
             {/* Public routes */}
             <Route path="/auth" element={<Auth />} />
-            
-            {/* ✅ NEW: Admin routes (outside Layout) */}
             <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/callback" element={<AdminLogin />} /> {/* ✅ Moved outside Layout */}
+
+            {/* ✅ Admin routes (protected) */}
             <Route 
               path="/admin/dashboard" 
               element={
@@ -116,6 +117,14 @@ function App() {
                 </ProtectedAdminRoute>
               } 
             />
+            <Route 
+              path="/admin/send-message"  // ✅ NEW ROUTE
+              element={
+                <ProtectedAdminRoute>
+                  <AdminSendMessage />
+                </ProtectedAdminRoute>
+              } 
+            />
 
             {/* Main Layout routes */}
             <Route path="/" element={<Layout />}>
@@ -124,7 +133,6 @@ function App() {
               <Route path="donate" element={<Donate />} />
               <Route path="categories" element={<Categories />} />
               <Route path="leaderboard" element={<Leaderboard />} />
-              <Route path="/admin/callback" element={<AdminLogin />} />
               <Route path="riddles" element={<Riddles />} />
               <Route path="achievements" element={<Achievements />} />
               <Route path="read-and-test" element={<ReadAndTest />} />
