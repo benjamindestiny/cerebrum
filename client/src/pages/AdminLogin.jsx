@@ -1,3 +1,4 @@
+// pages/AdminLogin.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -11,12 +12,14 @@ import {
   Eye,
   EyeOff,
   ArrowLeft,
+  Chrome,
 } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -33,6 +36,58 @@ const AdminLogin = () => {
     setError('');
   };
 
+  // ✅ NEW: Check if user is admin after authentication
+  const checkAdminStatus = async (user) => {
+    const { data: adminData, error: adminError } = await supabase
+      .from('admin_users')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (adminError) {
+      setError('Error checking admin status. Please try again.');
+      return false;
+    }
+
+    if (!adminData) {
+      setError('You do not have admin access. Please contact the administrator.');
+      await supabase.auth.signOut();
+      return false;
+    }
+
+    return true;
+  };
+
+  // ✅ NEW: Handle Google Sign In
+  const handleGoogleLogin = async () => {
+    setError('');
+    setGoogleLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/admin/callback`,
+        },
+      });
+
+      if (error) {
+        console.error('Google login error:', error);
+        setError('Failed to sign in with Google. Please try again.');
+        setGoogleLoading(false);
+        return;
+      }
+
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error('Google login error:', error);
+      setError('Failed to sign in with Google. Please try again.');
+      setGoogleLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -40,7 +95,6 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      // Sign in with Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email.trim(),
         password: formData.password,
@@ -57,31 +111,14 @@ const AdminLogin = () => {
       }
 
       if (data.user) {
-        // Check if user is an admin
-        const { data: adminData, error: adminError } = await supabase
-          .from('admin_users')
-          .select('*')
-          .eq('user_id', data.user.id)
-          .maybeSingle();
-
-        if (adminError) {
-          setError('Error checking admin status. Please try again.');
-          setLoading(false);
-          return;
+        const isAdmin = await checkAdminStatus(data.user);
+        if (isAdmin) {
+          setSuccess('Admin access granted! Redirecting...');
+          setTimeout(() => {
+            navigate('/admin/dashboard');
+          }, 1000);
         }
-
-        if (!adminData) {
-          setError('You do not have admin access. Please contact the administrator.');
-          // Sign out the user
-          await supabase.auth.signOut();
-          setLoading(false);
-          return;
-        }
-
-        setSuccess('Admin access granted! Redirecting...');
-        setTimeout(() => {
-          navigate('/admin/dashboard');
-        }, 1000);
+        setLoading(false);
       }
     } catch (error) {
       console.error('Admin login error:', error);
@@ -90,6 +127,46 @@ const AdminLogin = () => {
       setLoading(false);
     }
   };
+
+  // ✅ NEW: Handle OAuth callback
+  React.useEffect(() => {
+    const handleCallback = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+
+      if (code) {
+        setLoading(true);
+        try {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) {
+            console.error('Callback error:', error);
+            setError('Authentication failed. Please try again.');
+            setLoading(false);
+            return;
+          }
+
+          if (data?.user) {
+            const isAdmin = await checkAdminStatus(data.user);
+            if (isAdmin) {
+              setSuccess('Admin access granted! Redirecting...');
+              setTimeout(() => {
+                navigate('/admin/dashboard');
+              }, 1000);
+            }
+          }
+        } catch (error) {
+          console.error('Callback error:', error);
+          setError('Authentication failed. Please try again.');
+        } finally {
+          setLoading(false);
+          // Clean URL
+          window.history.replaceState({}, document.title, '/admin/login');
+        }
+      }
+    };
+
+    handleCallback();
+  }, [navigate]);
 
   return (
     <motion.div
@@ -106,7 +183,7 @@ const AdminLogin = () => {
           </div>
           <h1 className="text-2xl font-bold text-white">Admin Access</h1>
           <p className="text-gray-400 text-sm mt-1">
-            Enter your credentials to access the admin panel
+            Sign in with your admin account
           </p>
         </div>
 
@@ -123,6 +200,31 @@ const AdminLogin = () => {
             <span>{success}</span>
           </div>
         )}
+
+        {/* ✅ Google Sign In Button */}
+        <button
+          onClick={handleGoogleLogin}
+          disabled={googleLoading}
+          className="w-full mb-4 py-3 rounded-xl border border-gray-700 hover:border-[#7c3aed] bg-[#1a1a2e] hover:bg-[#2d2d5e] transition-all duration-300 flex items-center justify-center gap-3 text-gray-300 font-medium text-sm disabled:opacity-50"
+        >
+          {googleLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin text-[#a78bfa]" />
+          ) : (
+            <Chrome className="w-5 h-5" />
+          )}
+          {googleLoading ? 'Connecting...' : 'Continue with Google'}
+        </button>
+
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-700"></div>
+          </div>
+          <div className="relative flex justify-center">
+            <span className="px-3 bg-[#1a1a2e] text-gray-500 text-xs font-medium tracking-wider">
+              OR
+            </span>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative">
@@ -175,7 +277,7 @@ const AdminLogin = () => {
             ) : (
               <>
                 <Shield className="w-4 h-4" />
-                Sign in as Admin
+                Sign in with Email
               </>
             )}
           </motion.button>

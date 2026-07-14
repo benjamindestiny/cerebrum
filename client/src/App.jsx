@@ -124,6 +124,7 @@ function App() {
               <Route path="donate" element={<Donate />} />
               <Route path="categories" element={<Categories />} />
               <Route path="leaderboard" element={<Leaderboard />} />
+              <Route path="/admin/callback" element={<AdminLogin />} />
               <Route path="riddles" element={<Riddles />} />
               <Route path="achievements" element={<Achievements />} />
               <Route path="read-and-test" element={<ReadAndTest />} />
