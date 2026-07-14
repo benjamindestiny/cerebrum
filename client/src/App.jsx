@@ -20,6 +20,7 @@ import Riddles from "./pages/Riddles";
 import Categories from "./pages/Categories";
 import Achievements from "./pages/Achievements";
 import ReadAndTest from "./pages/ReadAndTest";
+import AdminEmailTemplates from "./pages/AdminEmailTemplates";
 import ReadAndTestResults from "./pages/ReadAndTestResults";
 import Privacy from "./pages/Privacy";
 import About from "./pages/About";
@@ -29,6 +30,12 @@ import Donate from "./pages/Donate";
 import TestGroq from "./pages/TestGroq";
 import CookieConsent from "./components/Common/CookieConsent";
 import { supabase } from "./services/supabase";
+
+// ✅ NEW: Admin imports
+import AdminProvider from "./context/AdminContext";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
+import ProtectedAdminRoute from "./components/Admin/ProtectedAdminRoute";
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -60,74 +67,111 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-[#0f0f1a]">
-        <Routes>
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Home />} />
-            <Route path="*" element={<NotFound />} />
-            <Route path="/admin/email" element={<AdminEmail />} />
-            <Route path="/admin/weekly-report" element={<AdminWeeklyReport />} />
-            <Route path="donate" element={<Donate />} />
-            <Route path="/admin/subscribers" element={<AdminSubscribers />} />
-            <Route path="categories" element={<Categories />} />
-            <Route path="leaderboard" element={<Leaderboard />} />
-            <Route path="riddles" element={<Riddles />} />
-            <Route path="achievements" element={<Achievements />} />
-            {/* <Route path="test-groq" element={<TestGroq />} /> */}
-            <Route path="read-and-test" element={<ReadAndTest />} />
-            <Route
-              path="read-and-test-results"
-              element={<ReadAndTestResults />}
+      {/* ✅ NEW: Wrap with AdminProvider */}
+      <AdminProvider>
+        <div className="min-h-screen bg-[#0f0f1a]">
+          <Routes>
+            {/* Public routes */}
+            <Route path="/auth" element={<Auth />} />
+            
+            {/* ✅ NEW: Admin routes (outside Layout) */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route 
+              path="/admin/dashboard" 
+              element={
+                <ProtectedAdminRoute>
+                  <AdminDashboard />
+                </ProtectedAdminRoute>
+              } 
             />
-            <Route path="privacy" element={<Privacy />} />
-            <Route path="about" element={<About />} />
-            <Route path="terms" element={<Terms />} />
+            <Route 
+              path="/admin/email-templates" 
+              element={
+                <ProtectedAdminRoute>
+                  <AdminEmailTemplates />
+                </ProtectedAdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/email" 
+              element={
+                <ProtectedAdminRoute>
+                  <AdminEmail />
+                </ProtectedAdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/subscribers" 
+              element={
+                <ProtectedAdminRoute>
+                  <AdminSubscribers />
+                </ProtectedAdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/weekly-report" 
+              element={
+                <ProtectedAdminRoute>
+                  <AdminWeeklyReport />
+                </ProtectedAdminRoute>
+              } 
+            />
 
-            <Route
-              path="dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="profile"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="achievements"
-              element={
-                <ProtectedRoute>
-                  <Achievements />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="quiz"
-              element={
-                <ProtectedRoute>
-                  <Quiz />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="results"
-              element={
-                <ProtectedRoute>
-                  <Results />
-                </ProtectedRoute>
-              }
-            />
-          </Route>
-        </Routes>
-        <CookieConsent />
-      </div>
+            {/* Main Layout routes */}
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Home />} />
+              <Route path="*" element={<NotFound />} />
+              <Route path="donate" element={<Donate />} />
+              <Route path="categories" element={<Categories />} />
+              <Route path="leaderboard" element={<Leaderboard />} />
+              <Route path="riddles" element={<Riddles />} />
+              <Route path="achievements" element={<Achievements />} />
+              <Route path="read-and-test" element={<ReadAndTest />} />
+              <Route
+                path="read-and-test-results"
+                element={<ReadAndTestResults />}
+              />
+              <Route path="privacy" element={<Privacy />} />
+              <Route path="about" element={<About />} />
+              <Route path="terms" element={<Terms />} />
+
+              <Route
+                path="dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="quiz"
+                element={
+                  <ProtectedRoute>
+                    <Quiz />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="results"
+                element={
+                  <ProtectedRoute>
+                    <Results />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
+          </Routes>
+          <CookieConsent />
+        </div>
+      </AdminProvider>
     </Router>
   );
 }
