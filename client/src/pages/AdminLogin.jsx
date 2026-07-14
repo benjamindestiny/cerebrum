@@ -1,6 +1,6 @@
 // pages/AdminLogin.jsx
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Shield,
@@ -15,9 +15,12 @@ import {
   Chrome,
 } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { useAdmin } from '../context/AdminContext';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { refreshAdminStatus } = useAdmin();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
@@ -28,6 +31,77 @@ const AdminLogin = () => {
     password: '',
   });
 
+  // ✅ Check if user is already logged in and is admin
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const isAdmin = await checkAdminStatus(user);
+        if (isAdmin) {
+          navigate('/admin/dashboard');
+        }
+      }
+    };
+    checkExistingSession();
+  }, []);
+
+  // ✅ Handle OAuth callback
+  useEffect(() => {
+    const handleCallback = async () => {
+      const params = new URLSearchParams(location.search);
+      const code = params.get('code');
+      const errorParam = params.get('error');
+
+      if (errorParam) {
+        setError('Authentication failed. Please try again.');
+        // Clean URL
+        window.history.replaceState({}, document.title, '/admin/login');
+        return;
+      }
+
+      if (code) {
+        setLoading(true);
+        try {
+          // Exchange code for session
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (error) {
+            console.error('Callback error:', error);
+            setError('Authentication failed. Please try again.');
+            setLoading(false);
+            // Clean URL
+            window.history.replaceState({}, document.title, '/admin/login');
+            return;
+          }
+
+          if (data?.user) {
+            const isAdmin = await checkAdminStatus(data.user);
+            if (isAdmin) {
+              setSuccess('Admin access granted! Redirecting...');
+              await refreshAdminStatus();
+              setTimeout(() => {
+                navigate('/admin/dashboard');
+              }, 1000);
+            } else {
+              // Not admin, sign out
+              await supabase.auth.signOut();
+              setError('You do not have admin access. Please contact the administrator.');
+            }
+          }
+        } catch (error) {
+          console.error('Callback error:', error);
+          setError('Authentication failed. Please try again.');
+        } finally {
+          setLoading(false);
+          // Clean URL
+          window.history.replaceState({}, document.title, '/admin/login');
+        }
+      }
+    };
+
+    handleCallback();
+  }, [location, navigate]);
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -36,38 +110,43 @@ const AdminLogin = () => {
     setError('');
   };
 
-  // ✅ NEW: Check if user is admin after authentication
+  // ✅ Check if user is admin
   const checkAdminStatus = async (user) => {
-    const { data: adminData, error: adminError } = await supabase
-      .from('admin_users')
-      .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle();
+    try {
+      const { data: adminData, error: adminError } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-    if (adminError) {
-      setError('Error checking admin status. Please try again.');
+      if (adminError) {
+        console.error('Error checking admin status:', adminError);
+        return false;
+      }
+
+      return !!adminData;
+    } catch (error) {
+      console.error('Error checking admin status:', error);
       return false;
     }
-
-    if (!adminData) {
-      setError('You do not have admin access. Please contact the administrator.');
-      await supabase.auth.signOut();
-      return false;
-    }
-
-    return true;
   };
 
-  // ✅ NEW: Handle Google Sign In
+  // ✅ Handle Google Sign In
   const handleGoogleLogin = async () => {
     setError('');
     setGoogleLoading(true);
 
     try {
+      const redirectUrl = `${window.location.origin}/admin/login`;
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/admin/callback`,
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         },
       });
 
@@ -79,6 +158,7 @@ const AdminLogin = () => {
       }
 
       if (data?.url) {
+        // Redirect to Google
         window.location.href = data.url;
       }
     } catch (error) {
@@ -88,6 +168,7 @@ const AdminLogin = () => {
     }
   };
 
+  // ✅ Handle Email/Password Login
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -114,9 +195,13 @@ const AdminLogin = () => {
         const isAdmin = await checkAdminStatus(data.user);
         if (isAdmin) {
           setSuccess('Admin access granted! Redirecting...');
+          await refreshAdminStatus();
           setTimeout(() => {
             navigate('/admin/dashboard');
           }, 1000);
+        } else {
+          await supabase.auth.signOut();
+          setError('You do not have admin access. Please contact the administrator.');
         }
         setLoading(false);
       }
@@ -128,45 +213,21 @@ const AdminLogin = () => {
     }
   };
 
-  // ✅ NEW: Handle OAuth callback
-  React.useEffect(() => {
-    const handleCallback = async () => {
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get('code');
-
-      if (code) {
-        setLoading(true);
-        try {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) {
-            console.error('Callback error:', error);
-            setError('Authentication failed. Please try again.');
-            setLoading(false);
-            return;
-          }
-
-          if (data?.user) {
-            const isAdmin = await checkAdminStatus(data.user);
-            if (isAdmin) {
-              setSuccess('Admin access granted! Redirecting...');
-              setTimeout(() => {
-                navigate('/admin/dashboard');
-              }, 1000);
-            }
-          }
-        } catch (error) {
-          console.error('Callback error:', error);
-          setError('Authentication failed. Please try again.');
-        } finally {
-          setLoading(false);
-          // Clean URL
-          window.history.replaceState({}, document.title, '/admin/login');
+  // ✅ Check if user already has a session
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const isAdmin = await checkAdminStatus(session.user);
+        if (isAdmin) {
+          navigate('/admin/dashboard');
+        } else {
+          await supabase.auth.signOut();
         }
       }
     };
-
-    handleCallback();
-  }, [navigate]);
+    checkSession();
+  }, []);
 
   return (
     <motion.div
@@ -185,11 +246,17 @@ const AdminLogin = () => {
           <p className="text-gray-400 text-sm mt-1">
             Sign in with your admin account
           </p>
+          {loading && (
+            <div className="mt-2 flex items-center justify-center gap-2 text-[#a78bfa] text-xs">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Processing...
+            </div>
+          )}
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
@@ -204,8 +271,8 @@ const AdminLogin = () => {
         {/* ✅ Google Sign In Button */}
         <button
           onClick={handleGoogleLogin}
-          disabled={googleLoading}
-          className="w-full mb-4 py-3 rounded-xl border border-gray-700 hover:border-[#7c3aed] bg-[#1a1a2e] hover:bg-[#2d2d5e] transition-all duration-300 flex items-center justify-center gap-3 text-gray-300 font-medium text-sm disabled:opacity-50"
+          disabled={googleLoading || loading}
+          className="w-full mb-4 py-3 rounded-xl border border-gray-700 hover:border-[#7c3aed] bg-[#1a1a2e] hover:bg-[#2d2d5e] transition-all duration-300 flex items-center justify-center gap-3 text-gray-300 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {googleLoading ? (
             <Loader2 className="w-5 h-5 animate-spin text-[#a78bfa]" />
@@ -269,7 +336,7 @@ const AdminLogin = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             type="submit"
-            disabled={loading}
+            disabled={loading || googleLoading}
             className="w-full bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors flex items-center justify-center gap-2 py-3 text-sm font-medium disabled:opacity-50"
           >
             {loading ? (
