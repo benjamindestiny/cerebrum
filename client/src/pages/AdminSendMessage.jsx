@@ -1,7 +1,6 @@
 // pages/AdminSendMessage.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
   ArrowLeft,
   Send,
@@ -187,50 +186,50 @@ const AdminSendMessage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-10 h-10 text-[#7c3aed] animate-spin" />
+      <div className="flex items-center justify-center min-h-[400px]  text-white border-[#2A2A4A]">
+        <Loader2 className="w-10 h-10 text-blue-400 animate-spin  text-white border-[#2A2A4A]" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
-      <div className="flex items-center gap-4 mb-6">
+    <div className="max-w-7xl mx-auto px-4 py-6  text-white border-[#2A2A4A]">
+      <div className="flex items-center gap-4 mb-6  text-white border-[#2A2A4A]">
         <button
           onClick={() => navigate('/admin/dashboard')}
-          className="p-2 rounded-lg hover:bg-white/5 transition-colors"
+          className="p-2 rounded-lg /5 transition-colors  text-white border-[#2A2A4A]"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-400" />
+          <ArrowLeft className="w-5 h-5 text-gray-400  text-white border-[#2A2A4A]" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <MessageSquare className="w-7 h-7 text-[#7c3aed]" />
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2  text-white border-[#2A2A4A]">
+            <MessageSquare className="w-7 h-7 text-blue-400  text-white border-[#2A2A4A]" />
             Send Message
           </h1>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-gray-400 text-sm mt-1  text-white border-[#2A2A4A]">
             Send messages to all registered users
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6  text-white border-[#2A2A4A]">
         {/* Sidebar - User Selection */}
-        <div className="lg:col-span-1">
-          <div className="glass-card p-4">
-            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-              <Users className="w-4 h-4 text-gray-400" />
+        <div className="lg:col-span-1  text-white border-[#2A2A4A]">
+          <div className="glass-card p-4  text-white border-[#2A2A4A]">
+            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2  text-white border-[#2A2A4A]">
+              <Users className="w-4 h-4 text-gray-400  text-white border-[#2A2A4A]" />
               Recipients
             </h3>
 
-            <div className="space-y-3">
+            <div className="space-y-3  text-white border-[#2A2A4A]">
               <div>
-                <label className="text-xs text-gray-400 block mb-1">
+                <label className="text-xs text-gray-400 block mb-1  text-white border-[#2A2A4A]">
                   User Filter
                 </label>
                 <select
                   value={selectedUsers}
                   onChange={(e) => setSelectedUsers(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white text-sm focus:border-[#7c3aed] focus:outline-none"
+                  className="w-full px-3 py-2 bg-[#262626] rounded-lg border border-white/10 text-white text-sm focus:border-blue-500 focus:outline-none  text-white border-[#2A2A4A]"
                 >
                   <option value="all">All Users ({users.length})</option>
                   <option value="active">Active Users (have taken quizzes)</option>
@@ -240,28 +239,28 @@ const AdminSendMessage = () => {
               </div>
 
               <div>
-                <label className="text-xs text-gray-400 block mb-1">
+                <label className="text-xs text-gray-400 block mb-1  text-white border-[#2A2A4A]">
                   Search
                 </label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <div className="relative  text-white border-[#2A2A4A]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500  text-white border-[#2A2A4A]" />
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Search by name or email..."
-                    className="w-full pl-9 pr-3 py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white text-sm focus:border-[#7c3aed] focus:outline-none"
+                    className="w-full pl-9 pr-3 py-2 bg-[#262626] rounded-lg border border-white/10 text-white text-sm focus:border-blue-500 focus:outline-none  text-white border-[#2A2A4A]"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-400">
+              <div className="flex items-center justify-between text-xs  text-white border-[#2A2A4A]">
+                <span className="text-gray-400  text-white border-[#2A2A4A]">
                   {getSelectedCount()} of {filteredUsers.length} selected
                 </span>
                 <button
                   onClick={handleSelectAll}
-                  className="text-[#7c3aed] hover:text-[#a78bfa] transition-colors"
+                  className="text-blue-400 hover:text-[#3B82F6CC] transition-colors  text-white border-[#2A2A4A]"
                 >
                   {selectedUserIds.length === filteredUsers.length && filteredUsers.length > 0
                     ? 'Deselect All'
@@ -270,28 +269,28 @@ const AdminSendMessage = () => {
               </div>
             </div>
 
-            <div className="mt-4 max-h-[400px] overflow-y-auto space-y-1">
+            <div className="mt-4 max-h-[400px] overflow-y-auto space-y-1  text-white border-[#2A2A4A]">
               {filteredUsers.map((user) => (
                 <label
                   key={user.id}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+                  className="flex items-center gap-3 p-2 rounded-lg /5 transition-colors cursor-pointer  text-white border-[#2A2A4A]"
                 >
                   <input
                     type="checkbox"
                     checked={selectedUserIds.includes(user.id)}
                     onChange={() => handleSelectUser(user.id)}
-                    className="w-4 h-4 rounded border-gray-600 text-[#7c3aed] focus:ring-[#7c3aed]"
+                    className="w-4 h-4 rounded border-gray-600 text-blue-400 focus:ring-[#3B82F6]  text-white border-[#2A2A4A]"
                   />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm text-white truncate">
+                  <div className="flex-1 min-w-0  text-white border-[#2A2A4A]">
+                    <div className="text-sm text-white truncate  text-white border-[#2A2A4A]">
                       {user.name || 'User'}
                     </div>
-                    <div className="text-xs text-gray-500 truncate">
+                    <div className="text-xs text-gray-500 truncate  text-white border-[#2A2A4A]">
                       {user.email}
                     </div>
                   </div>
                   {user.stats?.total_quizzes > 0 && (
-                    <span className="text-[10px] text-green-400 flex-shrink-0">
+                    <span className="text-[10px] text-green-400 flex-shrink-0  text-white border-[#2A2A4A]">
                       ● Active
                     </span>
                   )}
@@ -300,7 +299,7 @@ const AdminSendMessage = () => {
             </div>
 
             {filteredUsers.length === 0 && (
-              <div className="text-center py-8 text-gray-400 text-sm">
+              <div className="text-center py-8 text-gray-400 text-sm  text-white border-[#2A2A4A]">
                 No users found
               </div>
             )}
@@ -308,41 +307,41 @@ const AdminSendMessage = () => {
         </div>
 
         {/* Main - Message Editor */}
-        <div className="lg:col-span-2">
-          <div className="glass-card p-6">
-            <div className="space-y-4">
+        <div className="lg:col-span-2  text-white border-[#2A2A4A]">
+          <div className="glass-card p-6  text-white border-[#2A2A4A]">
+            <div className="space-y-4  text-white border-[#2A2A4A]">
               <div>
-                <label className="text-sm text-gray-400 block mb-1">
+                <label className="text-sm text-gray-400 block mb-1  text-white border-[#2A2A4A]">
                   Message Type
                 </label>
-                <div className="flex gap-3">
+                <div className="flex gap-3  text-white border-[#2A2A4A]">
                   <button
                     onClick={() => setMessageType('email')}
                     className={`px-4 py-2 rounded-lg text-sm transition-colors ${
                       messageType === 'email'
-                        ? 'bg-[#7c3aed] text-white'
-                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-white/5 text-gray-400 /15'
                     }`}
                   >
-                    <Mail className="w-4 h-4 inline mr-2" />
+                    <Mail className="w-4 h-4 inline mr-2  text-white border-[#2A2A4A]" />
                     Email
                   </button>
                   <button
                     onClick={() => setMessageType('notification')}
                     className={`px-4 py-2 rounded-lg text-sm transition-colors ${
                       messageType === 'notification'
-                        ? 'bg-[#7c3aed] text-white'
-                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-white/5 text-gray-400 /15'
                     }`}
                   >
-                    <Bell className="w-4 h-4 inline mr-2" />
+                    <Bell className="w-4 h-4 inline mr-2  text-white border-[#2A2A4A]" />
                     In-App Notification
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="text-sm text-gray-400 block mb-1">
+                <label className="text-sm text-gray-400 block mb-1  text-white border-[#2A2A4A]">
                   Subject
                 </label>
                 <input
@@ -350,14 +349,14 @@ const AdminSendMessage = () => {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="e.g., Important Update from Cerebrum"
-                  className="w-full px-4 py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white focus:border-[#7c3aed] focus:outline-none"
+                  className="w-full px-4 py-2 bg-[#262626] rounded-lg border border-white/10 text-white focus:border-blue-500 focus:outline-none  text-white border-[#2A2A4A]"
                 />
               </div>
 
               <div>
-                <label className="text-sm text-gray-400 block mb-1">
+                <label className="text-sm text-gray-400 block mb-1  text-white border-[#2A2A4A]">
                   Message
-                  <span className="text-xs text-gray-500 ml-2">
+                  <span className="text-xs text-gray-500 ml-2  text-white border-[#2A2A4A]">
                     Use {'{{name}}'} for user's name, {'{{email}}'} for email
                   </span>
                 </label>
@@ -366,34 +365,34 @@ const AdminSendMessage = () => {
                   onChange={(e) => setMessage(e.target.value)}
                   rows={8}
                   placeholder="Write your message here... Use {{name}} to personalize"
-                  className="w-full px-4 py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white focus:border-[#7c3aed] focus:outline-none resize-none"
+                  className="w-full px-4 py-2 bg-[#262626] rounded-lg border border-white/10 text-white focus:border-blue-500 focus:outline-none resize-none  text-white border-[#2A2A4A]"
                 />
-                <div className="flex justify-between mt-1 text-xs text-gray-500">
+                <div className="flex justify-between mt-1 text-xs text-gray-500  text-white border-[#2A2A4A]">
                   <span>{message.length} characters</span>
                   <span>≈ {Math.ceil(message.length / 1000)} minutes read</span>
                 </div>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-3  text-white border-[#2A2A4A]">
                 <button
                   onClick={() => setPreviewMode(!previewMode)}
-                  className="px-4 py-2 bg-white/10 text-gray-300 rounded-lg hover:bg-white/20 transition-colors text-sm"
+                  className="px-4 py-2 bg-white/10 text-gray-300 rounded-lg /20 transition-colors text-sm  text-white border-[#2A2A4A]"
                 >
                   {previewMode ? 'Edit' : 'Preview'}
                 </button>
                 <button
                   onClick={loadUsers}
-                  className="px-4 py-2 bg-white/5 text-gray-400 rounded-lg hover:bg-white/10 transition-colors text-sm flex items-center gap-2"
+                  className="px-4 py-2 bg-white/5 text-gray-400 rounded-lg /15 transition-colors text-sm flex items-center gap-2  text-white border-[#2A2A4A]"
                 >
-                  <RefreshCw className="w-4 h-4" />
+                  <RefreshCw className="w-4 h-4  text-white border-[#2A2A4A]" />
                   Refresh Users
                 </button>
               </div>
 
               {previewMode && (
-                <div className="p-4 bg-white/5 rounded-lg">
-                  <h4 className="text-sm font-semibold text-white mb-2">Preview</h4>
-                  <div className="text-sm text-gray-300 whitespace-pre-wrap">
+                <div className="p-4 bg-white/5 rounded-lg  text-white border-[#2A2A4A]">
+                  <h4 className="text-sm font-semibold text-white mb-2  text-white border-[#2A2A4A]">Preview</h4>
+                  <div className="text-sm text-gray-300 whitespace-pre-wrap  text-white border-[#2A2A4A]">
                     {message
                       .replace(/{{name}}/g, '[User Name]')
                       .replace(/{{email}}/g, 'user@email.com')}
@@ -401,10 +400,10 @@ const AdminSendMessage = () => {
                 </div>
               )}
 
-              <div className="border-t border-white/10 pt-4 mt-2">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-400">
-                    <span className="font-semibold text-white">
+              <div className="border-t border-white/10 pt-4 mt-2  text-white border-[#2A2A4A]">
+                <div className="flex items-center justify-between  text-white border-[#2A2A4A]">
+                  <div className="text-sm text-gray-400  text-white border-[#2A2A4A]">
+                    <span className="font-semibold text-white  text-white border-[#2A2A4A]">
                       {getSelectedCount()}
                     </span>{' '}
                     recipients selected
@@ -412,18 +411,18 @@ const AdminSendMessage = () => {
                   <button
                     onClick={handleSendMessage}
                     disabled={sending || getSelectedCount() === 0 || !subject || !message}
-                    className="px-6 py-3 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors flex items-center gap-2 text-sm font-medium disabled:opacity-50"
+                    className="px-6 py-3 bg-blue-500 text-white rounded-lg  transition-colors flex items-center gap-2 text-sm font-medium disabled:opacity-50  text-white border-[#2A2A4A]"
                   >
                     {sending ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-5 h-5 animate-spin  text-white border-[#2A2A4A]" />
                     ) : (
-                      <Send className="w-5 h-5" />
+                      <Send className="w-5 h-5  text-white border-[#2A2A4A]" />
                     )}
                     {sending ? 'Sending...' : `Send to ${getSelectedCount()} Users`}
                   </button>
                 </div>
                 {sending && (
-                  <div className="mt-2 text-sm text-gray-400">
+                  <div className="mt-2 text-sm text-gray-400  text-white border-[#2A2A4A]">
                     Sending... ({sentCount} sent, {failedCount} failed)
                   </div>
                 )}

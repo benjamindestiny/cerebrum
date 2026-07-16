@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, Mail, Camera, Save, ArrowLeft,
   UserCircle, Calendar, Award, Trophy,
@@ -162,32 +161,32 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-[#7c3aed] animate-spin mx-auto mb-4" />
-          <p className="text-gray-400">Loading profile...</p>
+      <div className="flex items-center justify-center min-h-[400px]  text-white border-[#2A2A4A]">
+        <div className="text-center  text-white border-[#2A2A4A]">
+          <Loader2 className="w-12 h-12 text-blue-400 animate-spin mx-auto mb-4  text-white border-[#2A2A4A]" />
+          <p className="text-gray-400  text-white border-[#2A2A4A]">Loading profile...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-12">
+    <div className="max-w-5xl mx-auto space-y-6 pb-12  text-white border-[#2A2A4A]">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between  text-white border-[#2A2A4A]">
+        <div className="flex items-center gap-4  text-white border-[#2A2A4A]">
           <button
             onClick={() => navigate('/dashboard')}
-            className="p-2 rounded-lg hover:bg-white/5 transition-colors"
+            className="p-2 rounded-lg /5 transition-colors  text-white border-[#2A2A4A]"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-400" />
+            <ArrowLeft className="w-5 h-5 text-gray-400  text-white border-[#2A2A4A]" />
           </button>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-            <UserCircle className="w-8 h-8 text-[#a78bfa]" />
+          <h1 className="text-3xl font-bold text-white flex items-center gap-3  text-white border-[#2A2A4A]">
+            <UserCircle className="w-8 h-8 text-[#3B82F6CC]  text-white border-[#2A2A4A]" />
             Profile
           </h1>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3  text-white border-[#2A2A4A]">
           {editing ? (
             <>
               <button
@@ -195,21 +194,21 @@ const Profile = () => {
                   setEditing(false);
                   loadProfile();
                 }}
-                className="btn-secondary text-sm px-4 py-2"
+                className="btn-secondary text-sm px-4 py-2  text-white border-[#2A2A4A]"
                 disabled={saving}
               >
-                <X className="w-4 h-4 inline mr-1" />
+                <X className="w-4 h-4 inline mr-1  text-white border-[#2A2A4A]" />
                 Cancel
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="btn-primary text-sm px-4 py-2 flex items-center gap-2"
+                className="btn-primary text-sm px-4 py-2 flex items-center gap-2  text-white border-[#2A2A4A]"
               >
                 {saving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin  text-white border-[#2A2A4A]" />
                 ) : (
-                  <Save className="w-4 h-4" />
+                  <Save className="w-4 h-4  text-white border-[#2A2A4A]" />
                 )}
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
@@ -217,9 +216,9 @@ const Profile = () => {
           ) : (
             <button
               onClick={() => setEditing(true)}
-              className="btn-secondary text-sm px-4 py-2 flex items-center gap-2"
+              className="btn-secondary text-sm px-4 py-2 flex items-center gap-2  text-white border-[#2A2A4A]"
             >
-              <Edit2 className="w-4 h-4" />
+              <Edit2 className="w-4 h-4  text-white border-[#2A2A4A]" />
               Edit Profile
             </button>
           )}
@@ -227,105 +226,105 @@ const Profile = () => {
       </div>
 
       {/* Profile Card */}
-      <div className="glass-card p-8">
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+      <div className="glass-card p-8  text-white border-[#2A2A4A]">
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-6  text-white border-[#2A2A4A]">
           {/* Avatar */}
-          <div className="relative group">
+          <div className="relative group  text-white border-[#2A2A4A]">
             <div 
-              className="w-28 h-28 rounded-full flex items-center justify-center text-4xl shadow-lg transition-all duration-300 group-hover:scale-105"
+              className="w-28 h-28 rounded-full flex items-center justify-center text-4xl shadow-lg transition-all  group-  text-white border-[#2A2A4A]"
               style={{ backgroundColor: currentAvatar?.bg || '#2d2d5e' }}
             >
               {currentAvatar?.emoji || '🧠'}
             </div>
             <button
               onClick={() => setShowAvatarSelector(true)}
-              className="absolute bottom-0 right-0 p-2 bg-[#2d2d5e] rounded-full border-2 border-[#1a1a2e] hover:border-[#7c3aed] transition-all duration-300 opacity-0 group-hover:opacity-100"
+              className="absolute bottom-0 right-0 p-2 bg-[#2d2d5e] rounded-full border-2 border-[#1A1A1A] hover:border-blue-500 transition-all  opacity-0 group-hover:opacity-100  text-white border-[#2A2A4A]"
             >
-              <Camera className="w-4 h-4 text-gray-400" />
+              <Camera className="w-4 h-4 text-gray-400  text-white border-[#2A2A4A]" />
             </button>
           </div>
 
           {/* Info */}
-          <div className="flex-1 space-y-1">
+          <div className="flex-1 space-y-1  text-white border-[#2A2A4A]">
             {editing ? (
-              <div className="space-y-3 w-full">
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+              <div className="space-y-3 w-full  text-white border-[#2A2A4A]">
+                <div className="relative  text-white border-[#2A2A4A]">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500  text-white border-[#2A2A4A]" />
                   <input
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
                     placeholder="Full Name"
-                    className="input-theme pl-10 w-full"
+                    className="input-theme pl-10 w-full  text-white border-[#2A2A4A]"
                   />
                 </div>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                <div className="relative  text-white border-[#2A2A4A]">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500  text-white border-[#2A2A4A]" />
                   <input
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="Email"
-                    className="input-theme pl-10 w-full"
+                    className="input-theme pl-10 w-full  text-white border-[#2A2A4A]"
                     disabled
                   />
-                  <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+                  <p className="text-xs text-gray-500 mt-1  text-white border-[#2A2A4A]">Email cannot be changed</p>
                 </div>
-                <div className="relative">
-                  <Target className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                <div className="relative  text-white border-[#2A2A4A]">
+                  <Target className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500  text-white border-[#2A2A4A]" />
                   <input
                     type="text"
                     name="bio"
                     value={formData.bio}
                     onChange={handleChange}
                     placeholder="Short bio (e.g., Lifelong learner 🚀)"
-                    className="input-theme pl-10 w-full"
+                    className="input-theme pl-10 w-full  text-white border-[#2A2A4A]"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                <div className="grid grid-cols-2 gap-3  text-white border-[#2A2A4A]">
+                  <div className="relative  text-white border-[#2A2A4A]">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500  text-white border-[#2A2A4A]" />
                     <input
                       type="text"
                       name="location"
                       value={formData.location}
                       onChange={handleChange}
                       placeholder="Location"
-                      className="input-theme pl-10 w-full"
+                      className="input-theme pl-10 w-full  text-white border-[#2A2A4A]"
                     />
                   </div>
-                  <div className="relative">
-                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                  <div className="relative  text-white border-[#2A2A4A]">
+                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500  text-white border-[#2A2A4A]" />
                     <input
                       type="url"
                       name="website"
                       value={formData.website}
                       onChange={handleChange}
                       placeholder="Website"
-                      className="input-theme pl-10 w-full"
+                      className="input-theme pl-10 w-full  text-white border-[#2A2A4A]"
                     />
                   </div>
                 </div>
               </div>
             ) : (
               <>
-                <h2 className="text-2xl font-bold text-white">
+                <h2 className="text-2xl font-bold text-white  text-white border-[#2A2A4A]">
                   {profile?.name || user?.user_metadata?.name || 'User'}
                 </h2>
-                <p className="text-gray-400">{user?.email}</p>
+                <p className="text-gray-400  text-white border-[#2A2A4A]">{user?.email}</p>
                 {profile?.bio && (
-                  <p className="text-gray-300 text-sm mt-1">{profile.bio}</p>
+                  <p className="text-gray-300 text-sm mt-1  text-white border-[#2A2A4A]">{profile.bio}</p>
                 )}
-                <div className="flex flex-wrap gap-3 mt-2 text-xs text-gray-500">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
+                <div className="flex flex-wrap gap-3 mt-2 text-xs text-gray-500  text-white border-[#2A2A4A]">
+                  <span className="flex items-center gap-1  text-white border-[#2A2A4A]">
+                    <Calendar className="w-3 h-3  text-white border-[#2A2A4A]" />
                     Joined {new Date(user?.created_at || Date.now()).toLocaleDateString()}
                   </span>
                   {profile?.location && (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
+                    <span className="flex items-center gap-1  text-white border-[#2A2A4A]">
+                      <MapPin className="w-3 h-3  text-white border-[#2A2A4A]" />
                       {profile.location}
                     </span>
                   )}
@@ -336,18 +335,18 @@ const Profile = () => {
 
           {/* Quick Stats */}
           {!editing && (
-            <div className="flex gap-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-white">{stats.totalQuizzes}</div>
-                <div className="text-xs text-gray-400">Quizzes</div>
+            <div className="flex gap-6  text-white border-[#2A2A4A]">
+              <div className="text-center  text-white border-[#2A2A4A]">
+                <div className="text-2xl font-bold text-white  text-white border-[#2A2A4A]">{stats.totalQuizzes}</div>
+                <div className="text-xs text-gray-400  text-white border-[#2A2A4A]">Quizzes</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-400">{stats.bestScore}%</div>
-                <div className="text-xs text-gray-400">Best Score</div>
+              <div className="text-center  text-white border-[#2A2A4A]">
+                <div className="text-2xl font-bold text-teal-400  text-white border-[#2A2A4A]">{stats.bestScore}%</div>
+                <div className="text-xs text-gray-400  text-white border-[#2A2A4A]">Best Score</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-400">{stats.streak}</div>
-                <div className="text-xs text-gray-400">Streak</div>
+              <div className="text-center  text-white border-[#2A2A4A]">
+                <div className="text-2xl font-bold text-orange-400  text-white border-[#2A2A4A]">{stats.streak}</div>
+                <div className="text-xs text-gray-400  text-white border-[#2A2A4A]">Streak</div>
               </div>
             </div>
           )}
@@ -355,121 +354,121 @@ const Profile = () => {
       </div>
 
       {/* Detailed Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="glass-card p-4 text-center">
-          <Trophy className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
-          <div className="text-xl font-bold text-white">{stats.bestScore}%</div>
-          <div className="text-xs text-gray-400">Best Score</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4  text-white border-[#2A2A4A]">
+        <div className="glass-card p-4 text-center  text-white border-[#2A2A4A]">
+          <Trophy className="w-6 h-6 text-teal-400 mx-auto mb-2  text-white border-[#2A2A4A]" />
+          <div className="text-xl font-bold text-white  text-white border-[#2A2A4A]">{stats.bestScore}%</div>
+          <div className="text-xs text-gray-400  text-white border-[#2A2A4A]">Best Score</div>
         </div>
-        <div className="glass-card p-4 text-center">
-          <Award className="w-6 h-6 text-[#a78bfa] mx-auto mb-2" />
-          <div className="text-xl font-bold text-white">{stats.averageScore || 0}%</div>
-          <div className="text-xs text-gray-400">Average Score</div>
+        <div className="glass-card p-4 text-center  text-white border-[#2A2A4A]">
+          <Award className="w-6 h-6 text-[#3B82F6CC] mx-auto mb-2  text-white border-[#2A2A4A]" />
+          <div className="text-xl font-bold text-white  text-white border-[#2A2A4A]">{stats.averageScore || 0}%</div>
+          <div className="text-xs text-gray-400  text-white border-[#2A2A4A]">Average Score</div>
         </div>
-        <div className="glass-card p-4 text-center">
-          <Zap className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
-          <div className="text-xl font-bold text-white">{stats.totalPoints || 0}</div>
-          <div className="text-xs text-gray-400">Total Points</div>
+        <div className="glass-card p-4 text-center  text-white border-[#2A2A4A]">
+          <Zap className="w-6 h-6 text-teal-400 mx-auto mb-2  text-white border-[#2A2A4A]" />
+          <div className="text-xl font-bold text-white  text-white border-[#2A2A4A]">{stats.totalPoints || 0}</div>
+          <div className="text-xs text-gray-400  text-white border-[#2A2A4A]">Total Points</div>
         </div>
-        <div className="glass-card p-4 text-center">
-          <Flame className="w-6 h-6 text-orange-400 mx-auto mb-2" />
-          <div className="text-xl font-bold text-white">{stats.streak || 0}</div>
-          <div className="text-xs text-gray-400">Day Streak</div>
+        <div className="glass-card p-4 text-center  text-white border-[#2A2A4A]">
+          <Flame className="w-6 h-6 text-orange-400 mx-auto mb-2  text-white border-[#2A2A4A]" />
+          <div className="text-xl font-bold text-white  text-white border-[#2A2A4A]">{stats.streak || 0}</div>
+          <div className="text-xs text-gray-400  text-white border-[#2A2A4A]">Day Streak</div>
         </div>
       </div>
 
       {/* Additional Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="glass-card p-4 flex items-center gap-4">
-          <div className="p-3 bg-blue-400/10 rounded-lg">
-            <Brain className="w-6 h-6 text-blue-400" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4  text-white border-[#2A2A4A]">
+        <div className="glass-card p-4 flex items-center gap-4  text-white border-[#2A2A4A]">
+          <div className="p-3 bg-blue-400/10 rounded-lg  text-white border-[#2A2A4A]">
+            <Brain className="w-6 h-6 text-[#3B82F6CC]  text-white border-[#2A2A4A]" />
           </div>
           <div>
-            <div className="text-lg font-bold text-white">{stats.riddlesSolved || 0}</div>
-            <div className="text-xs text-gray-400">Riddles Solved</div>
+            <div className="text-lg font-bold text-white  text-white border-[#2A2A4A]">{stats.riddlesSolved || 0}</div>
+            <div className="text-xs text-gray-400  text-white border-[#2A2A4A]">Riddles Solved</div>
           </div>
         </div>
-        <div className="glass-card p-4 flex items-center gap-4">
-          <div className="p-3 bg-green-400/10 rounded-lg">
-            <BookOpen className="w-6 h-6 text-green-400" />
+        <div className="glass-card p-4 flex items-center gap-4  text-white border-[#2A2A4A]">
+          <div className="p-3 bg-green-400/10 rounded-lg  text-white border-[#2A2A4A]">
+            <BookOpen className="w-6 h-6 text-green-400  text-white border-[#2A2A4A]" />
           </div>
           <div>
-            <div className="text-lg font-bold text-white">{stats.readArticles || 0}</div>
-            <div className="text-xs text-gray-400">Articles Read</div>
+            <div className="text-lg font-bold text-white  text-white border-[#2A2A4A]">{stats.readArticles || 0}</div>
+            <div className="text-xs text-gray-400  text-white border-[#2A2A4A]">Articles Read</div>
           </div>
         </div>
-        <div className="glass-card p-4 flex items-center gap-4">
-          <div className="p-3 bg-purple-400/10 rounded-lg">
-            <Star className="w-6 h-6 text-purple-400" />
+        <div className="glass-card p-4 flex items-center gap-4  text-white border-[#2A2A4A]">
+          <div className="p-3 bg-purple-400/10 rounded-lg  text-white border-[#2A2A4A]">
+            <Star className="w-6 h-6 text-purple-400  text-white border-[#2A2A4A]" />
           </div>
           <div>
-            <div className="text-lg font-bold text-white">{stats.perfectScores || 0}</div>
-            <div className="text-xs text-gray-400">Perfect Scores</div>
+            <div className="text-lg font-bold text-white  text-white border-[#2A2A4A]">{stats.perfectScores || 0}</div>
+            <div className="text-xs text-gray-400  text-white border-[#2A2A4A]">Perfect Scores</div>
           </div>
         </div>
       </div>
 
       {/* Achievements */}
-      <div className="glass-card p-6">
-        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-          <Medal className="w-5 h-5 text-yellow-400" />
+      <div className="glass-card p-6  text-white border-[#2A2A4A]">
+        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2  text-white border-[#2A2A4A]">
+          <Medal className="w-5 h-5 text-teal-400  text-white border-[#2A2A4A]" />
           Achievements
         </h3>
         {stats.totalQuizzes === 0 ? (
-          <div className="text-center py-8">
-            <div className="text-4xl mb-3">🏆</div>
-            <p className="text-gray-400">No achievements yet. Start learning!</p>
+          <div className="text-center py-8  text-white border-[#2A2A4A]">
+            <div className="text-4xl mb-3  text-white border-[#2A2A4A]">🏆</div>
+            <p className="text-gray-400  text-white border-[#2A2A4A]">No achievements yet. Start learning!</p>
             <button
               onClick={() => navigate('/categories')}
-              className="btn-primary mt-4 text-sm px-6 py-2"
+              className="btn-primary mt-4 text-sm px-6 py-2  text-white border-[#2A2A4A]"
             >
               Start Learning
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3  text-white border-[#2A2A4A]">
             {stats.totalQuizzes >= 1 && (
-              <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-green-400" />
+              <div className="flex items-center gap-3   text-white border-[#2A2A4A]">
+                <CheckCircle className="w-5 h-5 text-green-400  text-white border-[#2A2A4A]" />
                 <div>
-                  <div className="text-white text-sm font-medium">First Quiz</div>
-                  <div className="text-xs text-gray-400">Completed first quiz</div>
+                  <div className="text-white text-sm font-medium  text-white border-[#2A2A4A]">First Quiz</div>
+                  <div className="text-xs text-gray-400  text-white border-[#2A2A4A]">Completed first quiz</div>
                 </div>
               </div>
             )}
             {stats.bestScore === 100 && (
-              <div className="flex items-center gap-3 p-3 bg-yellow-400/10 rounded-lg border border-yellow-400/20">
-                <Trophy className="w-5 h-5 text-yellow-400" />
+              <div className="flex items-center gap-3 p-3 bg-teal-400/10 rounded-lg border border-teal-400/20  text-white border-[#2A2A4A]">
+                <Trophy className="w-5 h-5 text-teal-400  text-white border-[#2A2A4A]" />
                 <div>
-                  <div className="text-white text-sm font-medium">Perfect Score</div>
-                  <div className="text-xs text-gray-400">Scored 100%</div>
+                  <div className="text-white text-sm font-medium  text-white border-[#2A2A4A]">Perfect Score</div>
+                  <div className="text-xs text-gray-400  text-white border-[#2A2A4A]">Scored 100%</div>
                 </div>
               </div>
             )}
             {stats.streak >= 5 && (
-              <div className="flex items-center gap-3 p-3 bg-orange-400/10 rounded-lg border border-orange-400/20">
-                <Flame className="w-5 h-5 text-orange-400" />
+              <div className="flex items-center gap-3 p-3 bg-orange-400/10 rounded-lg border border-orange-400/20  text-white border-[#2A2A4A]">
+                <Flame className="w-5 h-5 text-orange-400  text-white border-[#2A2A4A]" />
                 <div>
-                  <div className="text-white text-sm font-medium">On Fire!</div>
-                  <div className="text-xs text-gray-400">5+ day streak</div>
+                  <div className="text-white text-sm font-medium  text-white border-[#2A2A4A]">On Fire!</div>
+                  <div className="text-xs text-gray-400  text-white border-[#2A2A4A]">5+ day streak</div>
                 </div>
               </div>
             )}
             {stats.riddlesSolved >= 5 && (
-              <div className="flex items-center gap-3 p-3 bg-purple-400/10 rounded-lg border border-purple-400/20">
-                <Puzzle className="w-5 h-5 text-purple-400" />
+              <div className="flex items-center gap-3 p-3 bg-purple-400/10 rounded-lg border border-purple-400/20  text-white border-[#2A2A4A]">
+                <Puzzle className="w-5 h-5 text-purple-400  text-white border-[#2A2A4A]" />
                 <div>
-                  <div className="text-white text-sm font-medium">Riddle Master</div>
-                  <div className="text-xs text-gray-400">Solved 5+ riddles</div>
+                  <div className="text-white text-sm font-medium  text-white border-[#2A2A4A]">Riddle Master</div>
+                  <div className="text-xs text-gray-400  text-white border-[#2A2A4A]">Solved 5+ riddles</div>
                 </div>
               </div>
             )}
             {stats.totalQuizzes >= 10 && (
-              <div className="flex items-center gap-3 p-3 bg-blue-400/10 rounded-lg border border-blue-400/20">
-                <Star className="w-5 h-5 text-blue-400" />
+              <div className="flex items-center gap-3 p-3 bg-blue-400/10 rounded-lg border border-[#3B82F6CC]/20  text-white border-[#2A2A4A]">
+                <Star className="w-5 h-5 text-[#3B82F6CC]  text-white border-[#2A2A4A]" />
                 <div>
-                  <div className="text-white text-sm font-medium">Quiz Enthusiast</div>
-                  <div className="text-xs text-gray-400">Completed 10+ quizzes</div>
+                  <div className="text-white text-sm font-medium  text-white border-[#2A2A4A]">Quiz Enthusiast</div>
+                  <div className="text-xs text-gray-400  text-white border-[#2A2A4A]">Completed 10+ quizzes</div>
                 </div>
               </div>
             )}
@@ -478,12 +477,12 @@ const Profile = () => {
       </div>
 
       {/* Account Settings */}
-      <div className="glass-card p-6">
-        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-          <Settings className="w-5 h-5 text-gray-400" />
+      <div className="glass-card p-6  text-white border-[#2A2A4A]">
+        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2  text-white border-[#2A2A4A]">
+          <Settings className="w-5 h-5 text-gray-400  text-white border-[#2A2A4A]" />
           Account Settings
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3  text-white border-[#2A2A4A]">
           <button
             onClick={() => {
               if (confirm('Are you sure you want to sign out?')) {
@@ -491,28 +490,28 @@ const Profile = () => {
                 navigate('/auth');
               }
             }}
-            className="flex items-center justify-between p-3 bg-red-500/10 rounded-lg hover:bg-red-500/20 transition-colors group"
+            className="flex items-center justify-between p-3 bg-red-500/10 rounded-lg /20 transition-colors group  text-white border-[#2A2A4A]"
           >
-            <div className="flex items-center gap-3">
-              <LogOut className="w-5 h-5 text-red-400" />
-              <span className="text-red-400">Sign Out</span>
+            <div className="flex items-center gap-3  text-white border-[#2A2A4A]">
+              <LogOut className="w-5 h-5 text-red-400  text-white border-[#2A2A4A]" />
+              <span className="text-red-400  text-white border-[#2A2A4A]">Sign Out</span>
             </div>
-            <ChevronRight className="w-4 h-4 text-red-400/50 group-hover:translate-x-1 transition-transform" />
+            <ChevronRight className="w-4 h-4 text-red-400/50 group- transition- text-white border-[#2A2A4A]" />
           </button>
           <button
-            className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors group"
+            className="flex items-center justify-between  /15 transition-colors group  text-white border-[#2A2A4A]"
           >
-            <div className="flex items-center gap-3">
-              <Lock className="w-5 h-5 text-gray-400" />
-              <span className="text-gray-400">Change Password</span>
+            <div className="flex items-center gap-3  text-white border-[#2A2A4A]">
+              <Lock className="w-5 h-5 text-gray-400  text-white border-[#2A2A4A]" />
+              <span className="text-gray-400  text-white border-[#2A2A4A]">Change Password</span>
             </div>
-            <ChevronRight className="w-4 h-4 text-gray-500/50 group-hover:translate-x-1 transition-transform" />
+            <ChevronRight className="w-4 h-4 text-gray-500/50 group- transition- text-white border-[#2A2A4A]" />
           </button>
         </div>
       </div>
 
       {/* Avatar Selector Modal */}
-      <AnimatePresence>
+      <>
         {showAvatarSelector && (
           <AvatarSelector
             currentAvatar={currentAvatar}
@@ -520,7 +519,7 @@ const Profile = () => {
             onClose={() => setShowAvatarSelector(false)}
           />
         )}
-      </AnimatePresence>
+      </>
     </div>
   );
 };

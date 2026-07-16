@@ -6,7 +6,7 @@ export const categoryIcons = {
   11: { icon: '🎬', label: 'Film', color: 'text-red-500' },
   12: { icon: '🎵', label: 'Music', color: 'text-pink-500' },
   13: { icon: '🎭', label: 'Musicals & Theatres', color: 'text-purple-500' },
-  14: { icon: '📺', label: 'Television', color: 'text-blue-500' },
+  14: { icon: '📺', label: 'Television', color: 'text-blue-400' },
   15: { icon: '🎮', label: 'Video Games', color: 'text-green-500' },
   16: { icon: '♟️', label: 'Board Games', color: 'text-amber-700' },
   17: { icon: '🔬', label: 'Science & Nature', color: 'text-emerald-500' },
@@ -14,45 +14,45 @@ export const categoryIcons = {
   19: { icon: '📐', label: 'Mathematics', color: 'text-red-400' },
   20: { icon: '🐉', label: 'Mythology', color: 'text-indigo-500' },
   21: { icon: '⚽', label: 'Sports', color: 'text-green-600' },
-  22: { icon: '🌍', label: 'Geography', color: 'text-blue-400' },
+  22: { icon: '🌍', label: 'Geography', color: 'text-[#3B82F6CC]' },
   23: { icon: '🏛️', label: 'History', color: 'text-amber-500' },
   24: { icon: '⚖️', label: 'Politics', color: 'text-gray-500' },
   25: { icon: '🎨', label: 'Art', color: 'text-pink-400' },
-  26: { icon: '⭐', label: 'Celebrities', color: 'text-yellow-400' },
+  26: { icon: '⭐', label: 'Celebrities', color: 'text-teal-400' },
   27: { icon: '🐾', label: 'Animals', color: 'text-green-400' },
-  28: { icon: '🚗', label: 'Vehicles', color: 'text-blue-600' },
+  28: { icon: '🚗', label: 'Vehicles', color: 'text-[#2563EB]' },
   29: { icon: '🦸', label: 'Comics', color: 'text-red-600' },
   30: { icon: '📱', label: 'Gadgets', color: 'text-gray-400' },
   31: { icon: '🎌', label: 'Japanese Anime & Manga', color: 'text-pink-600' },
-  32: { icon: '🧸', label: 'Cartoon & Animations', color: 'text-yellow-500' },
+  32: { icon: '🧸', label: 'Cartoon & Animations', color: 'text-teal-400' },
   
   // Custom Categories (100+)
   100: { icon: '⛪', label: 'Religion', color: 'text-purple-300' },
-  101: { icon: '✝️', label: 'Christianity', color: 'text-blue-300' },
+  101: { icon: '✝️', label: 'Christianity', color: 'text-[#14B8A6]' },
   102: { icon: '🕌', label: 'Islam', color: 'text-emerald-300' },
   103: { icon: '🕉️', label: 'Hinduism', color: 'text-orange-400' },
-  104: { icon: '☸️', label: 'Buddhism', color: 'text-yellow-400' },
-  105: { icon: '✡️', label: 'Judaism', color: 'text-blue-400' },
+  104: { icon: '☸️', label: 'Buddhism', color: 'text-teal-400' },
+  105: { icon: '✡️', label: 'Judaism', color: 'text-[#3B82F6CC]' },
   
   106: { icon: '💰', label: 'Money & Finance', color: 'text-green-400' },
   107: { icon: '💵', label: 'Personal Finance', color: 'text-emerald-400' },
-  108: { icon: '📈', label: 'Investing', color: 'text-blue-400' },
+  108: { icon: '📈', label: 'Investing', color: 'text-[#3B82F6CC]' },
   109: { icon: '🏦', label: 'Banking', color: 'text-amber-400' },
   110: { icon: '💳', label: 'Cryptocurrency', color: 'text-purple-400' },
   111: { icon: '📊', label: 'Economics', color: 'text-cyan-400' },
   
   112: { icon: '🏋️', label: 'Gym & Fitness', color: 'text-red-400' },
   113: { icon: '💪', label: 'Weightlifting', color: 'text-orange-400' },
-  114: { icon: '🏃', label: 'Running', color: 'text-blue-400' },
+  114: { icon: '🏃', label: 'Running', color: 'text-[#3B82F6CC]' },
   115: { icon: '🧘', label: 'Yoga', color: 'text-purple-300' },
   116: { icon: '🥗', label: 'Nutrition', color: 'text-green-400' },
   117: { icon: '💊', label: 'Supplements', color: 'text-red-300' },
   
-  118: { icon: '⚾', label: 'Baseball', color: 'text-blue-500' },
+  118: { icon: '⚾', label: 'Baseball', color: 'text-blue-400' },
   119: { icon: '🏀', label: 'Basketball', color: 'text-orange-500' },
   120: { icon: '🏈', label: 'Football', color: 'text-brown-500' },
   121: { icon: '🎾', label: 'Tennis', color: 'text-green-500' },
-  122: { icon: '🏐', label: 'Volleyball', color: 'text-yellow-500' },
+  122: { icon: '🏐', label: 'Volleyball', color: 'text-teal-400' },
   123: { icon: '⚾', label: 'Cricket', color: 'text-green-600' },
   
   124: { icon: '🍔', label: 'Food & Cooking', color: 'text-orange-400' },
@@ -62,23 +62,23 @@ export const categoryIcons = {
   128: { icon: '☕', label: 'Coffee & Tea', color: 'text-amber-600' },
   129: { icon: '🍷', label: 'Wine & Spirits', color: 'text-purple-600' },
   
-  130: { icon: '✈️', label: 'Travel', color: 'text-blue-400' },
+  130: { icon: '✈️', label: 'Travel', color: 'text-[#3B82F6CC]' },
   131: { icon: '🏝️', label: 'Beaches', color: 'text-cyan-400' },
   132: { icon: '🏔️', label: 'Mountains', color: 'text-green-700' },
   133: { icon: '🌆', label: 'Cities', color: 'text-amber-400' },
-  134: { icon: '🗽', label: 'Landmarks', color: 'text-blue-500' },
+  134: { icon: '🗽', label: 'Landmarks', color: 'text-blue-400' },
   
   135: { icon: '🌿', label: 'Nature', color: 'text-green-500' },
   136: { icon: '🌳', label: 'Forests', color: 'text-green-600' },
-  137: { icon: '🌊', label: 'Oceans', color: 'text-blue-500' },
+  137: { icon: '🌊', label: 'Oceans', color: 'text-blue-400' },
   138: { icon: '🏜️', label: 'Deserts', color: 'text-yellow-600' },
   
-  139: { icon: '🎓', label: 'Education', color: 'text-blue-400' },
+  139: { icon: '🎓', label: 'Education', color: 'text-[#3B82F6CC]' },
   140: { icon: '📖', label: 'Learning', color: 'text-amber-400' },
   141: { icon: '✏️', label: 'Writing', color: 'text-gray-400' },
   142: { icon: '🔤', label: 'Grammar', color: 'text-purple-400' },
   
-  143: { icon: '💡', label: 'Philosophy', color: 'text-yellow-400' },
+  143: { icon: '💡', label: 'Philosophy', color: 'text-teal-400' },
   144: { icon: '🧘', label: 'Meditation', color: 'text-purple-300' },
   145: { icon: '🌈', label: 'Psychology', color: 'text-pink-400' },
   
@@ -97,7 +97,7 @@ export const categoryIcons = {
   
   156: { icon: '🏰', label: 'Castles', color: 'text-amber-500' },
   157: { icon: '⚔️', label: 'Knights', color: 'text-gray-500' },
-  158: { icon: '🗡️', label: 'Swords', color: 'text-blue-400' },
+  158: { icon: '🗡️', label: 'Swords', color: 'text-[#3B82F6CC]' },
   
   159: { icon: '🎭', label: 'Theater', color: 'text-purple-500' },
   160: { icon: '🎤', label: 'Singing', color: 'text-pink-400' },
@@ -105,11 +105,11 @@ export const categoryIcons = {
   
   162: { icon: '📸', label: 'Photography', color: 'text-gray-400' },
   163: { icon: '🎥', label: 'Filmmaking', color: 'text-red-500' },
-  164: { icon: '📝', label: 'Journalism', color: 'text-blue-400' },
+  164: { icon: '📝', label: 'Journalism', color: 'text-[#3B82F6CC]' },
   
   165: { icon: '🕰️', label: 'Time', color: 'text-amber-400' },
   166: { icon: '🌙', label: 'Night', color: 'text-indigo-400' },
-  167: { icon: '☀️', label: 'Day', color: 'text-yellow-400' },
+  167: { icon: '☀️', label: 'Day', color: 'text-teal-400' },
 };
 
 export const getCategoryIcon = (id) => {

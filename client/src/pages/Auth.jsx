@@ -15,7 +15,6 @@ import {
   EyeOff,
   AlertCircle,
   CheckCircle,
-  WifiOff,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
 import { authService } from "../services/authService";
@@ -49,9 +48,7 @@ const Auth = () => {
 
     if (!supabaseUrl || !supabaseKey) {
       setIsSupabaseConfigured(false);
-      setError(
-        "⚠️ Supabase is not configured. Please check your environment variables.",
-      );
+      setError("⚠️ Supabase is not configured. Please check your environment variables.");
       console.error("❌ Missing Supabase environment variables!");
     }
   }, []);
@@ -59,9 +56,7 @@ const Auth = () => {
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           navigate("/dashboard");
         }
@@ -80,35 +75,22 @@ const Auth = () => {
       if (code) {
         setLoading(true);
         try {
-          const { data, error } =
-            await supabase.auth.exchangeCodeForSession(code);
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) {
             console.error("Verification error:", error);
             setError("Verification failed. Please try again.");
-            window.history.replaceState(
-              {},
-              document.title,
-              window.location.pathname,
-            );
+            window.history.replaceState({}, document.title, window.location.pathname);
             setLoading(false);
             return;
           }
           if (data?.session) {
-            window.history.replaceState(
-              {},
-              document.title,
-              window.location.pathname,
-            );
+            window.history.replaceState({}, document.title, window.location.pathname);
             navigate("/dashboard");
           }
         } catch (error) {
           console.error("Verification error:", error);
           setError("Verification failed. Please try again.");
-          window.history.replaceState(
-            {},
-            document.title,
-            window.location.pathname,
-          );
+          window.history.replaceState({}, document.title, window.location.pathname);
         } finally {
           setLoading(false);
         }
@@ -118,10 +100,7 @@ const Auth = () => {
   }, [location, navigate]);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
     setError("");
   };
 
@@ -133,9 +112,7 @@ const Auth = () => {
 
     try {
       if (!isSupabaseConfigured) {
-        setError(
-          "⚠️ Supabase is not configured. Please check your environment variables.",
-        );
+        setError("⚠️ Supabase is not configured. Please check your environment variables.");
         setLoading(false);
         return;
       }
@@ -147,8 +124,6 @@ const Auth = () => {
       }
 
       if (isLogin) {
-        console.log("Attempting login for:", formData.email);
-
         const { data, error } = await supabase.auth.signInWithPassword({
           email: formData.email.trim(),
           password: formData.password,
@@ -156,7 +131,6 @@ const Auth = () => {
 
         if (error) {
           console.error("Login error:", error);
-
           if (error.message?.includes("Invalid login credentials")) {
             setError("Invalid email or password. Please try again.");
           } else if (error.message?.includes("Email not confirmed")) {
@@ -178,8 +152,6 @@ const Auth = () => {
           }, 500);
         }
       } else {
-        console.log("Attempting signup for:", formData.email);
-
         if (formData.password !== formData.confirmPassword) {
           setError("Passwords do not match.");
           setLoading(false);
@@ -198,7 +170,6 @@ const Auth = () => {
           return;
         }
 
-        // ✅ FIX: Use authService to save name properly
         const { data, error } = await authService.signUp(
           formData.email.trim(),
           formData.password,
@@ -207,7 +178,6 @@ const Auth = () => {
 
         if (error) {
           console.error("Signup error:", error);
-
           if (error.message?.includes("already registered")) {
             setError("This email is already registered. Please login instead.");
           } else if (error.message?.includes("network")) {
@@ -233,7 +203,7 @@ const Auth = () => {
               to: formData.email,
               subject: "🎉 Welcome to Cerebrum!",
               html: emailTemplates.welcome(
-                formData.name || formData.email.split("@")[0],
+                formData.name || formData.email.split("@")[0]
               ).html,
             });
             console.log("✅ Welcome email sent");
@@ -249,14 +219,8 @@ const Auth = () => {
       }
     } catch (error) {
       console.error("Auth error:", error);
-
-      if (
-        error.message?.includes("fetch") ||
-        error.message?.includes("network")
-      ) {
-        setError(
-          "Network error. Please check your internet connection and try again.",
-        );
+      if (error.message?.includes("fetch") || error.message?.includes("network")) {
+        setError("Network error. Please check your internet connection and try again.");
       } else {
         setError("Something went wrong. Please try again.");
       }
@@ -364,53 +328,70 @@ const Auth = () => {
 
   if (showReset) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-3 sm:p-4" style={{ backgroundColor: 'var(--app-bg)' }}>
-        <div className="glass-card p-5 sm:p-6 md:p-8 max-w-md w-full">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{ backgroundColor: 'var(--app-bg)' }}
+      >
+        <motion.div 
+          initial={{ scale: 0.9, y: 20 }}
+          animate={{ scale: 1, y: 0 }}
+          transition={{ type: "spring", damping: 25 }}
+          className="glass-card p-8 max-w-md w-full"
+        >
           <button
             onClick={() => {
               setShowReset(false);
               setError("");
               setSuccess("");
             }}
-            className="flex items-center gap-2 text-muted hover:text-white transition-colors mb-4 sm:mb-6 text-sm sm:text-base"
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6 text-sm"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Sign In
           </button>
 
-          <div className="text-center mb-5 sm:mb-6 md:mb-8">
-            <div className="inline-block p-2.5 sm:p-3 bg-accent/20 rounded-full mb-3 sm:mb-4">
-              <Mail className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-accent" />
-            </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-white">
-              Reset Password
-            </h2>
-            <p className="text-muted text-xs sm:text-sm mt-1 sm:mt-2">
-              Enter your email address and we'll send you a link to reset your
-              password.
+          <div className="text-center mb-8">
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.1, type: "spring" }}
+              className="inline-block p-3 bg-blue-500/20 rounded-full mb-4"
+            >
+              <Mail className="w-10 h-10 text-blue-400" />
+            </motion.div>
+            <h2 className="text-2xl font-bold text-white">Reset Password</h2>
+            <p className="text-gray-400 text-sm mt-2">
+              Enter your email address and we'll send you a link to reset your password.
             </p>
           </div>
 
           {error && (
-            <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs sm:text-sm flex items-center gap-2">
+            <motion.div 
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm flex items-center gap-2"
+            >
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>{error}</span>
-            </div>
+            </motion.div>
           )}
 
           {success && (
-            <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400 text-xs sm:text-sm flex items-center gap-2">
+            <motion.div 
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400 text-sm flex items-center gap-2"
+            >
               <CheckCircle className="w-4 h-4 flex-shrink-0" />
               <span>{success}</span>
-            </div>
+            </motion.div>
           )}
 
-          <form
-            onSubmit={handleResetPassword}
-            className="space-y-3 sm:space-y-4"
-          >
+          <form onSubmit={handleResetPassword} className="space-y-4">
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
               <input
                 type="email"
                 value={resetEmail}
@@ -419,7 +400,7 @@ const Auth = () => {
                   setError("");
                 }}
                 placeholder="Email Address"
-                className="w-full bg-surface-2 text-white px-4 py-2 pl-9 sm:pl-10 rounded-lg border border-border focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm sm:text-base"
+                className="w-full bg-[#1E1E3A] text-white px-4 py-2.5 pl-10 rounded-lg border border-white/10 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
                 required
               />
             </div>
@@ -428,142 +409,189 @@ const Auth = () => {
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={loading}
-              className="w-full bg-accent text-white rounded-lg hover:bg-[#6d28d9] transition-colors flex items-center justify-center gap-2 py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50"
+              className="w-full bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 py-3 text-sm font-medium disabled:opacity-50"
             >
               {loading ? (
-                <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 "Send Reset Email"
               )}
             </motion.button>
           </form>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     );
   }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="min-h-screen flex items-center justify-center p-3 sm:p-4"
+      className="min-h-screen flex items-center justify-center p-4"
       style={{ backgroundColor: 'var(--app-bg)' }}
     >
-      <div className="glass-card p-5 sm:p-6 md:p-8 max-w-md w-full">
-        <div className="text-center mb-5 sm:mb-6 md:mb-8">
-          <div className="inline-block p-2.5 sm:p-3 bg-accent/20 rounded-full mb-3 sm:mb-4">
-            <Brain className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-accent" />
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white">
+      <motion.div 
+        initial={{ scale: 0.95, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        transition={{ type: "spring", damping: 25 }}
+        className="glass-card p-8 max-w-md w-full"
+      >
+        <div className="text-center mb-8">
+          <motion.div 
+            initial={{ scale: 0, rotate: -10 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ delay: 0.1, type: "spring" }}
+            className="inline-block p-3 bg-blue-500/20 rounded-full mb-4"
+          >
+            <Brain className="w-10 h-10 text-blue-400" />
+          </motion.div>
+          <motion.h1 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="text-3xl font-bold text-white"
+          >
             Cerebrum
-          </h1>
-          <p className="text-muted text-xs sm:text-sm">
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-gray-400 text-sm mt-1"
+          >
             {isLogin ? "Welcome back!" : "Create your account"}
-          </p>
-          {!isSupabaseConfigured && (
-            <div className="mt-2 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-400 text-xs flex items-center gap-2 justify-center">
-              <WifiOff className="w-4 h-4" />
-              <span>Supabase not configured. Check your .env file.</span>
-            </div>
-          )}
+          </motion.p>
         </div>
 
         {error && (
-          <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs sm:text-sm flex items-center gap-2">
+          <motion.div 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm flex items-center gap-2"
+          >
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{error}</span>
-          </div>
+          </motion.div>
         )}
 
         {success && (
-          <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400 text-xs sm:text-sm flex items-center gap-2">
+          <motion.div 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400 text-sm flex items-center gap-2"
+          >
             <CheckCircle className="w-4 h-4 flex-shrink-0" />
             <span>{success}</span>
-          </div>
+          </motion.div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted" />
+            <motion.div 
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              className="relative"
+            >
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
               <input
                 type="text"
                 name="name"
                 placeholder="Full Name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full bg-surface-2 text-white px-4 py-2 pl-9 sm:pl-10 rounded-lg border border-border focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm sm:text-base"
+                className="w-full bg-[#1E1E3A] text-white px-4 py-2.5 pl-10 rounded-lg border border-white/10 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
                 required={!isLogin}
               />
-            </div>
+            </motion.div>
           )}
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted" />
+          <motion.div 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: isLogin ? 0.1 : 0.15 }}
+            className="relative"
+          >
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
             <input
               type="email"
               name="email"
               placeholder="Email Address"
               value={formData.email}
               onChange={handleChange}
-              className="w-full bg-surface-2 text-white px-4 py-2 pl-9 sm:pl-10 rounded-lg border border-border focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm sm:text-base"
+              className="w-full bg-[#1E1E3A] text-white px-4 py-2.5 pl-10 rounded-lg border border-white/10 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
               required
             />
-          </div>
+          </motion.div>
 
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted" />
+          <motion.div 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: isLogin ? 0.15 : 0.2 }}
+            className="relative"
+          >
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
             <input
               type={showPassword ? "text" : "password"}
               name="password"
               placeholder="Password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full bg-surface-2 text-white px-4 py-2 pl-9 sm:pl-10 pr-10 rounded-lg border border-border focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm sm:text-base"
+              className="w-full bg-[#1E1E3A] text-white px-4 py-2.5 pl-10 pr-10 rounded-lg border border-white/10 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
               required
               minLength={6}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
             >
               {showPassword ? (
-                <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
+                <EyeOff className="w-5 h-5" />
               ) : (
-                <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
+                <Eye className="w-5 h-5" />
               )}
             </button>
-          </div>
+          </motion.div>
 
           {!isLogin && (
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted" />
+            <motion.div 
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.25 }}
+              className="relative"
+            >
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 name="confirmPassword"
                 placeholder="Confirm Password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="w-full bg-surface-2 text-white px-4 py-2 pl-9 sm:pl-10 pr-10 rounded-lg border border-border focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm sm:text-base"
+                className="w-full bg-[#1E1E3A] text-white px-4 py-2.5 pl-10 pr-10 rounded-lg border border-white/10 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
                 required={!isLogin}
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
               >
                 {showConfirmPassword ? (
-                  <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <EyeOff className="w-5 h-5" />
                 ) : (
-                  <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Eye className="w-5 h-5" />
                 )}
               </button>
-            </div>
+            </motion.div>
           )}
 
           {isLogin && (
-            <div className="text-right">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="text-right"
+            >
               <button
                 type="button"
                 onClick={() => {
@@ -571,11 +599,11 @@ const Auth = () => {
                   setError("");
                   setSuccess("");
                 }}
-                className="text-xs sm:text-sm text-muted hover:text-accent transition-colors"
+                className="text-sm text-gray-400 hover:text-blue-400 transition-colors"
               >
                 Forgot Password?
               </button>
-            </div>
+            </motion.div>
           )}
 
           <motion.button
@@ -583,42 +611,50 @@ const Auth = () => {
             whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={loading || !isSupabaseConfigured}
-            className="w-full bg-accent text-white rounded-lg hover:bg-[#6d28d9] transition-colors flex items-center justify-center gap-2 py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50"
+            className="w-full bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 py-3 text-sm font-medium disabled:opacity-50"
           >
             {loading ? (
-              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               <>
-                <LogIn className="w-3 h-3 sm:w-4 sm:h-4" />{" "}
+                <LogIn className="w-4 h-4" />{" "}
                 {isLogin ? "Sign In" : "Create Account"}
               </>
             )}
           </motion.button>
         </form>
 
-        <div className="relative my-5 sm:my-6 md:my-8">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="relative my-6"
+        >
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-border"></div>
+            <div className="w-full border-t border-white/10"></div>
           </div>
           <div className="relative flex justify-center">
-            <span className="px-3 sm:px-4 bg-surface text-muted text-[10px] sm:text-xs font-medium tracking-wider">
+            <span className="px-4 bg-[#181830] text-gray-500 text-xs font-medium tracking-wider">
               OR CONTINUE WITH
             </span>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="space-y-2 sm:space-y-3">
+        <div className="space-y-3">
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.35 }}
             onClick={handleGithubLogin}
             disabled={githubLoading || !isSupabaseConfigured}
-            className="w-full py-2.5 sm:py-3 rounded-xl border border-border hover:border-accent bg-surface hover:bg-surface-2 transition-all duration-300 flex items-center justify-center gap-3 text-gray-300 font-medium text-sm sm:text-base disabled:opacity-50"
+            className="w-full py-3 rounded-xl border border-white/10 hover:border-blue-500/30 bg-white/5 hover:bg-white/10 transition-all duration-300 flex items-center justify-center gap-3 text-gray-300 font-medium text-sm disabled:opacity-50"
           >
             {githubLoading ? (
-              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-accent" />
+              <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
             ) : (
-              <Github className="w-4 h-4 sm:w-5 sm:h-5" />
+              <Github className="w-5 h-5" />
             )}
             {githubLoading ? "Connecting..." : "Continue with GitHub"}
           </motion.button>
@@ -626,20 +662,28 @@ const Auth = () => {
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4 }}
             onClick={handleGoogleLogin}
             disabled={googleLoading || !isSupabaseConfigured}
-            className="w-full py-2.5 sm:py-3 rounded-xl border border-border hover:border-accent bg-surface hover:bg-surface-2 transition-all duration-300 flex items-center justify-center gap-3 text-gray-300 font-medium text-sm sm:text-base disabled:opacity-50"
+            className="w-full py-3 rounded-xl border border-white/10 hover:border-blue-500/30 bg-white/5 hover:bg-white/10 transition-all duration-300 flex items-center justify-center gap-3 text-gray-300 font-medium text-sm disabled:opacity-50"
           >
             {googleLoading ? (
-              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-accent" />
+              <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
             ) : (
-              <Chrome className="w-4 h-4 sm:w-5 sm:h-5" />
+              <Chrome className="w-5 h-5" />
             )}
             {googleLoading ? "Connecting..." : "Continue with Google"}
           </motion.button>
         </div>
 
-        <div className="mt-4 sm:mt-5 md:mt-6 text-center">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.45 }}
+          className="mt-6 text-center"
+        >
           <button
             onClick={() => {
               setIsLogin(!isLogin);
@@ -652,22 +696,22 @@ const Auth = () => {
                 confirmPassword: "",
               });
             }}
-            className="text-xs sm:text-sm text-muted hover:text-accent transition-colors"
+            className="text-sm text-gray-400 hover:text-blue-400 transition-colors"
           >
             {isLogin ? (
               <span>
                 Don't have an account?{" "}
-                <span className="text-accent font-medium">Sign Up</span>
+                <span className="text-blue-400 font-medium">Sign Up</span>
               </span>
             ) : (
               <span>
                 Already have an account?{" "}
-                <span className="text-accent font-medium">Sign In</span>
+                <span className="text-blue-400 font-medium">Sign In</span>
               </span>
             )}
           </button>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </motion.div>
   );
 };

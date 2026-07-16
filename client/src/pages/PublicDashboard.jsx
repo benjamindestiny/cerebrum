@@ -21,6 +21,7 @@ import {
   FolderTree,
   Target,
   Loader2,
+  CheckCircle,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
 
@@ -33,10 +34,6 @@ const PublicDashboard = () => {
     totalCategories: 0,
   });
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadRealStats();
-  }, []);
 
   const loadRealStats = async () => {
     setLoading(true);
@@ -64,14 +61,14 @@ const PublicDashboard = () => {
         );
       }
 
-      // Get categories from categories table or count distinct categories
+      // Get unique categories
       const { data: categories } = await supabase
         .from("quiz_results")
         .select("category")
         .not("category", "is", null);
 
       const uniqueCategories = new Set(categories?.map(c => c.category) || []);
-      const totalCategories = uniqueCategories.size || 12; // fallback
+      const totalCategories = uniqueCategories.size || 12;
 
       setStats({
         totalUsers: userCount || 0,
@@ -81,42 +78,50 @@ const PublicDashboard = () => {
       });
     } catch (error) {
       console.error("Error loading stats:", error);
-      // Fallback to reasonable numbers
-      setStats({
-        totalUsers: 24,
-        totalQuizzes: 0,
-        totalQuestions: 0,
-        totalCategories: 12,
-      });
+      // Fallback to cached or default values
+      setStats(prev => ({
+        totalUsers: prev.totalUsers || 24,
+        totalQuizzes: prev.totalQuizzes || 0,
+        totalQuestions: prev.totalQuestions || 0,
+        totalCategories: prev.totalCategories || 12,
+      }));
     } finally {
       setLoading(false);
     }
   };
+
+  // Load stats on mount and refresh every 30 seconds
+  useEffect(() => {
+    loadRealStats();
+    
+    // Refresh stats every 30 seconds (for live updates)
+    const interval = setInterval(() => {
+      loadRealStats();
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const features = [
     {
       icon: FolderTree,
       title: "Smart Categories",
       desc: "Browse 50+ topics with a powerful category explorer",
-      color: "from-purple-500 to-pink-500",
     },
     {
       icon: Gamepad2,
       title: "Multiplayer Battles",
       desc: "Challenge friends in real-time quiz competitions",
-      color: "from-blue-500 to-cyan-500",
     },
     {
       icon: BookOpen,
       title: "Read & Test",
       desc: "Learn with articles and test your comprehension",
-      color: "from-emerald-500 to-teal-500",
     },
     {
       icon: Puzzle,
       title: "Riddle Challenge",
       desc: "Solve brain teasers and earn points",
-      color: "from-orange-500 to-red-500",
     },
   ];
 
@@ -130,193 +135,169 @@ const PublicDashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-10 h-10 text-[#7c3aed] animate-spin" />
+        <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 sm:space-y-10 md:space-y-12 pb-12 px-3 sm:px-4">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      className="space-y-12 pb-12 px-4"
+    >
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[300px] sm:w-[400px] md:w-[600px] h-[300px] sm:h-[400px] md:h-[600px] bg-[#6C2BD9]/10 rounded-full blur-3xl -z-10"></div>
-        <div className="absolute bottom-0 left-0 w-[250px] sm:w-[350px] md:w-[500px] h-[250px] sm:h-[350px] md:h-[500px] bg-[#00C9A7]/10 rounded-full blur-3xl -z-10"></div>
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-3xl -z-10"></div>
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-teal-500/5 rounded-full blur-3xl -z-10"></div>
 
-        <div className="container mx-auto px-2 sm:px-4 max-w-7xl relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center max-w-4xl mx-auto"
-          >
-            <motion.div
-              animate={{ y: [0, -15, 0], rotate: [0, 5, -5, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              className="inline-block mb-4 sm:mb-6"
-            >
-              <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-2xl bg-gradient-to-br from-[#6C2BD9] to-[#8B5CF6] flex items-center justify-center shadow-2xl shadow-[#6C2BD9]/30">
-                <Brain className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" />
+        <div className="container mx-auto max-w-7xl relative z-10">
+          <div className="text-center max-w-3xl mx-auto">
+            <div className="inline-block mb-6">
+              <div className="w-20 h-20 rounded-2xl bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <Brain className="w-10 h-10 text-white" />
               </div>
-            </motion.div>
+            </div>
 
-            <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-4 leading-tight">
               Master Any Subject with{" "}
-              <span className="bg-gradient-to-r from-[#6C2BD9] via-[#8B5CF6] to-[#00C9A7] bg-clip-text text-transparent">
-                Cerebrum
-              </span>
+              <span className="text-blue-400">Cerebrum</span>
             </h1>
 
-            <p className="text-gray-400 text-sm sm:text-base md:text-lg lg:text-xl max-w-2xl mx-auto mb-6 sm:mb-8 px-2">
+            <p className="text-gray-300 text-lg max-w-2xl mx-auto mb-8">
               The interactive learning platform where you can read, test,
-              compete, and master any subject. Join thousands of learners
-              worldwide.
+              compete, and master any subject. Join learners worldwide.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={() => navigate("/auth")}
-                className="px-5 sm:px-6 md:px-8 py-2.5 sm:py-3 md:py-4 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors flex items-center gap-2 text-sm sm:text-base md:text-lg shadow-lg shadow-[#7c3aed]/30"
+                className="px-8 py-4 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 text-lg font-semibold"
               >
-                <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" /> Get Started Free{" "}
-                <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
+                <UserPlus className="w-5 h-5" /> Get Started Free
+                <ArrowRight className="w-4 h-4" />
               </button>
               <button
                 onClick={() => navigate("/categories")}
-                className="px-5 sm:px-6 md:px-8 py-2.5 sm:py-3 md:py-4 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors flex items-center gap-2 text-sm sm:text-base md:text-lg"
+                className="px-8 py-4 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-all flex items-center justify-center gap-2 text-lg font-semibold border border-white/10"
               >
-                <Eye className="w-4 h-4 sm:w-5 sm:h-5" /> Explore Categories
+                <Eye className="w-5 h-5" /> Explore Categories
               </button>
             </div>
 
-            <div className="mt-6 sm:mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-gray-400">
-              <span className="flex items-center gap-1 sm:gap-2">
-                <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-yellow-400" />
-                <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-yellow-400" />
-                <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-yellow-400" />
-                <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-yellow-400" />
-                <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-yellow-400" />
-                <span className="ml-1 sm:ml-2 text-gray-400">
-                  {stats.totalUsers} learners
-                </span>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-gray-400">
+              <span className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-teal-400" />
+                {stats.totalUsers} learners
               </span>
-              <span className="hidden sm:inline text-gray-600">•</span>
-              <span className="flex items-center gap-1 sm:gap-2">
-                <Users className="w-3 h-3 sm:w-4 sm:h-4 text-[#6C2BD9]" />
-                <span className="text-gray-400">Join for free</span>
+              <span className="text-gray-600">•</span>
+              <span className="flex items-center gap-2">
+                <Rocket className="w-4 h-4 text-blue-400" />
+                Start instantly
               </span>
-              <span className="hidden sm:inline text-gray-600">•</span>
-              <span className="flex items-center gap-1 sm:gap-2">
-                <Rocket className="w-3 h-3 sm:w-4 sm:h-4 text-[#00C9A7]" />
-                <span className="text-gray-400">Start instantly</span>
+              <span className="text-gray-600">•</span>
+              <span className="flex items-center gap-2">
+                <Star className="w-4 h-4 text-teal-400 fill-teal-400" />
+                100% free
               </span>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
       {/* Stats Section */}
-      <section className="container mx-auto px-2 sm:px-4 max-w-7xl">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <section className="container mx-auto max-w-7xl">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {statsData.map((stat, index) => (
             <div
               key={index}
-              className="glass-card p-3 sm:p-4 md:p-6 text-center"
+              className="bg-white/5 border border-white/10 rounded-xl p-4 text-center hover:border-blue-500/30 transition-all"
             >
-              <stat.icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-[#6C2BD9] mx-auto mb-1 sm:mb-2" />
-              <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white">
+              <stat.icon className="w-6 h-6 text-blue-400 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-white">
                 {stat.value > 1000
                   ? `${(stat.value / 1000).toFixed(1)}K+`
                   : stat.value || 0}
               </div>
-              <div className="text-[10px] sm:text-xs md:text-sm text-gray-400">
-                {stat.label}
-              </div>
+              <div className="text-xs text-gray-400">{stat.label}</div>
             </div>
           ))}
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="container mx-auto px-2 sm:px-4 max-w-7xl">
-        <div className="text-center mb-6 sm:mb-8 md:mb-12">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 sm:mb-4">
-            Why Choose{" "}
-            <span className="bg-gradient-to-r from-[#6C2BD9] to-[#8B5CF6] bg-clip-text text-transparent">
-              Cerebrum
-            </span>
-            <span className="text-white">?</span>
+      <section className="container mx-auto max-w-7xl">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-white mb-2">
+            Why Choose <span className="text-blue-400">Cerebrum</span>?
           </h2>
-          <p className="text-gray-400 text-sm sm:text-base max-w-2xl mx-auto">
+          <p className="text-gray-400 max-w-xl mx-auto">
             Everything you need to learn, test, and master any subject
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {features.map((feature, index) => (
             <div
               key={index}
-              className="glass-card p-4 sm:p-5 md:p-6 border border-white/5 hover:border-[#6C2BD9]/30 transition-all duration-300 group"
+              className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-blue-500/30 transition-all"
             >
-              <div
-                className={`p-2 sm:p-3 rounded-lg bg-gradient-to-br ${feature.color} bg-opacity-20 inline-block mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300`}
-              >
-                <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              <div className="p-3 bg-blue-500/10 rounded-lg inline-block mb-3">
+                <feature.icon className="w-6 h-6 text-blue-400" />
               </div>
-              <h3 className="text-white font-semibold text-sm sm:text-base md:text-lg mb-1 sm:mb-2">
+              <h3 className="text-white font-semibold text-lg mb-1">
                 {feature.title}
               </h3>
-              <p className="text-gray-400 text-xs sm:text-sm">{feature.desc}</p>
+              <p className="text-gray-400 text-sm">{feature.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="container mx-auto px-2 sm:px-4 max-w-7xl">
-        <div className="glass-card p-6 sm:p-8 md:p-10 lg:p-12 bg-gradient-to-r from-[#6C2BD9]/30 to-[#00C9A7]/30 border border-white/10 text-center">
-          <div className="max-w-3xl mx-auto">
-            <div className="inline-block mb-4 sm:mb-6">
-              <Sparkles className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 text-yellow-400" />
-            </div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
+      <section className="container mx-auto max-w-7xl">
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-8 sm:p-12 text-center">
+          <div className="max-w-2xl mx-auto">
+            <Sparkles className="w-12 h-12 text-teal-400 mx-auto mb-4" />
+            <h2 className="text-3xl font-bold text-white mb-3">
               Ready to Start Learning?
             </h2>
-            <p className="text-gray-300 text-sm sm:text-base md:text-lg mb-6 sm:mb-8 max-w-xl mx-auto">
+            <p className="text-gray-300 mb-6">
               Join {stats.totalUsers} learners and start mastering new topics
               today. It's completely free!
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={() => navigate("/auth")}
-                className="px-6 sm:px-8 py-3 sm:py-4 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors text-sm sm:text-base md:text-lg shadow-lg shadow-[#6C2BD9]/30 flex items-center justify-center gap-2"
+                className="px-8 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 font-semibold"
               >
-                <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" /> Sign Up Free
+                <UserPlus className="w-5 h-5" /> Sign Up Free
               </button>
               <button
                 onClick={() => navigate("/categories")}
-                className="px-6 sm:px-8 py-3 sm:py-4 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors text-sm sm:text-base md:text-lg flex items-center justify-center gap-2"
+                className="px-8 py-3 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-all flex items-center justify-center gap-2 font-semibold"
               >
-                <Eye className="w-4 h-4 sm:w-5 sm:h-5" /> Browse Categories
+                <Eye className="w-5 h-5" /> Browse Categories
               </button>
             </div>
-            <div className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-400">
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-sm text-gray-400">
               <span className="flex items-center gap-1">
-                <Coffee className="w-3 h-3 sm:w-4 sm:h-4" /> No credit card
-                required
+                <Coffee className="w-4 h-4" /> No credit card required
               </span>
-              <span className="hidden sm:inline text-gray-600">•</span>
+              <span className="text-gray-600">•</span>
               <span className="flex items-center gap-1">
-                <Shield className="w-3 h-3 sm:w-4 sm:h-4" /> Privacy protected
+                <Shield className="w-4 h-4" /> Privacy protected
               </span>
-              <span className="hidden sm:inline text-gray-600">•</span>
+              <span className="text-gray-600">•</span>
               <span className="flex items-center gap-1">
-                <Gift className="w-3 h-3 sm:w-4 sm:h-4" /> 100% free to start
+                <Gift className="w-4 h-4" /> 100% free to start
               </span>
             </div>
           </div>
         </div>
       </section>
-    </div>
+    </motion.div>
   );
 };
 

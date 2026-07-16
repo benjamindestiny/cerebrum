@@ -8,8 +8,8 @@ const Home = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-12 h-12 border-4 border-[#7c3aed] border-t-transparent rounded-full animate-spin"></div>
+      <div className="flex items-center justify-center min-h-screen  text-white border-[#2A2A4A]">
+        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin  text-white border-[#2A2A4A]"></div>
       </div>
     );
   }

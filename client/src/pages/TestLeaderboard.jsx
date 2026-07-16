@@ -38,9 +38,9 @@ const TestLeaderboard = () => {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="p-4">
-      <h1 className="text-white text-xl">Test Results</h1>
-      <pre className="text-gray-300 text-xs mt-4">
+    <div className="p-4  text-white border-[#2A2A4A]">
+      <h1 className="text-white text-xl  text-white border-[#2A2A4A]">Test Results</h1>
+      <pre className="text-gray-300 text-xs mt-4  text-white border-[#2A2A4A]">
         {JSON.stringify(data, null, 2)}
       </pre>
     </div>

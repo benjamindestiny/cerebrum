@@ -31,39 +31,39 @@ const Privacy = () => {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div className="text-center">
-        <Shield className="w-16 h-16 text-[#6C2BD9] mx-auto mb-4" />
-        <h1 className="text-4xl font-bold text-white">Privacy Policy</h1>
-        <p className="text-gray-400 mt-2">Last updated: July 2025</p>
-        <p className="text-gray-400 mt-4 max-w-2xl mx-auto">
+    <div className="max-w-4xl mx-auto space-y-8  text-white border-[#2A2A4A]">
+      <div className="text-center  text-white border-[#2A2A4A]">
+        <Shield className="w-16 h-16 text-blue-400 mx-auto mb-4  text-white border-[#2A2A4A]" />
+        <h1 className="text-4xl font-bold text-white  text-white border-[#2A2A4A]">Privacy Policy</h1>
+        <p className="text-gray-400 mt-2  text-white border-[#2A2A4A]">Last updated: July 2025</p>
+        <p className="text-gray-400 mt-4 max-w-2xl mx-auto  text-white border-[#2A2A4A]">
           At Cerebrum, we take your privacy seriously. This policy describes how we collect, 
           use, and protect your personal information.
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4  text-white border-[#2A2A4A]">
         {sections.map((section, index) => (
-          <div key={index} className="glass-card p-6 hover:border-[#6C2BD9]/30 transition-all duration-300">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-[#6C2BD9]/20 rounded-lg">
-                <section.icon className="w-6 h-6 text-[#6C2BD9]" />
+          <div key={index} className="glass-card p-6 hover:border-blue-500/30 transition-all   text-white border-[#2A2A4A]">
+            <div className="flex items-start gap-4  text-white border-[#2A2A4A]">
+              <div className="p-3  rounded-lg  text-white border-[#2A2A4A]">
+                <section.icon className="w-6 h-6 text-blue-400  text-white border-[#2A2A4A]" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white mb-2">{section.title}</h2>
-                <p className="text-gray-400 leading-relaxed">{section.content}</p>
+                <h2 className="text-xl font-bold text-white mb-2  text-white border-[#2A2A4A]">{section.title}</h2>
+                <p className="text-gray-400 leading-relaxed  text-white border-[#2A2A4A]">{section.content}</p>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="glass-card p-6 border border-yellow-400/20 bg-yellow-400/5">
-        <div className="flex items-start gap-4">
-          <Lock className="w-6 h-6 text-yellow-400 mt-1" />
+      <div className="glass-card p-6 border border-teal-400/20 bg-teal-400/5  text-white border-[#2A2A4A]">
+        <div className="flex items-start gap-4  text-white border-[#2A2A4A]">
+          <Lock className="w-6 h-6 text-teal-400 mt-1  text-white border-[#2A2A4A]" />
           <div>
-            <h3 className="text-white font-semibold">Your Rights</h3>
-            <p className="text-gray-400 text-sm mt-1">
+            <h3 className="text-white font-semibold  text-white border-[#2A2A4A]">Your Rights</h3>
+            <p className="text-gray-400 text-sm mt-1  text-white border-[#2A2A4A]">
               You have the right to access, modify, or delete your personal data at any time. 
               To exercise these rights, please contact us through the provided channels.
             </p>

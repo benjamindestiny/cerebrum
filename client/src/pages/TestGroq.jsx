@@ -21,18 +21,18 @@ const TestGroq = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-white">
+    <div className="max-w-4xl mx-auto p-6 space-y-6  text-white border-[#2A2A4A]">
+      <h1 className="text-2xl font-bold text-white  text-white border-[#2A2A4A]">
         Test Groq Quiz Generator
       </h1>
 
-      <div className="flex gap-4 flex-wrap">
+      <div className="flex gap-4 flex-wrap  text-white border-[#2A2A4A]">
         <input
           type="text"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           placeholder="Enter category..."
-          className="flex-1 px-4 py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white"
+          className="flex-1 px-4 py-2 bg-[#262626] rounded-lg border border-white/10 text-white  text-white border-[#2A2A4A]"
         />
         <input
           type="number"
@@ -40,28 +40,28 @@ const TestGroq = () => {
           onChange={(e) => setCount(parseInt(e.target.value) || 5)}
           min={1}
           max={20}
-          className="w-20 px-4 py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white"
+          className="w-20 px-4 py-2 bg-[#262626] rounded-lg border border-white/10 text-white  text-white border-[#2A2A4A]"
         />
         <button
           onClick={handleGenerate}
           disabled={loading}
-          className="px-6 py-2 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] disabled:opacity-50"
+          className="px-6 py-2 bg-blue-500 text-white rounded-lg  disabled:opacity-50  text-white border-[#2A2A4A]"
         >
           {loading ? "Generating..." : "Generate"}
         </button>
       </div>
 
       {questions.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold text-white">
+        <div className="space-y-4  text-white border-[#2A2A4A]">
+          <h2 className="text-xl font-bold text-white  text-white border-[#2A2A4A]">
             Generated {questions.length} Questions
           </h2>
           {questions.map((q, idx) => (
-            <div key={idx} className="glass-card p-4">
-              <p className="text-white font-medium">
+            <div key={idx} className="glass-card p-4  text-white border-[#2A2A4A]">
+              <p className="text-white font-medium  text-white border-[#2A2A4A]">
                 {idx + 1}. {q.question}
               </p>
-              <div className="mt-2 space-y-1">
+              <div className="mt-2 space-y-1  text-white border-[#2A2A4A]">
                 {q.options.map((opt, i) => (
                   <div
                     key={i}
@@ -72,7 +72,7 @@ const TestGroq = () => {
                 ))}
               </div>
               {q.explanation && (
-                <p className="mt-2 text-sm text-gray-400">💡 {q.explanation}</p>
+                <p className="mt-2 text-sm text-gray-400  text-white border-[#2A2A4A]">💡 {q.explanation}</p>
               )}
             </div>
           ))}

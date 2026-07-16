@@ -69,14 +69,14 @@ const AdminDashboard = () => {
       label: 'Send Message',
       description: 'Send messages to all users',
       path: '/admin/send-message',
-      color: 'text-blue-400',
+      color: 'text-[#3B82F6CC]',
     },
     {
       icon: Mail,
       label: 'Email Templates',
       description: 'Manage email templates',
       path: '/admin/email-templates',
-      color: 'text-[#7c3aed]',
+      color: 'text-blue-400',
     },
     {
       icon: Users,
@@ -90,20 +90,20 @@ const AdminDashboard = () => {
       label: 'Weekly Report',
       description: 'View platform analytics',
       path: '/admin/weekly-report',
-      color: 'text-yellow-400',
+      color: 'text-teal-400',
     },
   ];
 
   if (!isAdmin) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Shield className="w-16 h-16 text-red-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white">Access Denied</h2>
-          <p className="text-gray-400 mt-2">You don't have admin privileges.</p>
+      <div className="flex items-center justify-center min-h-[400px]  text-white border-[#2A2A4A]">
+        <div className="text-center  text-white border-[#2A2A4A]">
+          <Shield className="w-16 h-16 text-red-400 mx-auto mb-4  text-white border-[#2A2A4A]" />
+          <h2 className="text-2xl font-bold text-white  text-white border-[#2A2A4A]">Access Denied</h2>
+          <p className="text-gray-400 mt-2  text-white border-[#2A2A4A]">You don't have admin privileges.</p>
           <button
             onClick={() => navigate('/')}
-            className="mt-4 px-6 py-2 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors"
+            className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg  transition-colors  text-white border-[#2A2A4A]"
           >
             Go Home
           </button>
@@ -113,61 +113,61 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-7xl mx-auto px-4 py-6  text-white border-[#2A2A4A]">
+      <div className="flex items-center justify-between mb-6  text-white border-[#2A2A4A]">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Shield className="w-7 h-7 text-[#7c3aed]" />
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2  text-white border-[#2A2A4A]">
+            <Shield className="w-7 h-7 text-blue-400  text-white border-[#2A2A4A]" />
             Admin Dashboard
           </h1>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-gray-400 text-sm mt-1  text-white border-[#2A2A4A]">
             Welcome back, {user?.email} ({adminData?.role || 'admin'})
           </p>
         </div>
         <button
           onClick={handleSignOut}
-          className="px-4 py-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors flex items-center gap-2 text-sm"
+          className="px-4 py-2 bg-red-500/10 text-red-400 rounded-lg /20 transition-colors flex items-center gap-2 text-sm  text-white border-[#2A2A4A]"
         >
-          <LogOut className="w-4 h-4" />
+          <LogOut className="w-4 h-4  text-white border-[#2A2A4A]" />
           Sign Out
         </button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="glass-card p-4 text-center">
-          <div className="text-2xl font-bold text-white">{stats.totalUsers}</div>
-          <div className="text-xs text-gray-400">Total Users</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6  text-white border-[#2A2A4A]">
+        <div className="glass-card p-4 text-center  text-white border-[#2A2A4A]">
+          <div className="text-2xl font-bold text-white  text-white border-[#2A2A4A]">{stats.totalUsers}</div>
+          <div className="text-xs text-gray-400  text-white border-[#2A2A4A]">Total Users</div>
         </div>
-        <div className="glass-card p-4 text-center">
-          <div className="text-2xl font-bold text-green-400">{stats.totalQuizzes}</div>
-          <div className="text-xs text-gray-400">Quizzes Taken</div>
+        <div className="glass-card p-4 text-center  text-white border-[#2A2A4A]">
+          <div className="text-2xl font-bold text-green-400  text-white border-[#2A2A4A]">{stats.totalQuizzes}</div>
+          <div className="text-xs text-gray-400  text-white border-[#2A2A4A]">Quizzes Taken</div>
         </div>
-        <div className="glass-card p-4 text-center">
-          <div className="text-2xl font-bold text-yellow-400">{stats.totalUsers}</div>
-          <div className="text-xs text-gray-400">Active Users</div>
+        <div className="glass-card p-4 text-center  text-white border-[#2A2A4A]">
+          <div className="text-2xl font-bold text-teal-400  text-white border-[#2A2A4A]">{stats.totalUsers}</div>
+          <div className="text-xs text-gray-400  text-white border-[#2A2A4A]">Active Users</div>
         </div>
-        <div className="glass-card p-4 text-center">
-          <div className="text-2xl font-bold text-[#7c3aed]">0</div>
-          <div className="text-xs text-gray-400">Riddles Solved</div>
+        <div className="glass-card p-4 text-center  text-white border-[#2A2A4A]">
+          <div className="text-2xl font-bold text-blue-400  text-white border-[#2A2A4A]">0</div>
+          <div className="text-xs text-gray-400  text-white border-[#2A2A4A]">Riddles Solved</div>
         </div>
       </div>
 
       {/* Admin Links */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4  text-white border-[#2A2A4A]">
         {adminLinks.map((link, index) => (
           <button
             key={index}
             onClick={() => navigate(link.path)}
-            className="glass-card p-6 text-left hover:border-[#7c3aed]/30 transition-all group"
+            className="glass-card p-6 text-left hover:border-blue-500/30 transition-all group  text-white border-[#2A2A4A]"
           >
-            <div className="flex items-start gap-4">
-              <div className={`p-3 bg-[#7c3aed]/10 rounded-lg group-hover:bg-[#7c3aed]/20 transition-colors`}>
-                <link.icon className={`w-6 h-6 ${link.color || 'text-[#7c3aed]'}`} />
+            <div className="flex items-start gap-4  text-white border-[#2A2A4A]">
+              <div className={`p-3  rounded-lg group-/20 transition-colors`}>
+                <link.icon className={`w-6 h-6 ${link.color || 'text-blue-400'}`} />
               </div>
               <div>
-                <h3 className="text-white font-medium">{link.label}</h3>
-                <p className="text-gray-400 text-sm mt-1">{link.description}</p>
+                <h3 className="text-white font-medium  text-white border-[#2A2A4A]">{link.label}</h3>
+                <p className="text-gray-400 text-sm mt-1  text-white border-[#2A2A4A]">{link.description}</p>
               </div>
             </div>
           </button>

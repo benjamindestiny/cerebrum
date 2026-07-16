@@ -7,10 +7,10 @@ const ProtectedAdminRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-[#7c3aed] border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-gray-400 mt-4">Checking admin access...</p>
+      <div className="flex items-center justify-center min-h-[400px]  text-white border-[#2A2A4A]">
+        <div className="text-center  text-white border-[#2A2A4A]">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto  text-white border-[#2A2A4A]"></div>
+          <p className="text-gray-400 mt-4  text-white border-[#2A2A4A]">Checking admin access...</p>
         </div>
       </div>
     );

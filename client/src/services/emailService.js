@@ -1,54 +1,151 @@
 // services/emailService.js
 import { supabase } from "./supabase";
 
-const BREVO_API_KEY = import.meta.env.VITE_BREVO_API_KEY || "";
+// Brevo SMTP Configuration
+const SMTP_CONFIG = {
+  host: import.meta.env.VITE_SMTP_HOST || "smtp-relay.brevo.com",
+  port: parseInt(import.meta.env.VITE_SMTP_PORT) || 587,
+  secure: false, // false for 587, true for 465
+  auth: {
+    user: import.meta.env.VITE_SMTP_USER || "",
+    pass: import.meta.env.VITE_SMTP_PASS || "",
+  },
+};
+
+// Brevo API Configuration (Fallback)
+const BREVO_API_KEY =
+  import.meta.env.VITE_BREVO_API_KEY || import.meta.env.BREVO_API_KEY || "";
 const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
-// Email templates (default fallbacks)
+// Email templates
 export const emailTemplates = {
   welcome: (name) => ({
     subject: "🎉 Welcome to Cerebrum!",
     html: `
-      <h1>Welcome to Cerebrum, ${name}! 🧠</h1>
-      <p>We're thrilled to have you join our community of learners.</p>
-      <p>Here's what you can do:</p>
-      <ul>
-        <li>📝 Take quizzes on various topics</li>
-        <li>🧩 Solve challenging riddles</li>
-        <li>📚 Read educational articles</li>
-        <li>🏆 Compete on the leaderboard</li>
-      </ul>
-      <p>Start your learning journey now!</p>
-      <a href="${import.meta.env.VITE_APP_URL}/categories" style="background: #7c3aed; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none;">
-        Start Learning
-      </a>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; margin: 0;">
+        <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; padding: 40px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <div style="display: inline-block; padding: 15px; background: #3B82F6; border-radius: 50%;">
+              <span style="font-size: 36px;">🧠</span>
+            </div>
+            <h1 style="color: #0C0C1A; margin-top: 15px;">Welcome to Cerebrum!</h1>
+          </div>
+          
+          <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi <strong>${name}</strong>,</p>
+          <p style="font-size: 16px; color: #333; line-height: 1.6;">We're thrilled to have you join our community of learners! 🎉</p>
+          
+          <div style="background: #FFF8ED; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3B82F6;">
+            <p style="margin: 5px 0; font-size: 14px;">📝 Take quizzes on various topics</p>
+            <p style="margin: 5px 0; font-size: 14px;">🧩 Solve challenging riddles</p>
+            <p style="margin: 5px 0; font-size: 14px;">📚 Read educational articles</p>
+            <p style="margin: 5px 0; font-size: 14px;">🏆 Compete on the leaderboard</p>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${import.meta.env.VITE_APP_URL || "https://cerebrum-three.vercel.app"}/categories" 
+               style="background: #3B82F6; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
+              Start Learning Now
+            </a>
+          </div>
+          
+          <p style="font-size: 14px; color: #999; text-align: center; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+            Happy learning,<br><strong>The Cerebrum Team</strong>
+          </p>
+        </div>
+      </body>
+      </html>
     `,
   }),
 
   quizResults: (name, category, score, points) => ({
     subject: `📊 Your Quiz Results: ${category}`,
     html: `
-      <h1>Quiz Results 🎯</h1>
-      <p>Hi ${name},</p>
-      <p>You scored <strong>${score}%</strong> on the "${category}" quiz!</p>
-      <p>You earned <strong>${points} points</strong>.</p>
-      <p>Keep up the great work!</p>
-      <a href="${import.meta.env.VITE_APP_URL}/dashboard" style="background: #7c3aed; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none;">
-        View Dashboard
-      </a>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; margin: 0;">
+        <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; padding: 40px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <div style="display: inline-block; padding: 15px; background: #3B82F6; border-radius: 50%;">
+              <span style="font-size: 36px;">📊</span>
+            </div>
+            <h1 style="color: #0C0C1A; margin-top: 15px;">Quiz Results</h1>
+          </div>
+          
+          <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi <strong>${name}</strong>,</p>
+          
+          <div style="background: #FFF8ED; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; border: 2px solid #3B82F6;">
+            <div style="font-size: 48px; font-weight: bold; color: #3B82F6;">${score}%</div>
+            <p style="color: #666; margin-top: 5px;">on "${category}"</p>
+            <p style="color: #666;">Earned <strong>${points} points</strong></p>
+          </div>
+          
+          <p style="font-size: 16px; color: #333; line-height: 1.6;">Keep up the great work!</p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${import.meta.env.VITE_APP_URL || "https://cerebrum-three.vercel.app"}/dashboard" 
+               style="background: #3B82F6; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
+              View Dashboard
+            </a>
+          </div>
+          
+          <p style="font-size: 14px; color: #999; text-align: center; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+            The Cerebrum Team 🧠
+          </p>
+        </div>
+      </body>
+      </html>
     `,
   }),
 
   achievement: (name, achievement) => ({
     subject: `🏆 Achievement Unlocked: ${achievement}`,
     html: `
-      <h1>🏆 Achievement Unlocked!</h1>
-      <p>Congratulations ${name}!</p>
-      <p>You've earned the <strong>${achievement}</strong> achievement.</p>
-      <p>Keep going to unlock more achievements!</p>
-      <a href="${import.meta.env.VITE_APP_URL}/profile" style="background: #7c3aed; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none;">
-        View Profile
-      </a>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; margin: 0;">
+        <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; padding: 40px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <div style="display: inline-block; padding: 15px; background: #3B82F6; border-radius: 50%;">
+              <span style="font-size: 36px;">🏆</span>
+            </div>
+            <h1 style="color: #0C0C1A; margin-top: 15px;">Achievement Unlocked!</h1>
+          </div>
+          
+          <div style="background: #FFF8ED; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; border: 2px solid #3B82F6;">
+            <div style="font-size: 48px;">🎉</div>
+            <p style="font-size: 20px; font-weight: bold; color: #3B82F6; margin: 10px 0;">${achievement}</p>
+          </div>
+          
+          <p style="font-size: 16px; color: #333; line-height: 1.6;">Congratulations <strong>${name}</strong>! You've earned a new achievement.</p>
+          <p style="font-size: 16px; color: #333; line-height: 1.6;">Keep going to unlock more!</p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${import.meta.env.VITE_APP_URL || "https://cerebrum-three.vercel.app"}/profile" 
+               style="background: #3B82F6; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
+              View Profile
+            </a>
+          </div>
+          
+          <p style="font-size: 14px; color: #999; text-align: center; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+            The Cerebrum Team 🧠
+          </p>
+        </div>
+      </body>
+      </html>
     `,
   }),
 };
@@ -58,8 +155,36 @@ export const emailTemplates = {
 // ============================================
 export const sendEmail = async ({ to, subject, html, from = "Cerebrum" }) => {
   try {
-    // Try Brevo first
-    if (BREVO_API_KEY) {
+    // Try SMTP first
+    if (SMTP_CONFIG.auth.user && SMTP_CONFIG.auth.pass && SMTP_CONFIG.host) {
+      try {
+        console.log("📧 Sending via SMTP to:", to);
+
+        // Use fetch to send via Brevo SMTP relay
+        const response = await fetch("/api/send-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to,
+            subject,
+            html,
+            config: SMTP_CONFIG,
+          }),
+        });
+
+        if (response.ok) {
+          console.log(`✅ Email sent via SMTP to ${to}`);
+          return { success: true, method: "smtp" };
+        }
+      } catch (smtpError) {
+        console.warn("SMTP failed, trying API...", smtpError.message);
+      }
+    }
+
+    // Fallback: Try Brevo API
+    if (BREVO_API_KEY && BREVO_API_KEY !== "") {
+      console.log("📧 Sending via Brevo API to:", to);
+
       const response = await fetch(BREVO_API_URL, {
         method: "POST",
         headers: {
@@ -78,18 +203,21 @@ export const sendEmail = async ({ to, subject, html, from = "Cerebrum" }) => {
       });
 
       if (response.ok) {
-        console.log(`✅ Email sent to ${to}`);
-        return { success: true };
+        console.log(`✅ Email sent via Brevo API to ${to}`);
+        return { success: true, method: "api" };
+      } else {
+        const errorData = await response.json();
+        console.error("❌ Brevo API Error:", errorData);
       }
     }
 
-    // Fallback: Log the email
-    console.log("📧 Email would be sent:", {
+    // Last resort: Log it
+    console.log("📧 Email would be sent (no working method):", {
       to,
       subject,
-      html,
+      html: html.substring(0, 200) + "...",
     });
-    console.log("ℹ️ Set BREVO_API_KEY in .env to send real emails");
+    console.log("ℹ️ Configure SMTP or Brevo API to send real emails");
 
     return { success: true, fallback: true };
   } catch (error) {
@@ -101,13 +229,18 @@ export const sendEmail = async ({ to, subject, html, from = "Cerebrum" }) => {
 // ============================================
 // SEND BULK EMAIL
 // ============================================
-export const sendBulkEmail = async ({ recipients, subject, body, variables = [] }) => {
+export const sendBulkEmail = async ({
+  recipients,
+  subject,
+  body,
+  variables = [],
+}) => {
   try {
     let sent = 0;
     let failed = 0;
     const results = [];
 
-    // Process in batches of 50 to avoid rate limits
+    // Process in batches of 50
     const batchSize = 50;
     for (let i = 0; i < recipients.length; i += batchSize) {
       const batch = recipients.slice(i, i + batchSize);
@@ -117,24 +250,29 @@ export const sendBulkEmail = async ({ recipients, subject, body, variables = [] 
 
         // Replace variables
         variables.forEach((varName) => {
-          const value = recipient.data?.[varName] || 
-                       recipient[varName] || 
-                       `{{${varName}}}`;
-          
+          const value =
+            recipient.data?.[varName] || recipient[varName] || `{{${varName}}}`;
+
           const regex = new RegExp(`{{${varName}}}`, "g");
           personalizedBody = personalizedBody.replace(regex, value);
           personalizedSubject = personalizedSubject.replace(regex, value);
         });
 
-        // Also replace common variables
+        // Common variables
         personalizedBody = personalizedBody
           .replace(/{{name}}/g, recipient.name || "User")
           .replace(/{{email}}/g, recipient.email || "")
-          .replace(/{{site_url}}/g, import.meta.env.VITE_APP_URL || "");
+          .replace(
+            /{{site_url}}/g,
+            import.meta.env.VITE_APP_URL || "https://cerebrum-three.vercel.app",
+          );
 
         personalizedSubject = personalizedSubject
           .replace(/{{name}}/g, recipient.name || "User")
-          .replace(/{{site_url}}/g, import.meta.env.VITE_APP_URL || "");
+          .replace(
+            /{{site_url}}/g,
+            import.meta.env.VITE_APP_URL || "https://cerebrum-three.vercel.app",
+          );
 
         const result = await sendEmail({
           to: recipient.email,
@@ -154,20 +292,24 @@ export const sendBulkEmail = async ({ recipients, subject, body, variables = [] 
       const batchResults = await Promise.all(promises);
       results.push(...batchResults);
 
-      // Small delay between batches
+      // Delay between batches
       if (i + batchSize < recipients.length) {
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }
 
-    // Log the sent emails
-    await supabase.from("email_logs").insert({
-      subject: subject,
-      recipients: recipients.map((r) => r.email).join(", "),
-      sent_count: sent,
-      failed_count: failed,
-      sent_at: new Date().toISOString(),
-    });
+    // Log to database
+    try {
+      await supabase.from("email_logs").insert({
+        subject: subject,
+        recipients: recipients.map((r) => r.email).join(", "),
+        sent_count: sent,
+        failed_count: failed,
+        sent_at: new Date().toISOString(),
+      });
+    } catch (logError) {
+      console.error("Error logging email:", logError);
+    }
 
     return {
       success: true,
@@ -188,50 +330,8 @@ export const sendBulkEmail = async ({ recipients, subject, body, variables = [] 
   }
 };
 
-// ============================================
-// GET TEMPLATE FROM DATABASE
-// ============================================
-export const getTemplate = async (templateId) => {
-  try {
-    const { data, error } = await supabase
-      .from("email_templates")
-      .select("*")
-      .eq("id", templateId)
-      .single();
-
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error("Error fetching template:", error);
-    return null;
-  }
-};
-
-// ============================================
-// SAVE TEMPLATE
-// ============================================
-export const saveTemplate = async (template) => {
-  try {
-    const { data, error } = await supabase
-      .from("email_templates")
-      .upsert({
-        ...template,
-        updated_at: new Date().toISOString(),
-      })
-      .select();
-
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error("Error saving template:", error);
-    throw error;
-  }
-};
-
 export default {
   sendEmail,
   sendBulkEmail,
   emailTemplates,
-  getTemplate,
-  saveTemplate,
 };

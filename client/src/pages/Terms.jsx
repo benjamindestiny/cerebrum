@@ -26,31 +26,31 @@ const Terms = () => {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div className="text-center">
-        <FileText className="w-16 h-16 text-[#6C2BD9] mx-auto mb-4" />
-        <h1 className="text-4xl font-bold text-white">Terms of Service</h1>
-        <p className="text-gray-400 mt-2">Effective: July 2025</p>
+    <div className="max-w-4xl mx-auto space-y-8  text-white border-[#2A2A4A]">
+      <div className="text-center  text-white border-[#2A2A4A]">
+        <FileText className="w-16 h-16 text-blue-400 mx-auto mb-4  text-white border-[#2A2A4A]" />
+        <h1 className="text-4xl font-bold text-white  text-white border-[#2A2A4A]">Terms of Service</h1>
+        <p className="text-gray-400 mt-2  text-white border-[#2A2A4A]">Effective: July 2025</p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4  text-white border-[#2A2A4A]">
         {sections.map((section, index) => (
-          <div key={index} className="glass-card p-6 hover:border-[#6C2BD9]/30 transition-all duration-300">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-[#6C2BD9]/20 rounded-lg">
-                <section.icon className="w-6 h-6 text-[#6C2BD9]" />
+          <div key={index} className="glass-card p-6 hover:border-blue-500/30 transition-all   text-white border-[#2A2A4A]">
+            <div className="flex items-start gap-4  text-white border-[#2A2A4A]">
+              <div className="p-3  rounded-lg  text-white border-[#2A2A4A]">
+                <section.icon className="w-6 h-6 text-blue-400  text-white border-[#2A2A4A]" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white mb-2">{section.title}</h2>
-                <p className="text-gray-400 leading-relaxed">{section.content}</p>
+                <h2 className="text-xl font-bold text-white mb-2  text-white border-[#2A2A4A]">{section.title}</h2>
+                <p className="text-gray-400 leading-relaxed  text-white border-[#2A2A4A]">{section.content}</p>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="glass-card p-6 border border-yellow-400/20 bg-yellow-400/5">
-        <p className="text-sm text-gray-400">
+      <div className="glass-card p-6 border border-teal-400/20 bg-teal-400/5  text-white border-[#2A2A4A]">
+        <p className="text-sm text-gray-400  text-white border-[#2A2A4A]">
           Last updated: July 2025. These terms may be updated periodically. 
           We will notify users of any significant changes.
         </p>

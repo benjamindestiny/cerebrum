@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { 
   Users, UserPlus, UserMinus, Crown, Trophy,
@@ -160,113 +159,113 @@ const Multiplayer = () => {
     const totalPlayers = players.length;
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-6  text-white border-[#2A2A4A]">
         {/* Room Info */}
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between">
+        <div className="glass-card p-6  text-white border-[#2A2A4A]">
+          <div className="flex items-center justify-between  text-white border-[#2A2A4A]">
             <div>
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Users className="w-5 h-5 text-[#6C2BD9]" />
+              <h2 className="text-xl font-bold text-white flex items-center gap-2  text-white border-[#2A2A4A]">
+                <Users className="w-5 h-5 text-blue-400  text-white border-[#2A2A4A]" />
                 Game Lobby
               </h2>
-              <p className="text-sm text-gray-400">Waiting for players to join...</p>
+              <p className="text-sm text-gray-400  text-white border-[#2A2A4A]">Waiting for players to join...</p>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-[#6C2BD9]/20 rounded-lg">
+            <div className="flex items-center gap-3  text-white border-[#2A2A4A]">
+              <div className="flex items-center gap-2 px-3 py-1.5  rounded-lg  text-white border-[#2A2A4A]">
                 <Wifi className={`w-4 h-4 ${isConnected ? 'text-green-400' : 'text-red-400'}`} />
-                <span className="text-xs text-gray-300">{isConnected ? 'Connected' : 'Disconnected'}</span>
+                <span className="text-xs text-gray-300  text-white border-[#2A2A4A]">{isConnected ? 'Connected' : 'Disconnected'}</span>
               </div>
               <button
                 onClick={handleLeaveRoom}
-                className="text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-1"
+                className="text-gray-400  transition-colors text-sm flex items-center gap-1  text-white border-[#2A2A4A]"
               >
-                <ArrowLeft className="w-4 h-4" /> Leave
+                <ArrowLeft className="w-4 h-4  text-white border-[#2A2A4A]" /> Leave
               </button>
             </div>
           </div>
         </div>
 
         {/* Room Code */}
-        <div className="glass-card p-6 text-center">
-          <p className="text-sm text-gray-400 mb-2">Share this code with friends to join</p>
-          <div className="flex items-center justify-center gap-4">
-            <div className="text-3xl font-bold tracking-widest text-white bg-[#2D2D5E] px-6 py-3 rounded-lg border border-[#6C2BD9]/30">
+        <div className="glass-card p-6 text-center  text-white border-[#2A2A4A]">
+          <p className="text-sm text-gray-400 mb-2  text-white border-[#2A2A4A]">Share this code with friends to join</p>
+          <div className="flex items-center justify-center gap-4  text-white border-[#2A2A4A]">
+            <div className="text-3xl font-bold tracking-widest text-white bg-[#262626] px-6 py-3 rounded-lg border border-blue-500/30  text-white border-[#2A2A4A]">
               {roomCode}
             </div>
             <button
               onClick={copyRoomCode}
-              className="p-3 bg-[#6C2BD9]/20 rounded-lg hover:bg-[#6C2BD9]/30 transition-colors"
+              className="p-3  rounded-lg /30 transition-colors  text-white border-[#2A2A4A]"
             >
-              {copied ? <Check className="w-5 h-5 text-green-400" /> : <Copy className="w-5 h-5 text-[#6C2BD9]" />}
+              {copied ? <Check className="w-5 h-5 text-green-400  text-white border-[#2A2A4A]" /> : <Copy className="w-5 h-5 text-blue-400  text-white border-[#2A2A4A]" />}
             </button>
-            <button className="p-3 bg-[#6C2BD9]/20 rounded-lg hover:bg-[#6C2BD9]/30 transition-colors">
-              <Share2 className="w-5 h-5 text-[#6C2BD9]" />
+            <button className="p-3  rounded-lg /30 transition-colors  text-white border-[#2A2A4A]">
+              <Share2 className="w-5 h-5 text-blue-400  text-white border-[#2A2A4A]" />
             </button>
           </div>
-          <div className="mt-3 text-xs text-gray-500">
+          <div className="mt-3 text-xs text-gray-500  text-white border-[#2A2A4A]">
             {isHost ? 'You are the host' : 'You are a player'}
           </div>
         </div>
 
         {/* Players */}
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-white font-semibold flex items-center gap-2">
-              <Users className="w-4 h-4 text-[#6C2BD9]" />
+        <div className="glass-card p-6  text-white border-[#2A2A4A]">
+          <div className="flex items-center justify-between mb-4  text-white border-[#2A2A4A]">
+            <h3 className="text-white font-semibold flex items-center gap-2  text-white border-[#2A2A4A]">
+              <Users className="w-4 h-4 text-blue-400  text-white border-[#2A2A4A]" />
               Players ({totalPlayers})
-              <span className="text-xs text-gray-400">({readyCount} ready)</span>
+              <span className="text-xs text-gray-400  text-white border-[#2A2A4A]">({readyCount} ready)</span>
             </h3>
             {isHost && (
               <button
                 onClick={startGame}
                 disabled={readyCount < 2}
-                className="btn-primary text-sm px-4 py-2 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-primary text-sm px-4 py-2 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed  text-white border-[#2A2A4A]"
               >
-                <Play className="w-4 h-4" /> Start Game
+                <Play className="w-4 h-4  text-white border-[#2A2A4A]" /> Start Game
               </button>
             )}
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3  text-white border-[#2A2A4A]">
             {players.map((player) => (
               <div key={player.id} className={`p-3 rounded-lg text-center ${
-                player.isHost ? 'border border-[#6C2BD9]/30 bg-[#6C2BD9]/10' : 'bg-white/5'
+                player.isHost ? 'border border-blue-500/30 ' : 'bg-white/5'
               }`}>
-                <div className="text-2xl">{player.avatar}</div>
-                <div className="text-sm text-white font-medium truncate">{player.name}</div>
-                {player.isHost && <span className="text-xs text-[#6C2BD9]">👑 Host</span>}
-                {player.isReady && <span className="text-xs text-green-400">✅ Ready</span>}
+                <div className="text-2xl  text-white border-[#2A2A4A]">{player.avatar}</div>
+                <div className="text-sm text-white font-medium truncate  text-white border-[#2A2A4A]">{player.name}</div>
+                {player.isHost && <span className="text-xs text-blue-400  text-white border-[#2A2A4A]">👑 Host</span>}
+                {player.isReady && <span className="text-xs text-green-400  text-white border-[#2A2A4A]">✅ Ready</span>}
               </div>
             ))}
           </div>
           {isHost && readyCount < 2 && totalPlayers > 0 && (
-            <p className="text-xs text-yellow-400 mt-3 text-center">
+            <p className="text-xs text-teal-400 mt-3 text-center  text-white border-[#2A2A4A]">
               Need at least 2 ready players to start
             </p>
           )}
           {totalPlayers === 0 && (
-            <p className="text-sm text-gray-400 text-center py-4">
+            <p className="text-sm text-gray-400 text-center py-4  text-white border-[#2A2A4A]">
               No players yet. Share the room code!
             </p>
           )}
         </div>
 
         {/* Chat */}
-        <div className="glass-card p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <MessageCircle className="w-4 h-4 text-gray-400" />
-            <span className="text-sm text-gray-400">Chat</span>
+        <div className="glass-card p-4  text-white border-[#2A2A4A]">
+          <div className="flex items-center gap-2 mb-3  text-white border-[#2A2A4A]">
+            <MessageCircle className="w-4 h-4 text-gray-400  text-white border-[#2A2A4A]" />
+            <span className="text-sm text-gray-400  text-white border-[#2A2A4A]">Chat</span>
           </div>
-          <div className="h-24 overflow-y-auto mb-3 space-y-1">
+          <div className="h-24 overflow-y-auto mb-3 space-y-1  text-white border-[#2A2A4A]">
             {messages.map((msg) => (
-              <div key={msg.id} className="flex items-start gap-2 text-xs">
-                <span className="text-[#6C2BD9] font-medium">{msg.sender}:</span>
-                <span className="text-gray-300">{msg.message}</span>
-                <span className="text-gray-500 ml-auto">{msg.time}</span>
+              <div key={msg.id} className="flex items-start gap-2 text-xs  text-white border-[#2A2A4A]">
+                <span className="text-blue-400 font-medium  text-white border-[#2A2A4A]">{msg.sender}:</span>
+                <span className="text-gray-300  text-white border-[#2A2A4A]">{msg.message}</span>
+                <span className="text-gray-500 ml-auto  text-white border-[#2A2A4A]">{msg.time}</span>
               </div>
             ))}
             <div ref={messagesEndRef} />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2  text-white border-[#2A2A4A]">
             <input
               ref={inputRef}
               type="text"
@@ -274,13 +273,13 @@ const Multiplayer = () => {
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              className="flex-1 px-3 py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white placeholder-gray-500 focus:border-[#6C2BD9] focus:outline-none text-sm"
+              className="flex-1 px-3 py-2 bg-[#262626] rounded-lg border border-white/10 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none text-sm  text-white border-[#2A2A4A]"
             />
             <button
               onClick={handleSendMessage}
-              className="px-4 py-2 bg-[#6C2BD9] rounded-lg hover:bg-[#5A1BB8] transition-colors"
+              className="px-4 py-2 bg-blue-500 rounded-lg  transition-colors  text-white border-[#2A2A4A]"
             >
-              <Send className="w-4 h-4 text-white" />
+              <Send className="w-4 h-4 text-white  text-white border-[#2A2A4A]" />
             </button>
           </div>
         </div>
@@ -295,37 +294,37 @@ const Multiplayer = () => {
     const progress = ((currentQuestion + 1) / questions.length) * 100;
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-6  text-white border-[#2A2A4A]">
         {/* Game Header */}
-        <div className="glass-card p-4">
-          <div className="flex items-center justify-between">
+        <div className="glass-card p-4  text-white border-[#2A2A4A]">
+          <div className="flex items-center justify-between  text-white border-[#2A2A4A]">
             <div>
-              <span className="text-sm text-gray-400">Question {currentQuestion + 1} of {questions.length}</span>
-              <div className="text-xs text-gray-500 mt-1">Score: {score} points</div>
+              <span className="text-sm text-gray-400  text-white border-[#2A2A4A]">Question {currentQuestion + 1} of {questions.length}</span>
+              <div className="text-xs text-gray-500 mt-1  text-white border-[#2A2A4A]">Score: {score} points</div>
             </div>
-            <motion.div 
+            <div 
               className={`flex items-center gap-2 ${timeLeft <= 5 ? 'text-red-400' : 'text-[#00C9A7]'}`}
               animate={timeLeft <= 5 ? { scale: [1, 1.1, 1] } : {}}
-              transition={{ duration: 0.5, repeat: Infinity }}
+              
             >
-              <Timer className="w-4 h-4" />
-              <span className="font-bold">{timeLeft}s</span>
-            </motion.div>
+              <Timer className="w-4 h-4  text-white border-[#2A2A4A]" />
+              <span className="font-bold  text-white border-[#2A2A4A]">{timeLeft}s</span>
+            </div>
           </div>
-          <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden mt-2">
-            <motion.div 
-              className="h-full bg-gradient-to-r from-[#6C2BD9] to-[#8B5CF6]"
-              initial={{ width: 0 }}
+          <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden mt-2  text-white border-[#2A2A4A]">
+            <div 
+              className="h-full     text-white border-[#2A2A4A]"
+              
               animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.5 }}
+              
             />
           </div>
         </div>
 
         {/* Question */}
-        <div className="glass-card p-6">
-          <h2 className="text-xl text-white font-medium mb-6">{q.question}</h2>
-          <div className="space-y-3">
+        <div className="glass-card p-6  text-white border-[#2A2A4A]">
+          <h2 className="text-xl text-white font-medium mb-6  text-white border-[#2A2A4A]">{q.question}</h2>
+          <div className="space-y-3  text-white border-[#2A2A4A]">
             {q.options.map((option, index) => {
               const isSelected = answers[currentQuestion] === index;
               const isCorrect = index === q.correct;
@@ -333,42 +332,42 @@ const Multiplayer = () => {
               const showWrong = isSelected && !isCorrect;
               
               return (
-                <motion.button
+                <button
                   key={index}
                   whileHover={answers[currentQuestion] === undefined ? { scale: 1.02 } : {}}
                   whileTap={answers[currentQuestion] === undefined ? { scale: 0.98 } : {}}
                   onClick={() => handleAnswer(index)}
                   disabled={answers[currentQuestion] !== undefined}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 ${
-                    answers[currentQuestion] === undefined ? 'bg-white/5 hover:bg-white/10 text-gray-300 border border-transparent' :
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-all  ${
+                    answers[currentQuestion] === undefined ? 'bg-white/5 /15 text-gray-300 border border-transparent' :
                     showCorrect ? 'bg-[#00C9A7]/30 border border-[#00C9A7] text-white' :
                     showWrong ? 'bg-red-500/30 border border-red-500 text-white' :
                     'bg-white/5 text-gray-400 border border-transparent'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between  text-white border-[#2A2A4A]">
                     <span>{option}</span>
                     {answers[currentQuestion] !== undefined && (
                       <span>
-                        {isCorrect && <Check className="w-5 h-5 text-[#00C9A7]" />}
-                        {isSelected && !isCorrect && <X className="w-5 h-5 text-red-400" />}
+                        {isCorrect && <Check className="w-5 h-5 text-[#00C9A7]  text-white border-[#2A2A4A]" />}
+                        {isSelected && !isCorrect && <X className="w-5 h-5 text-red-400  text-white border-[#2A2A4A]" />}
                       </span>
                     )}
                   </div>
-                </motion.button>
+                </button>
               );
             })}
           </div>
         </div>
 
         {/* Players' Scores */}
-        <div className="glass-card p-4">
-          <div className="flex items-center justify-between">
+        <div className="glass-card p-4  text-white border-[#2A2A4A]">
+          <div className="flex items-center justify-between  text-white border-[#2A2A4A]">
             {players.map((player) => (
-              <div key={player.id} className="text-center">
-                <div className="text-2xl">{player.avatar}</div>
-                <div className="text-xs text-gray-400 truncate max-w-[60px]">{player.name}</div>
-                <div className="text-sm font-bold text-white">{player.score}</div>
+              <div key={player.id} className="text-center  text-white border-[#2A2A4A]">
+                <div className="text-2xl  text-white border-[#2A2A4A]">{player.avatar}</div>
+                <div className="text-xs text-gray-400 truncate max-w-[60px]  text-white border-[#2A2A4A]">{player.name}</div>
+                <div className="text-sm font-bold text-white  text-white border-[#2A2A4A]">{player.score}</div>
               </div>
             ))}
           </div>
@@ -383,46 +382,46 @@ const Multiplayer = () => {
     const winner = sortedPlayers[0];
 
     return (
-      <div className="space-y-6">
-        <div className="glass-card p-8 text-center">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 200 }}
+      <div className="space-y-6  text-white border-[#2A2A4A]">
+        <div className="glass-card p-8 text-center  text-white border-[#2A2A4A]">
+          <div
+            
+            
+            
           >
-            <Trophy className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
-          </motion.div>
-          <h2 className="text-2xl font-bold text-white">🏆 {winner?.name} Wins!</h2>
-          <p className="text-gray-400">Score: {winner?.score} points</p>
+            <Trophy className="w-16 h-16 text-teal-400 mx-auto mb-4  text-white border-[#2A2A4A]" />
+          </div>
+          <h2 className="text-2xl font-bold text-white  text-white border-[#2A2A4A]">🏆 {winner?.name} Wins!</h2>
+          <p className="text-gray-400  text-white border-[#2A2A4A]">Score: {winner?.score} points</p>
         </div>
 
-        <div className="glass-card p-6">
-          <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-            <Medal className="w-4 h-4 text-yellow-400" />
+        <div className="glass-card p-6  text-white border-[#2A2A4A]">
+          <h3 className="text-white font-semibold mb-4 flex items-center gap-2  text-white border-[#2A2A4A]">
+            <Medal className="w-4 h-4 text-teal-400  text-white border-[#2A2A4A]" />
             Final Scores
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-2  text-white border-[#2A2A4A]">
             {sortedPlayers.map((player, index) => (
               <div key={player.id} className={`flex items-center justify-between p-3 rounded-lg ${
-                index === 0 ? 'bg-yellow-400/10 border border-yellow-400/20' :
+                index === 0 ? 'bg-teal-400/10 border border-teal-400/20' :
                 index === 1 ? 'bg-gray-400/10 border border-gray-400/20' :
                 index === 2 ? 'bg-amber-600/10 border border-amber-600/20' :
                 'bg-white/5'
               }`}>
-                <div className="flex items-center gap-3">
-                  <span className="text-lg">{index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '#' + (index + 1)}</span>
-                  <span className="text-2xl">{player.avatar}</span>
-                  <span className="text-white font-medium">{player.name}</span>
+                <div className="flex items-center gap-3  text-white border-[#2A2A4A]">
+                  <span className="text-lg  text-white border-[#2A2A4A]">{index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '#' + (index + 1)}</span>
+                  <span className="text-2xl  text-white border-[#2A2A4A]">{player.avatar}</span>
+                  <span className="text-white font-medium  text-white border-[#2A2A4A]">{player.name}</span>
                 </div>
-                <div className="text-right">
-                  <div className="text-white font-bold">{player.score || 0} pts</div>
+                <div className="text-right  text-white border-[#2A2A4A]">
+                  <div className="text-white font-bold  text-white border-[#2A2A4A]">{player.score || 0} pts</div>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="flex gap-4 justify-center">
+        <div className="flex gap-4 justify-center  text-white border-[#2A2A4A]">
           <button
             onClick={() => {
               setGameState('lobby');
@@ -433,15 +432,15 @@ const Multiplayer = () => {
               // Reset player scores
               setPlayers(prev => prev.map(p => ({ ...p, score: 0 })));
             }}
-            className="btn-primary flex items-center gap-2"
+            className="btn-primary flex items-center gap-2  text-white border-[#2A2A4A]"
           >
-            <RefreshCw className="w-4 h-4" /> Play Again
+            <RefreshCw className="w-4 h-4  text-white border-[#2A2A4A]" /> Play Again
           </button>
           <button
             onClick={handleLeaveRoom}
-            className="btn-secondary flex items-center gap-2"
+            className="btn-secondary flex items-center gap-2  text-white border-[#2A2A4A]"
           >
-            <ArrowLeft className="w-4 h-4" /> Leave Room
+            <ArrowLeft className="w-4 h-4  text-white border-[#2A2A4A]" /> Leave Room
           </button>
         </div>
       </div>
@@ -449,7 +448,7 @@ const Multiplayer = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-3xl mx-auto  text-white border-[#2A2A4A]">
       {gameState === 'lobby' && renderLobby()}
       {gameState === 'playing' && renderPlaying()}
       {gameState === 'results' && renderResults()}

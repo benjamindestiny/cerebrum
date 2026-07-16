@@ -313,7 +313,7 @@ export const readingMaterials = [
     icon: "🎬",
     difficulty: "Medium",
     estimatedTime: "8 min read",
-    content: "<h3>The History of Cinema</h3><p>The history of cinema began in the late 19th century with the invention of the motion picture camera. The first films were short, silent, and simple.</p><p>In the 1920s, sound was introduced to films, revolutionizing the industry and leading to the 'Golden Age of Hollywood.'</p><p>Today, cinema is a powerful form of storytelling that reaches audiences around the world.</p>",
+    content: "<h3>The History of Cinema</h3><p>The history of cinema began in the late 19th century with the invention of the picture camera. The first films were short, silent, and simple.</p><p>In the 1920s, sound was introduced to films, revolutionizing the industry and leading to the 'Golden Age of Hollywood.'</p><p>Today, cinema is a powerful form of storytelling that reaches audiences around the world.</p>",
     questions: [
       { question: "When did the history of cinema begin?", options: ["19th century", "18th century", "20th century", "17th century"], correct: 0 },
       { question: "What was introduced to films in the 1920s?", options: ["Sound", "Color", "Digital", "Animation"], correct: 0 },

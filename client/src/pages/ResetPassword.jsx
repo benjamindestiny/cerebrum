@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { Lock, Loader2, CheckCircle } from 'lucide-react';
 import { supabase } from '../services/supabase';
@@ -46,68 +45,68 @@ const ResetPassword = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0f0f1a] p-4">
-        <div className="glass-card p-8 max-w-md w-full text-center">
-          <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">Password Updated!</h2>
-          <p className="text-gray-400">Your password has been successfully reset.</p>
-          <p className="text-gray-400 text-sm mt-2">Redirecting to login...</p>
+      <div className="min-h-screen flex items-center justify-center bg-[#0D0D0D] p-4  text-white border-[#2A2A4A]">
+        <div className="glass-card p-8 max-w-md w-full text-center  text-white border-[#2A2A4A]">
+          <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4  text-white border-[#2A2A4A]" />
+          <h2 className="text-2xl font-bold text-white mb-2  text-white border-[#2A2A4A]">Password Updated!</h2>
+          <p className="text-gray-400  text-white border-[#2A2A4A]">Your password has been successfully reset.</p>
+          <p className="text-gray-400 text-sm mt-2  text-white border-[#2A2A4A]">Redirecting to login...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0f0f1a] p-4">
-      <div className="glass-card p-8 max-w-md w-full">
-        <div className="text-center mb-8">
-          <div className="inline-block p-3 bg-[#7c3aed]/20 rounded-full mb-4">
-            <Lock className="w-12 h-12 text-[#a78bfa]" />
+    <div className="min-h-screen flex items-center justify-center bg-[#0D0D0D] p-4  text-white border-[#2A2A4A]">
+      <div className="glass-card p-8 max-w-md w-full  text-white border-[#2A2A4A]">
+        <div className="text-center mb-8  text-white border-[#2A2A4A]">
+          <div className="inline-block p-3  rounded-full mb-4  text-white border-[#2A2A4A]">
+            <Lock className="w-12 h-12 text-[#3B82F6CC]  text-white border-[#2A2A4A]" />
           </div>
-          <h2 className="text-2xl font-bold text-white">Set New Password</h2>
-          <p className="text-gray-400 text-sm mt-2">
+          <h2 className="text-2xl font-bold text-white  text-white border-[#2A2A4A]">Set New Password</h2>
+          <p className="text-gray-400 text-sm mt-2  text-white border-[#2A2A4A]">
             Enter your new password below.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+        <form onSubmit={handleSubmit} className="space-y-4  text-white border-[#2A2A4A]">
+          <div className="relative  text-white border-[#2A2A4A]">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500  text-white border-[#2A2A4A]" />
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="New Password"
-              className="input-theme pl-10 w-full"
+              className="input-theme pl-10 w-full  text-white border-[#2A2A4A]"
               required
             />
           </div>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+          <div className="relative  text-white border-[#2A2A4A]">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500  text-white border-[#2A2A4A]" />
             <input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm New Password"
-              className="input-theme pl-10 w-full"
+              className="input-theme pl-10 w-full  text-white border-[#2A2A4A]"
               required
             />
           </div>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          <button
+            
+            
             type="submit"
             disabled={loading}
-            className="w-full btn-primary flex items-center justify-center gap-2 py-3"
+            className="w-full btn-primary flex items-center justify-center gap-2 py-3  text-white border-[#2A2A4A]"
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Update Password'}
-          </motion.button>
+            {loading ? <Loader2 className="w-5 h-5 animate-spin  text-white border-[#2A2A4A]" /> : 'Update Password'}
+          </button>
         </form>
 
-        <div className="mt-4 text-center">
+        <div className="mt-4 text-center  text-white border-[#2A2A4A]">
           <button
             onClick={() => navigate('/auth')}
-            className="text-sm text-gray-400 hover:text-[#a78bfa] transition-colors"
+            className="text-sm text-gray-400 hover:text-[#3B82F6CC] transition-colors  text-white border-[#2A2A4A]"
           >
             Back to Sign In
           </button>

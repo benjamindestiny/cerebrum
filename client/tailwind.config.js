@@ -6,19 +6,19 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: "#6C2BD9",
-          light: "#8B5CF6",
-          dark: "#5A1BB8",
+          DEFAULT: "#3B82F6",
+          light: "#60A5FA",
+          dark: "#2563EB",
         },
-        secondary: {
-          DEFAULT: "#00C9A7",
-          light: "#34D399",
-          dark: "#059669",
+        accent: {
+          DEFAULT: "#14B8A6",
+          light: "#2DD4BF",
+          dark: "#0D9488",
         },
         dark: {
-          DEFAULT: "#0A0A1A",
-          card: "#1A1A3E",
-          input: "#2D2D5E",
+          DEFAULT: "#0C0C1A",
+          card: "#181830",
+          input: "#1E1E3A",
         },
       },
       fontFamily: {

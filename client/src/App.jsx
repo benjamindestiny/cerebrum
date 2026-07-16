@@ -1,3 +1,4 @@
+import PublicDashboard from "./pages/PublicDashboard";
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -52,8 +53,8 @@ const ProtectedRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-12 h-12 border-4 border-[#7c3aed] border-t-transparent rounded-full animate-spin"></div>
+      <div className="flex items-center justify-center min-h-screen  text-white border-[#2A2A4A]">
+        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin  text-white border-[#2A2A4A]"></div>
       </div>
     );
   }
@@ -69,7 +70,7 @@ function App() {
   return (
     <Router>
       <AdminProvider>
-        <div className="min-h-screen bg-[#0f0f1a]">
+        <div className="min-h-screen bg-[#0D0D0D]  text-white border-[#2A2A4A]">
           <Routes>
             {/* Public routes */}
             <Route path="/auth" element={<Auth />} />
@@ -129,6 +130,7 @@ function App() {
             {/* Main Layout routes */}
             <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />
+<Route index element={<PublicDashboard />} />
               <Route path="*" element={<NotFound />} />
               <Route path="donate" element={<Donate />} />
               <Route path="categories" element={<Categories />} />

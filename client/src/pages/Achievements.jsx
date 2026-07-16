@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Trophy,
   Award,
@@ -61,7 +60,7 @@ const Achievements = () => {
       requirement: (stats) => stats.totalQuizzes >= 1,
       getProgress: (stats) => Math.min(stats.totalQuizzes, 1),
       maxProgress: 1,
-      color: "from-green-500 to-emerald-500",
+      color: " ",
       bgColor: "bg-green-500/10",
       borderColor: "border-green-500/30",
     },
@@ -75,8 +74,8 @@ const Achievements = () => {
       requirement: (stats) => stats.totalQuizzes >= 5,
       getProgress: (stats) => Math.min(stats.totalQuizzes, 5),
       maxProgress: 5,
-      color: "from-blue-500 to-cyan-500",
-      bgColor: "bg-blue-500/10",
+      color: " ",
+      bgColor: "",
       borderColor: "border-blue-500/30",
     },
     {
@@ -89,7 +88,7 @@ const Achievements = () => {
       requirement: (stats) => stats.totalQuizzes >= 10,
       getProgress: (stats) => Math.min(stats.totalQuizzes, 10),
       maxProgress: 10,
-      color: "from-purple-500 to-pink-500",
+      color: " ",
       bgColor: "bg-purple-500/10",
       borderColor: "border-purple-500/30",
     },
@@ -103,9 +102,9 @@ const Achievements = () => {
       requirement: (stats) => stats.totalQuizzes >= 25,
       getProgress: (stats) => Math.min(stats.totalQuizzes, 25),
       maxProgress: 25,
-      color: "from-yellow-500 to-orange-500",
-      bgColor: "bg-yellow-500/10",
-      borderColor: "border-yellow-500/30",
+      color: " ",
+      bgColor: "bg-teal-500/10",
+      borderColor: "border-teal-500/30",
     },
     // Score Achievements
     {
@@ -118,9 +117,9 @@ const Achievements = () => {
       requirement: (stats) => stats.perfectScores >= 1,
       getProgress: (stats) => Math.min(stats.perfectScores, 1),
       maxProgress: 1,
-      color: "from-yellow-400 to-amber-500",
-      bgColor: "bg-yellow-400/10",
-      borderColor: "border-yellow-400/30",
+      color: " ",
+      bgColor: "bg-teal-400/10",
+      borderColor: "border-teal-400/30",
     },
     {
       id: "perfect_5",
@@ -132,7 +131,7 @@ const Achievements = () => {
       requirement: (stats) => stats.perfectScores >= 5,
       getProgress: (stats) => Math.min(stats.perfectScores, 5),
       maxProgress: 5,
-      color: "from-amber-400 to-orange-500",
+      color: " ",
       bgColor: "bg-amber-400/10",
       borderColor: "border-amber-400/30",
     },
@@ -146,7 +145,7 @@ const Achievements = () => {
       requirement: (stats) => stats.bestScore >= 90,
       getProgress: (stats) => Math.min(stats.bestScore, 100),
       maxProgress: 100,
-      color: "from-emerald-400 to-teal-500",
+      color: " ",
       bgColor: "bg-emerald-400/10",
       borderColor: "border-emerald-400/30",
     },
@@ -160,9 +159,9 @@ const Achievements = () => {
       requirement: (stats) => stats.bestScore >= 80,
       getProgress: (stats) => Math.min(stats.bestScore, 100),
       maxProgress: 100,
-      color: "from-blue-400 to-indigo-500",
+      color: " ",
       bgColor: "bg-blue-400/10",
-      borderColor: "border-blue-400/30",
+      borderColor: "border-[#3B82F6CC]/30",
     },
     // Streak Achievements
     {
@@ -175,7 +174,7 @@ const Achievements = () => {
       requirement: (stats) => stats.streak >= 3,
       getProgress: (stats) => Math.min(stats.streak, 3),
       maxProgress: 3,
-      color: "from-orange-400 to-red-500",
+      color: " ",
       bgColor: "bg-orange-400/10",
       borderColor: "border-orange-400/30",
     },
@@ -189,7 +188,7 @@ const Achievements = () => {
       requirement: (stats) => stats.streak >= 7,
       getProgress: (stats) => Math.min(stats.streak, 7),
       maxProgress: 7,
-      color: "from-red-500 to-rose-600",
+      color: " ",
       bgColor: "bg-red-500/10",
       borderColor: "border-red-500/30",
     },
@@ -203,7 +202,7 @@ const Achievements = () => {
       requirement: (stats) => stats.streak >= 30,
       getProgress: (stats) => Math.min(stats.streak, 30),
       maxProgress: 30,
-      color: "from-purple-500 to-pink-600",
+      color: " ",
       bgColor: "bg-purple-500/10",
       borderColor: "border-purple-500/30",
     },
@@ -218,7 +217,7 @@ const Achievements = () => {
       requirement: (stats) => stats.riddlesSolved >= 1,
       getProgress: (stats) => Math.min(stats.riddlesSolved, 1),
       maxProgress: 1,
-      color: "from-indigo-400 to-purple-500",
+      color: " ",
       bgColor: "bg-indigo-400/10",
       borderColor: "border-indigo-400/30",
     },
@@ -232,7 +231,7 @@ const Achievements = () => {
       requirement: (stats) => stats.riddlesSolved >= 10,
       getProgress: (stats) => Math.min(stats.riddlesSolved, 10),
       maxProgress: 10,
-      color: "from-purple-500 to-violet-600",
+      color: " ",
       bgColor: "bg-purple-500/10",
       borderColor: "border-purple-500/30",
     },
@@ -246,7 +245,7 @@ const Achievements = () => {
       requirement: (stats) => stats.riddlesSolved >= 25,
       getProgress: (stats) => Math.min(stats.riddlesSolved, 25),
       maxProgress: 25,
-      color: "from-violet-500 to-fuchsia-600",
+      color: " ",
       bgColor: "bg-violet-500/10",
       borderColor: "border-violet-500/30",
     },
@@ -261,7 +260,7 @@ const Achievements = () => {
       requirement: (stats) => stats.readArticles >= 1,
       getProgress: (stats) => Math.min(stats.readArticles, 1),
       maxProgress: 1,
-      color: "from-emerald-400 to-green-500",
+      color: " ",
       bgColor: "bg-emerald-400/10",
       borderColor: "border-emerald-400/30",
     },
@@ -275,7 +274,7 @@ const Achievements = () => {
       requirement: (stats) => stats.readArticles >= 10,
       getProgress: (stats) => Math.min(stats.readArticles, 10),
       maxProgress: 10,
-      color: "from-green-500 to-teal-600",
+      color: " ",
       bgColor: "bg-green-500/10",
       borderColor: "border-green-500/30",
     },
@@ -290,7 +289,7 @@ const Achievements = () => {
       requirement: (stats) => stats.totalPoints >= 100,
       getProgress: (stats) => Math.min(stats.totalPoints, 100),
       maxProgress: 100,
-      color: "from-cyan-400 to-blue-500",
+      color: " ",
       bgColor: "bg-cyan-400/10",
       borderColor: "border-cyan-400/30",
     },
@@ -304,8 +303,8 @@ const Achievements = () => {
       requirement: (stats) => stats.totalPoints >= 500,
       getProgress: (stats) => Math.min(stats.totalPoints, 500),
       maxProgress: 500,
-      color: "from-blue-500 to-indigo-600",
-      bgColor: "bg-blue-500/10",
+      color: " ",
+      bgColor: "",
       borderColor: "border-blue-500/30",
     },
     {
@@ -318,7 +317,7 @@ const Achievements = () => {
       requirement: (stats) => stats.totalPoints >= 1000,
       getProgress: (stats) => Math.min(stats.totalPoints, 1000),
       maxProgress: 1000,
-      color: "from-indigo-500 to-purple-600",
+      color: " ",
       bgColor: "bg-indigo-500/10",
       borderColor: "border-indigo-500/30",
     },
@@ -333,7 +332,7 @@ const Achievements = () => {
       requirement: (stats) => stats.totalTime >= 3600,
       getProgress: (stats) => Math.min(stats.totalTime, 3600),
       maxProgress: 3600,
-      color: "from-rose-400 to-pink-500",
+      color: " ",
       bgColor: "bg-rose-400/10",
       borderColor: "border-rose-400/30",
     },
@@ -347,7 +346,7 @@ const Achievements = () => {
       requirement: (stats) => stats.totalQuizzes >= 3,
       getProgress: (stats) => Math.min(stats.totalQuizzes, 3),
       maxProgress: 3,
-      color: "from-fuchsia-400 to-pink-500",
+      color: " ",
       bgColor: "bg-fuchsia-400/10",
       borderColor: "border-fuchsia-400/30",
     },
@@ -476,8 +475,8 @@ const Achievements = () => {
 
   const getCategoryColor = (category) => {
     const colors = {
-      Quiz: "text-blue-400",
-      Score: "text-yellow-400",
+      Quiz: "text-[#3B82F6CC]",
+      Score: "text-teal-400",
       Streak: "text-orange-400",
       Riddles: "text-purple-400",
       Reading: "text-green-400",
@@ -495,49 +494,49 @@ const Achievements = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[300px] px-4">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 sm:w-12 sm:h-12 text-[#7c3aed] animate-spin mx-auto mb-3" />
-          <p className="text-gray-400 text-sm">Loading achievements...</p>
+      <div className="flex items-center justify-center min-h-[300px] px-4  text-white border-[#2A2A4A]">
+        <div className="text-center  text-white border-[#2A2A4A]">
+          <Loader2 className="w-8 h-8 sm:w-12 sm:h-12 text-blue-400 animate-spin mx-auto mb-3  text-white border-[#2A2A4A]" />
+          <p className="text-gray-400 text-sm  text-white border-[#2A2A4A]">Loading achievements...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12">
+    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12  text-white border-[#2A2A4A]">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-        <div className="flex items-center gap-2 sm:gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4  text-white border-[#2A2A4A]">
+        <div className="flex items-center gap-2 sm:gap-4  text-white border-[#2A2A4A]">
           <button
             onClick={() => navigate("/dashboard")}
-            className="p-1.5 sm:p-2 rounded-lg hover:bg-white/5 transition-colors"
+            className="p-1.5 sm:p-2 rounded-lg /5 transition-colors  text-white border-[#2A2A4A]"
           >
-            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400  text-white border-[#2A2A4A]" />
           </button>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white flex items-center gap-2 sm:gap-3">
-            <Trophy className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-yellow-400" />
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white flex items-center gap-2 sm:gap-3  text-white border-[#2A2A4A]">
+            <Trophy className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-teal-400  text-white border-[#2A2A4A]" />
             Achievements
           </h1>
         </div>
-        <div className="flex flex-wrap gap-2 sm:gap-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3  text-white border-[#2A2A4A]">
           <button
             onClick={refreshAchievements}
             disabled={refreshing}
-            className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-xs sm:text-sm flex items-center gap-2"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-700 text-white rounded-lg  transition-colors text-xs sm:text-sm flex items-center gap-2  text-white border-[#2A2A4A]"
           >
             <RefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 ${refreshing ? "animate-spin" : ""}`} />
             {refreshing ? "Refreshing..." : "Refresh"}
           </button>
-          <div className="glass-card px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2">
-            <Star className="w-4 h-4 text-yellow-400" />
-            <span className="text-xs sm:text-sm text-white">
+          <div className="glass-card px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2  text-white border-[#2A2A4A]">
+            <Star className="w-4 h-4 text-teal-400  text-white border-[#2A2A4A]" />
+            <span className="text-xs sm:text-sm text-white  text-white border-[#2A2A4A]">
               {earnedCount}/{totalAchievements}
             </span>
           </div>
-          <div className="glass-card px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#7c3aed]" />
-            <span className="text-xs sm:text-sm text-white">
+          <div className="glass-card px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2  text-white border-[#2A2A4A]">
+            <Sparkles className="w-4 h-4 text-blue-400  text-white border-[#2A2A4A]" />
+            <span className="text-xs sm:text-sm text-white  text-white border-[#2A2A4A]">
               {totalPoints} pts
             </span>
           </div>
@@ -545,22 +544,22 @@ const Achievements = () => {
       </div>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <div className="glass-card p-3 sm:p-4 text-center">
-          <div className="text-lg sm:text-xl font-bold text-white">{stats.totalQuizzes}</div>
-          <div className="text-[10px] sm:text-xs text-gray-400">Quizzes Taken</div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4  text-white border-[#2A2A4A]">
+        <div className="glass-card p-3 sm:p-4 text-center  text-white border-[#2A2A4A]">
+          <div className="text-lg sm:text-xl font-bold text-white  text-white border-[#2A2A4A]">{stats.totalQuizzes}</div>
+          <div className="text-[10px] sm:text-xs text-gray-400  text-white border-[#2A2A4A]">Quizzes Taken</div>
         </div>
-        <div className="glass-card p-3 sm:p-4 text-center">
-          <div className="text-lg sm:text-xl font-bold text-yellow-400">{stats.bestScore}%</div>
-          <div className="text-[10px] sm:text-xs text-gray-400">Best Score</div>
+        <div className="glass-card p-3 sm:p-4 text-center  text-white border-[#2A2A4A]">
+          <div className="text-lg sm:text-xl font-bold text-teal-400  text-white border-[#2A2A4A]">{stats.bestScore}%</div>
+          <div className="text-[10px] sm:text-xs text-gray-400  text-white border-[#2A2A4A]">Best Score</div>
         </div>
-        <div className="glass-card p-3 sm:p-4 text-center">
-          <div className="text-lg sm:text-xl font-bold text-orange-400">{stats.streak}</div>
-          <div className="text-[10px] sm:text-xs text-gray-400">Day Streak</div>
+        <div className="glass-card p-3 sm:p-4 text-center  text-white border-[#2A2A4A]">
+          <div className="text-lg sm:text-xl font-bold text-orange-400  text-white border-[#2A2A4A]">{stats.streak}</div>
+          <div className="text-[10px] sm:text-xs text-gray-400  text-white border-[#2A2A4A]">Day Streak</div>
         </div>
-        <div className="glass-card p-3 sm:p-4 text-center">
-          <div className="text-lg sm:text-xl font-bold text-[#7c3aed]">{stats.totalPoints}</div>
-          <div className="text-[10px] sm:text-xs text-gray-400">Total Points</div>
+        <div className="glass-card p-3 sm:p-4 text-center  text-white border-[#2A2A4A]">
+          <div className="text-lg sm:text-xl font-bold text-blue-400  text-white border-[#2A2A4A]">{stats.totalPoints}</div>
+          <div className="text-[10px] sm:text-xs text-gray-400  text-white border-[#2A2A4A]">Total Points</div>
         </div>
       </div>
 
@@ -572,70 +571,70 @@ const Achievements = () => {
         if (categoryAchievements.length === 0) return null;
 
         return (
-          <div key={category} className="space-y-3 sm:space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="text-lg sm:text-xl">{getCategoryIcon(category)}</span>
+          <div key={category} className="space-y-3 sm:space-y-4  text-white border-[#2A2A4A]">
+            <div className="flex items-center gap-2  text-white border-[#2A2A4A]">
+              <span className="text-lg sm:text-xl  text-white border-[#2A2A4A]">{getCategoryIcon(category)}</span>
               <h2 className={`text-base sm:text-lg font-bold ${getCategoryColor(category)}`}>
                 {category}
               </h2>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-500  text-white border-[#2A2A4A]">
                 ({earnedInCategory}/{categoryAchievements.length})
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4  text-white border-[#2A2A4A]">
               {categoryAchievements.map((achievement) => {
                 const isEarned = achievement.requirement(stats);
                 const progress = calculateProgress(achievement);
                 const progressText = getProgressText(achievement);
 
                 return (
-                  <motion.div
+                  <div
                     key={achievement.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    whileHover={{ y: -4 }}
-                    className={`glass-card p-4 sm:p-5 transition-all duration-300 ${
+                    
+                    
+                    
+                    className={`glass-card p-4 sm:p-5 transition-all  ${
                       isEarned
                         ? `border ${achievement.borderColor} ${achievement.bgColor}`
                         : "border border-white/5 opacity-70"
                     }`}
                   >
-                    <div className="flex items-start gap-3 sm:gap-4">
+                    <div className="flex items-start gap-3 sm:gap-4  text-white border-[#2A2A4A]">
                       <div className={`text-2xl sm:text-3xl ${isEarned ? "" : "opacity-50"}`}>
                         {isEarned ? achievement.icon : "🔒"}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex-1 min-w-0  text-white border-[#2A2A4A]">
+                        <div className="flex items-center gap-2 flex-wrap  text-white border-[#2A2A4A]">
                           <h3 className={`text-sm sm:text-base font-semibold ${isEarned ? "text-white" : "text-gray-400"}`}>
                             {achievement.title}
                           </h3>
-                          {isEarned && <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />}
+                          {isEarned && <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0  text-white border-[#2A2A4A]" />}
                         </div>
-                        <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">
+                        <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5  text-white border-[#2A2A4A]">
                           {achievement.description}
                         </p>
-                        <div className="mt-2">
-                          <div className="flex items-center justify-between text-[10px] sm:text-xs text-gray-500">
+                        <div className="mt-2  text-white border-[#2A2A4A]">
+                          <div className="flex items-center justify-between text-[10px] sm:text-xs text-gray-500  text-white border-[#2A2A4A]">
                             <span>{isEarned ? "✅ Completed!" : progressText}</span>
-                            <span className="text-[#7c3aed]">+{achievement.points} pts</span>
+                            <span className="text-blue-400  text-white border-[#2A2A4A]">+{achievement.points} pts</span>
                           </div>
-                          <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mt-1">
-                            <motion.div
-                              initial={{ width: 0 }}
+                          <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mt-1  text-white border-[#2A2A4A]">
+                            <div
+                              
                               animate={{ width: `${progress}%` }}
-                              transition={{ duration: 0.5 }}
+                              
                               className={`h-full rounded-full ${
                                 isEarned
-                                  ? "bg-gradient-to-r from-green-400 to-emerald-500"
-                                  : "bg-gradient-to-r from-[#7c3aed] to-[#a78bfa]"
+                                  ? "  "
+                                  : "  "
                               }`}
                             />
                           </div>
                         </div>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 );
               })}
             </div>
@@ -645,16 +644,16 @@ const Achievements = () => {
 
       {/* No Achievements Yet */}
       {earnedCount === 0 && (
-        <div className="glass-card p-8 sm:p-12 text-center">
-          <div className="flex flex-col items-center gap-3 sm:gap-4">
-            <div className="text-5xl sm:text-6xl">🏆</div>
-            <h3 className="text-lg sm:text-xl font-bold text-white">No Achievements Yet</h3>
-            <p className="text-gray-400 text-sm sm:text-base max-w-md">
+        <div className="glass-card p-8 sm:p-12 text-center  text-white border-[#2A2A4A]">
+          <div className="flex flex-col items-center gap-3 sm:gap-4  text-white border-[#2A2A4A]">
+            <div className="text-5xl sm:text-6xl  text-white border-[#2A2A4A]">🏆</div>
+            <h3 className="text-lg sm:text-xl font-bold text-white  text-white border-[#2A2A4A]">No Achievements Yet</h3>
+            <p className="text-gray-400 text-sm sm:text-base max-w-md  text-white border-[#2A2A4A]">
               Start taking quizzes, solving riddles, and reading articles to earn your first achievement!
             </p>
             <button
               onClick={() => navigate("/categories")}
-              className="btn-primary mt-2 text-xs sm:text-sm px-4 sm:px-6 py-1.5 sm:py-2"
+              className="btn-primary mt-2 text-xs sm:text-sm px-4 sm:px-6 py-1.5 sm:py-2  text-white border-[#2A2A4A]"
             >
               Start Learning
             </button>
@@ -664,19 +663,19 @@ const Achievements = () => {
 
       {/* Recent Achievements */}
       {recentAchievements.length > 0 && (
-        <div className="glass-card p-4 sm:p-5 md:p-6 border border-yellow-400/20 bg-yellow-400/5">
-          <h3 className="text-sm sm:text-base font-bold text-white mb-3 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-yellow-400" />
+        <div className="glass-card p-4 sm:p-5 md:p-6 border border-teal-400/20 bg-teal-400/5  text-white border-[#2A2A4A]">
+          <h3 className="text-sm sm:text-base font-bold text-white mb-3 flex items-center gap-2  text-white border-[#2A2A4A]">
+            <Sparkles className="w-4 h-4 text-teal-400  text-white border-[#2A2A4A]" />
             Recently Earned
           </h3>
-          <div className="flex flex-wrap gap-2 sm:gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3  text-white border-[#2A2A4A]">
             {recentAchievements.map((achievement) => (
               <div
                 key={achievement.id}
                 className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full ${achievement.bgColor} border ${achievement.borderColor}`}
               >
-                <span className="text-sm sm:text-base">{achievement.icon}</span>
-                <span className="text-xs sm:text-sm text-white">{achievement.title}</span>
+                <span className="text-sm sm:text-base  text-white border-[#2A2A4A]">{achievement.icon}</span>
+                <span className="text-xs sm:text-sm text-white  text-white border-[#2A2A4A]">{achievement.title}</span>
               </div>
             ))}
           </div>
@@ -684,27 +683,27 @@ const Achievements = () => {
       )}
 
       {/* Total Stats */}
-      <div className="glass-card p-4 sm:p-5 md:p-6">
-        <h3 className="text-sm sm:text-base font-bold text-white mb-3 flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-[#7c3aed]" />
+      <div className="glass-card p-4 sm:p-5 md:p-6  text-white border-[#2A2A4A]">
+        <h3 className="text-sm sm:text-base font-bold text-white mb-3 flex items-center gap-2  text-white border-[#2A2A4A]">
+          <TrendingUp className="w-4 h-4 text-blue-400  text-white border-[#2A2A4A]" />
           Achievement Progress
         </h3>
-        <div className="space-y-2 sm:space-y-3">
+        <div className="space-y-2 sm:space-y-3  text-white border-[#2A2A4A]">
           <div>
-            <div className="flex justify-between text-xs sm:text-sm text-gray-400">
+            <div className="flex justify-between text-xs sm:text-sm text-gray-400  text-white border-[#2A2A4A]">
               <span>Overall Progress</span>
               <span>{Math.round((earnedCount / totalAchievements) * 100)}%</span>
             </div>
-            <div className="w-full h-2 sm:h-2.5 bg-white/10 rounded-full overflow-hidden mt-1">
-              <motion.div
-                initial={{ width: 0 }}
+            <div className="w-full h-2 sm:h-2.5 bg-white/10 rounded-full overflow-hidden mt-1  text-white border-[#2A2A4A]">
+              <div
+                
                 animate={{ width: `${(earnedCount / totalAchievements) * 100}%` }}
-                transition={{ duration: 0.5 }}
-                className="h-full bg-gradient-to-r from-[#7c3aed] to-yellow-400 rounded-full"
+                
+                className="h-full    rounded-full  text-white border-[#2A2A4A]"
               />
             </div>
           </div>
-          <div className="flex flex-wrap justify-between gap-2 text-xs text-gray-500">
+          <div className="flex flex-wrap justify-between gap-2 text-xs text-gray-500  text-white border-[#2A2A4A]">
             <span>🏆 {earnedCount} / {totalAchievements} unlocked</span>
             <span>⭐ {totalPoints} points earned from achievements</span>
           </div>

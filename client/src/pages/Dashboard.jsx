@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { sendEmail, emailTemplates } from "../services/emailService";
-import DailyMissions from "../components/Common/DailyMissions";
 import { motion } from "framer-motion";
+import DailyMissions from "../components/Common/DailyMissions";
 import {
   Trophy,
   Brain,
@@ -12,10 +11,7 @@ import {
   Users,
   Clock,
   ArrowRight,
-  Award,
   Flame,
-  Star,
-  Mail,
   Sparkles,
   Loader2,
   ChevronRight,
@@ -45,24 +41,15 @@ const Dashboard = () => {
 
   const loadDashboardData = useCallback(async () => {
     if (!currentUser) return;
-
     setLoadingStats(true);
     try {
-      console.log("📊 Loading dashboard for user:", currentUser.id);
-
       const { data: quizResults, error } = await supabase
         .from("quiz_results")
         .select("*")
         .eq("user_id", currentUser.id)
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("❌ Error fetching:", error);
-        setLoadingStats(false);
-        return;
-      }
-
-      console.log(`📊 Found ${quizResults?.length || 0} quiz results`);
+      if (error) throw error;
 
       if (!quizResults || quizResults.length === 0) {
         setStats({
@@ -126,20 +113,17 @@ const Dashboard = () => {
         }
       }
 
-      const newStats = {
+      setStats({
         totalQuizzes,
         totalPoints,
         averageScore,
         streak,
         bestScore,
         perfectScores,
-      };
-
-      console.log("📊 Stats calculated:", newStats);
-      setStats(newStats);
+      });
       setRecentActivity(quizResults.slice(0, 5));
     } catch (error) {
-      console.error("❌ Error loading dashboard:", error);
+      console.error("Error loading dashboard:", error);
     } finally {
       setLoadingStats(false);
     }
@@ -154,75 +138,89 @@ const Dashboard = () => {
   const refreshDashboard = async () => {
     setRefreshing(true);
     await loadDashboardData();
-    setRefreshTrigger((prev) => prev + 1);
+    setRefreshTrigger(prev => prev + 1);
     setRefreshing(false);
   };
 
-  // Public Dashboard
   if (!currentUser && !loading) {
     return (
-      <div className="max-w-6xl mx-auto space-y-6 px-3 sm:px-4 pb-12">
-        <div className="glass-card p-6 sm:p-8 md:p-12 text-center">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="max-w-6xl mx-auto space-y-6 px-3 sm:px-4 pb-12"
+      >
+        <div className="glass-card p-12 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2, type: "spring", damping: 20 }}
           >
             <div className="flex justify-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#7c3aed]/20 flex items-center justify-center">
-                <Brain className="w-8 h-8 sm:w-10 sm:h-10 text-[#7c3aed]" />
-              </div>
+              <motion.div 
+                animate={{ rotate: [0, 5, -5, 0] }}
+                transition={{ duration: 4, repeat: Infinity }}
+                className="w-20 h-20 rounded-full bg-blue-500/20 flex items-center justify-center"
+              >
+                <Brain className="w-10 h-10 text-blue-400" />
+              </motion.div>
             </div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mt-4">
-              Welcome to <span className="text-[#7c3aed]">Cerebrum</span>
+            <h1 className="text-4xl font-bold text-white mt-4">
+              Welcome to <span className="text-blue-400">Cerebrum</span>
             </h1>
-            <p className="text-gray-400 text-sm sm:text-base md:text-lg max-w-2xl mx-auto mt-2">
-              Challenge your mind with interactive quizzes, riddles, and brain
-              teasers.
+            <p className="text-gray-400 text-lg max-w-2xl mx-auto mt-2">
+              Challenge your mind with interactive quizzes, riddles, and brain teasers.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center mt-4">
-              <button
-                onClick={() => navigate("/auth")}
-                className="px-5 sm:px-6 py-2.5 sm:py-3 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors"
+            <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate("/auth")} 
+                className="btn-primary"
               >
                 Get Started <ArrowRight className="w-4 h-4 inline" />
-              </button>
-              <button
-                onClick={() => navigate("/categories")}
-                className="px-5 sm:px-6 py-2.5 sm:py-3 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors"
+              </motion.button>
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate("/categories")} 
+                className="btn-secondary"
               >
                 Browse Quizzes
-              </button>
+              </motion.button>
             </div>
           </motion.div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   if (loadingStats) {
     return (
-      <div className="max-w-6xl mx-auto flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2 className="w-10 h-10 text-[#7c3aed] animate-spin mx-auto mb-3" />
-          <p className="text-gray-400 text-sm">Loading your stats...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12">
+    <div className="max-w-6xl mx-auto space-y-6 px-3 sm:px-4 pb-12">
       {/* Welcome Card */}
-      <div className="glass-card p-5 sm:p-6 md:p-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="glass-card p-6 md:p-8"
+      >
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
+            <h1 className="text-2xl font-bold text-white">
               Welcome back,{" "}
-              <span className="text-[#7c3aed]">
+              <span className="text-blue-400">
                 {currentUser?.user_metadata?.name || "Learner"}! 👋
               </span>
             </h1>
-            <p className="text-gray-400 text-xs sm:text-sm mt-1">
+            <p className="text-gray-400 text-sm mt-1">
               {stats.streak > 0
                 ? `🔥 ${stats.streak}-day learning streak!`
                 : "Ready to learn something new today?"}
@@ -232,162 +230,165 @@ const Dashboard = () => {
             <button
               onClick={refreshDashboard}
               disabled={refreshing}
-              className="px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-xs sm:text-sm flex items-center gap-2"
+              className="px-3 py-2 bg-surface-2 text-gray-300 rounded-lg hover:bg-white/10 transition-colors text-sm flex items-center gap-2"
             >
-              <RefreshCw
-                className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
-              />
+              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
               {refreshing ? "Refreshing..." : "Refresh"}
             </button>
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => navigate("/categories")}
-              className="px-4 py-2 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors text-sm flex items-center gap-2"
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm flex items-center gap-2"
             >
               <Play className="w-4 h-4" /> Start Learning
-            </button>
+            </motion.button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Daily Missions */}
-      <DailyMissions
-        userId={currentUser?.id}
-        onMissionComplete={(data) => {
-          console.log("Mission complete!", data);
-          loadDashboardData();
-        }}
-        refreshTrigger={refreshTrigger}
-      />
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.4 }}
+      >
+        <DailyMissions
+          userId={currentUser?.id}
+          onMissionComplete={() => loadDashboardData()}
+          refreshTrigger={refreshTrigger}
+        />
+      </motion.div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <div className="glass-card p-3 sm:p-4 text-center">
-          <Trophy className="w-5 h-5 text-yellow-400 mx-auto mb-1" />
-          <div className="text-lg sm:text-xl md:text-2xl font-bold text-white">
-            {stats.totalPoints}
-          </div>
-          <div className="text-[10px] sm:text-xs text-gray-400">
-            Total Points
-          </div>
-        </div>
-        <div className="glass-card p-3 sm:p-4 text-center">
-          <Flame className="w-5 h-5 text-orange-400 mx-auto mb-1" />
-          <div className="text-lg sm:text-xl md:text-2xl font-bold text-white">
-            {stats.streak}
-          </div>
-          <div className="text-[10px] sm:text-xs text-gray-400">Day Streak</div>
-        </div>
-        <div className="glass-card p-3 sm:p-4 text-center">
-          <Brain className="w-5 h-5 text-[#7c3aed] mx-auto mb-1" />
-          <div className="text-lg sm:text-xl md:text-2xl font-bold text-white">
-            {stats.totalQuizzes}
-          </div>
-          <div className="text-[10px] sm:text-xs text-gray-400">
-            Quizzes Taken
-          </div>
-        </div>
-        <div className="glass-card p-3 sm:p-4 text-center">
-          <Target className="w-5 h-5 text-green-400 mx-auto mb-1" />
-          <div className="text-lg sm:text-xl md:text-2xl font-bold text-white">
-            {stats.averageScore}%
-          </div>
-          <div className="text-[10px] sm:text-xs text-gray-400">Avg Score</div>
-        </div>
-      </div>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15, duration: 0.4 }}
+        className="grid grid-cols-2 sm:grid-cols-4 gap-4"
+      >
+        {[
+          { icon: Trophy, label: 'Total Points', value: stats.totalPoints, color: 'text-yellow-400' },
+          { icon: Flame, label: 'Day Streak', value: stats.streak, color: 'text-orange-400' },
+          { icon: Brain, label: 'Quizzes Taken', value: stats.totalQuizzes, color: 'text-blue-400' },
+          { icon: Target, label: 'Avg Score', value: `${stats.averageScore}%`, color: 'text-teal-400' },
+        ].map((item, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 + index * 0.08, duration: 0.3 }}
+            className="glass-card p-4 text-center hover-lift"
+          >
+            <item.icon className={`w-6 h-6 ${item.color} mx-auto mb-1`} />
+            <div className="text-2xl font-bold text-white">{item.value}</div>
+            <div className="text-xs text-gray-400">{item.label}</div>
+          </motion.div>
+        ))}
+      </motion.div>
 
-      {/* Quick Action Buttons */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <button
-          onClick={() => navigate("/categories")}
-          className="glass-card p-3 sm:p-4 text-center hover:border-[#7c3aed]/30 transition-all group"
-        >
-          <div className="w-10 h-10 rounded-full bg-[#7c3aed]/10 flex items-center justify-center mx-auto mb-2 group-hover:bg-[#7c3aed]/20 transition-all">
-            <Play className="w-5 h-5 text-[#7c3aed]" />
-          </div>
-          <span className="text-white text-sm font-medium">Take Quiz</span>
-          <p className="text-gray-400 text-xs">Test your knowledge</p>
-        </button>
-        <button
-          onClick={() => navigate("/riddles")}
-          className="glass-card p-3 sm:p-4 text-center hover:border-[#7c3aed]/30 transition-all group"
-        >
-          <div className="w-10 h-10 rounded-full bg-purple-400/10 flex items-center justify-center mx-auto mb-2 group-hover:bg-purple-400/20 transition-all">
-            <Puzzle className="w-5 h-5 text-purple-400" />
-          </div>
-          <span className="text-white text-sm font-medium">Riddles</span>
-          <p className="text-gray-400 text-xs">Solve brain teasers</p>
-        </button>
-        <button
-          onClick={() => navigate("/read-and-test")}
-          className="glass-card p-3 sm:p-4 text-center hover:border-[#7c3aed]/30 transition-all group"
-        >
-          <div className="w-10 h-10 rounded-full bg-green-400/10 flex items-center justify-center mx-auto mb-2 group-hover:bg-green-400/20 transition-all">
-            <BookOpen className="w-5 h-5 text-green-400" />
-          </div>
-          <span className="text-white text-sm font-medium">Read & Test</span>
-          <p className="text-gray-400 text-xs">Learn and quiz</p>
-        </button>
-        <button
-          onClick={() => navigate("/leaderboard")}
-          className="glass-card p-3 sm:p-4 text-center hover:border-[#7c3aed]/30 transition-all group"
-        >
-          <div className="w-10 h-10 rounded-full bg-yellow-400/10 flex items-center justify-center mx-auto mb-2 group-hover:bg-yellow-400/20 transition-all">
-            <Users className="w-5 h-5 text-yellow-400" />
-          </div>
-          <span className="text-white text-sm font-medium">Leaderboard</span>
-          <p className="text-gray-400 text-xs">See top players</p>
-        </button>
-      </div>
+      {/* Quick Actions */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.4 }}
+        className="grid grid-cols-2 sm:grid-cols-4 gap-4"
+      >
+        {[
+          { icon: Play, label: 'Take Quiz', desc: 'Test your knowledge', path: '/categories', color: 'text-blue-400' },
+          { icon: Puzzle, label: 'Riddles', desc: 'Solve brain teasers', path: '/riddles', color: 'text-purple-400' },
+          { icon: BookOpen, label: 'Read & Test', desc: 'Learn and quiz', path: '/read-and-test', color: 'text-green-400' },
+          { icon: Users, label: 'Leaderboard', desc: 'See top players', path: '/leaderboard', color: 'text-yellow-400' },
+        ].map((item, index) => (
+          <motion.button
+            key={index}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.35 + index * 0.06, duration: 0.3 }}
+            whileHover={{ scale: 1.02, y: -3 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate(item.path)}
+            className="glass-card p-4 text-center hover:border-blue-500/30 transition-all"
+          >
+            <div className={`w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-2`}>
+              <item.icon className={`w-6 h-6 ${item.color}`} />
+            </div>
+            <span className="text-white font-medium">{item.label}</span>
+            <p className="text-gray-400 text-xs">{item.desc}</p>
+          </motion.button>
+        ))}
+      </motion.div>
 
       {/* Recent Activity */}
       {recentActivity.length > 0 && (
-        <div className="glass-card p-4 sm:p-6">
-          <h3 className="text-white font-semibold mb-3 flex items-center gap-2 text-sm sm:text-base">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.4 }}
+          className="glass-card p-6"
+        >
+          <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
             <Clock className="w-4 h-4 text-gray-400" /> Recent Activity
           </h3>
-          <div className="space-y-1.5 sm:space-y-2">
+          <div className="space-y-2">
             {recentActivity.map((activity, index) => (
-              <div
+              <motion.div
                 key={index}
-                className="flex items-center justify-between p-2 sm:p-3 bg-white/5 rounded-lg"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.55 + index * 0.05, duration: 0.3 }}
+                className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
               >
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#7c3aed]"></div>
-                  <span className="text-white text-xs sm:text-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                  <span className="text-white text-sm">
                     {activity.category || "Quiz"}
                   </span>
-                  <span className="text-gray-400 text-xs">
+                  <span className="text-gray-400 text-sm">
                     {activity.percentage || activity.score}%
                   </span>
                 </div>
-                <span className="text-gray-500 text-[10px] sm:text-xs">
+                <span className="text-gray-500 text-xs">
                   {new Date(activity.created_at).toLocaleDateString()}
                 </span>
-              </div>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Daily Challenge CTA */}
-      <div className="glass-card p-4 sm:p-6 border border-[#7c3aed]/20 bg-[#7c3aed]/5">
-        <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6, duration: 0.4 }}
+        className="glass-card p-6 border border-blue-500/20 bg-blue-500/5"
+      >
+        <div className="flex flex-col sm:flex-row items-center gap-4">
           <div className="flex-1 text-center sm:text-left">
-            <h3 className="text-white font-semibold text-sm sm:text-base flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-yellow-400" /> Daily Challenge
+            <h3 className="text-white font-semibold flex items-center gap-2">
+              <motion.span
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+              >
+                <Sparkles className="w-5 h-5 text-yellow-400" />
+              </motion.span>
+              Daily Challenge
             </h3>
-            <p className="text-gray-400 text-xs sm:text-sm mt-1">
+            <p className="text-gray-400 text-sm mt-1">
               Complete a quiz today to maintain your streak!
             </p>
           </div>
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => navigate("/categories")}
-            className="px-4 py-2 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors text-sm flex items-center gap-2 w-full sm:w-auto justify-center"
+            className="px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm flex items-center gap-2 w-full sm:w-auto justify-center"
           >
             Take Challenge <ChevronRight className="w-4 h-4" />
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

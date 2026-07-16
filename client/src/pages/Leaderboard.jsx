@@ -11,7 +11,6 @@ import {
   Calendar,
   Zap,
   Loader2,
-  Star,
   RefreshCw,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
@@ -29,49 +28,20 @@ const Leaderboard = () => {
     getCurrentUser();
   }, [location.key]);
 
-  useEffect(() => {
-    const subscription = supabase
-      .channel("leaderboard_updates")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "quiz_results",
-        },
-        () => {
-          refreshLeaderboard();
-        },
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
   const getCurrentUser = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     setCurrentUser(user);
   };
 
-  // ============================================
-  // WEIGHTED SCORE CALCULATION
-  // ============================================
   const calculateWeightedScore = (records) => {
     if (!records || records.length === 0) return 0;
-
-    const sorted = [...records].sort(
-      (a, b) => new Date(b.created_at) - new Date(a.created_at),
+    const sorted = [...records].sort((a, b) => 
+      new Date(b.created_at) - new Date(a.created_at)
     );
-
     let totalWeight = 0;
     let weightedSum = 0;
-
     sorted.forEach((record, index) => {
-      const weight = Math.max(0, 1 - index * 0.05);
+      const weight = Math.max(0, 1 - (index * 0.05));
       let pct = parseFloat(record.percentage) || 0;
       if (pct === 0 && record.score && record.total_questions) {
         pct = Math.round((record.score / record.total_questions) * 100);
@@ -79,7 +49,6 @@ const Leaderboard = () => {
       weightedSum += pct * weight;
       totalWeight += weight;
     });
-
     return totalWeight > 0 ? Math.round(weightedSum / totalWeight) : 0;
   };
 
@@ -131,13 +100,9 @@ const Leaderboard = () => {
         };
 
         let percentage = parseFloat(record.percentage) || 0;
-
         if (percentage === 0 && record.score && record.total_questions) {
-          percentage = Math.round(
-            (record.score / record.total_questions) * 100,
-          );
+          percentage = Math.round((record.score / record.total_questions) * 100);
         }
-
         if (percentage === 0 && record.score) {
           percentage = Math.round(record.score);
         }
@@ -162,7 +127,6 @@ const Leaderboard = () => {
         player.quizCount += 1;
         player.bestScore = Math.max(player.bestScore, percentage);
         player.records.push(record);
-
         if (record.created_at > player.lastPlayed) {
           player.lastPlayed = record.created_at;
         }
@@ -170,15 +134,12 @@ const Leaderboard = () => {
 
       const leaderboard = Object.values(playerMap).map((player) => ({
         ...player,
-        averageScore:
-          player.quizCount > 0
-            ? Math.round(player.totalScore / player.quizCount)
-            : 0,
-        // ✅ FIX: Calculate weighted score
+        averageScore: player.quizCount > 0
+          ? Math.round(player.totalScore / player.quizCount)
+          : 0,
         weightedScore: calculateWeightedScore(player.records),
       }));
 
-      // ✅ FIX: Sort by weighted score first, then average
       leaderboard.sort((a, b) => {
         if (b.weightedScore !== a.weightedScore) {
           return b.weightedScore - a.weightedScore;
@@ -194,28 +155,14 @@ const Leaderboard = () => {
       });
 
       const avatarMap = {
-        1: "🧠",
-        2: "🚀",
-        3: "🌟",
-        4: "🎯",
-        5: "💪",
-        6: "🧙",
-        7: "🦊",
-        8: "🐉",
-        9: "🦅",
-        10: "🐺",
-        11: "🦄",
-        12: "🐼",
-        13: "🦁",
-        14: "🐧",
-        15: "🐱",
-        16: "🐶",
+        1: "🧠", 2: "🚀", 3: "🌟", 4: "🎯", 5: "💪",
+        6: "🧙", 7: "🦊", 8: "🐉", 9: "🦅", 10: "🐺",
+        11: "🦄", 12: "🐼", 13: "🦁", 14: "🐧", 15: "🐱", 16: "🐶",
       };
       leaderboard.forEach((player) => {
         player.avatar = avatarMap[player.avatarId] || "🧠";
       });
 
-      console.log("📊 Leaderboard loaded:", leaderboard.length, "players");
       setPlayers(leaderboard);
     } catch (error) {
       console.error("Error loading leaderboard:", error);
@@ -227,42 +174,32 @@ const Leaderboard = () => {
 
   const refreshLeaderboard = async () => {
     setRefreshing(true);
-    try {
-      await loadLeaderboard();
-    } catch (error) {
-      console.error("Error refreshing:", error);
-    } finally {
-      setRefreshing(false);
-    }
+    await loadLeaderboard();
+    setRefreshing(false);
   };
 
-  const getRankIcon = (rank) => {
-    if (rank === 1)
-      return <Crown className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400" />;
-    if (rank === 2)
-      return <Medal className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" />;
-    if (rank === 3)
-      return <Award className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" />;
-    return (
-      <span className="text-muted font-medium text-xs sm:text-sm">#{rank}</span>
-    );
+  const getRankBadge = (rank) => {
+    if (rank === 1) return "🥇";
+    if (rank === 2) return "🥈";
+    if (rank === 3) return "🥉";
+    return `#${rank}`;
   };
 
-  const getRankClass = (rank) => {
-    if (rank === 1) return "border-yellow-400/30 bg-yellow-400/5";
-    if (rank === 2) return "border-gray-400/30 bg-gray-400/5";
-    if (rank === 3) return "border-amber-600/30 bg-amber-600/5";
+  const getRankColor = (rank) => {
+    if (rank === 1) return "bg-yellow-500/10 border-yellow-500/30";
+    if (rank === 2) return "bg-gray-400/10 border-gray-400/30";
+    if (rank === 3) return "bg-amber-600/10 border-amber-600/30";
     return "";
   };
 
   const getScoreColor = (score) => {
     if (score >= 80) return "text-green-400";
-    if (score >= 50) return "text-yellow-400";
+    if (score >= 50) return "text-blue-400";
     return "text-red-400";
   };
 
   const filteredPlayers = players.filter((player) =>
-    player.userName?.toLowerCase().includes(searchTerm.toLowerCase()),
+    player.userName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const currentUserData = players.find((p) => p.userId === currentUser?.id);
@@ -270,95 +207,81 @@ const Leaderboard = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[300px] sm:min-h-[400px]">
-        <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 text-accent animate-spin" />
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      className="max-w-6xl mx-auto space-y-6 px-4 pb-12"
+    >
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white flex items-center gap-2 sm:gap-3">
-            <Trophy className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-yellow-400" />
+          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+            <Trophy className="w-8 h-8 text-yellow-400" />
             Leaderboard
           </h1>
-          <p className="text-muted text-xs sm:text-sm mt-0.5 sm:mt-1">
+          <p className="text-gray-400 text-sm mt-1">
             {players.length} players competing
           </p>
         </div>
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="glass-card px-2.5 sm:px-3 md:px-4 py-1 sm:py-1.5 flex items-center gap-1.5 sm:gap-2">
-            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent" />
-            <span className="text-[10px] sm:text-xs md:text-sm text-gray-300">
-              {players.length} players
-            </span>
+        <div className="flex items-center gap-3">
+          <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 flex items-center gap-2">
+            <Users className="w-4 h-4 text-blue-400" />
+            <span className="text-sm text-gray-300">{players.length} players</span>
           </div>
           <button
             onClick={refreshLeaderboard}
             disabled={refreshing}
-            className="p-1.5 sm:p-2 glass-card hover:bg-white/10 transition-colors disabled:opacity-50"
+            className="p-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all disabled:opacity-50"
           >
-            <RefreshCw
-              className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted ${refreshing ? "animate-spin" : ""}`}
-            />
+            <RefreshCw className={`w-4 h-4 text-gray-400 ${refreshing ? "animate-spin" : ""}`} />
           </button>
         </div>
       </div>
 
+      {/* Current User Rank */}
       {currentUser && currentUserData && (
-        <div className="glass-card p-3 sm:p-4 border-2 border-accent bg-accent/5">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <span className="text-xl sm:text-2xl">
-                {currentUserData.avatar || "🧠"}
-              </span>
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{currentUserData.avatar || "🧠"}</span>
               <div>
-                <p className="text-white font-medium text-xs sm:text-sm md:text-base">
-                  {currentUserData.userName}
-                </p>
-                <p className="text-[10px] sm:text-xs text-muted">
-                  Your current rank
-                </p>
+                <p className="text-white font-medium">{currentUserData.userName}</p>
+                <p className="text-sm text-gray-400">Your current rank</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-6">
               <div className="text-center">
-                <div className="text-lg sm:text-xl md:text-2xl font-bold text-accent">
+                <div className="text-2xl font-bold text-blue-400">
                   #{currentUserRank || "-"}
                 </div>
-                <div className="text-[8px] sm:text-[10px] text-muted-strong">
-                  Rank
-                </div>
-              </div>
-              <div className="text-center px-2 sm:px-3">
-                <div className="text-base sm:text-lg md:text-xl font-bold text-white">
-                  {currentUserData.weightedScore ||
-                    currentUserData.averageScore ||
-                    0}
-                  %
-                </div>
-                <div className="text-[8px] sm:text-[10px] text-muted-strong">
-                  {currentUserData.weightedScore ? "⭐ Weighted" : "Avg"} Score
-                </div>
+                <div className="text-xs text-gray-500">Rank</div>
               </div>
               <div className="text-center">
-                <div className="text-base sm:text-lg md:text-xl font-bold text-accent">
+                <div className="text-xl font-bold text-white">
+                  {currentUserData.weightedScore || currentUserData.averageScore || 0}%
+                </div>
+                <div className="text-xs text-gray-500">Score</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl font-bold text-blue-400">
                   {currentUserData.quizCount || 0}
                 </div>
-                <div className="text-[8px] sm:text-[10px] text-muted-strong">
-                  Quizzes
-                </div>
+                <div className="text-xs text-gray-500">Quizzes</div>
               </div>
               {currentUserData.streak > 0 && (
                 <div className="text-center">
-                  <div className="text-base sm:text-lg md:text-xl font-bold text-orange-400">
+                  <div className="text-xl font-bold text-orange-400">
                     {currentUserData.streak}🔥
                   </div>
-                  <div className="text-[8px] sm:text-[10px] text-muted-strong">
-                    Streak
-                  </div>
+                  <div className="text-xs text-gray-500">Streak</div>
                 </div>
               )}
             </div>
@@ -366,149 +289,139 @@ const Leaderboard = () => {
         </div>
       )}
 
-      <div className="relative w-full sm:w-auto">
-        <Search className="absolute left-2.5 sm:left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted" />
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
         <input
           type="text"
           placeholder="Search players..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full sm:w-40 md:w-48 pl-8 sm:pl-9 pr-3 sm:pr-4 py-1.5 sm:py-2 bg-surface-2 rounded-lg border border-border text-white placeholder-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-xs sm:text-sm"
+          className="w-full sm:w-64 pl-10 pr-4 py-2 bg-[#1E1E3A] border border-white/10 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
         />
       </div>
 
+      {/* Top 3 Podium */}
       {filteredPlayers.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          {filteredPlayers.slice(0, 3).map((player, index) => (
-            <motion.div
-              key={player.userId}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className={`glass-card p-4 sm:p-6 text-center ${getRankClass(index + 1)}`}
-            >
-              <div className="text-3xl sm:text-4xl mb-1 sm:mb-2">
-                {player.avatar || "🧠"}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {filteredPlayers.slice(0, 3).map((player, index) => {
+            const rank = index + 1;
+            return (
+              <div
+                key={player.userId}
+                className={`bg-white/5 border rounded-xl p-6 text-center transition-all ${getRankColor(rank)} hover:border-blue-500/30`}
+              >
+                <div className="text-4xl mb-2">{player.avatar || "🧠"}</div>
+                <div className="text-lg font-bold text-white truncate">
+                  {player.userName}
+                </div>
+                <div className="text-3xl font-bold text-blue-400 mt-1">
+                  {player.weightedScore || player.averageScore}%
+                </div>
+                <div className="text-xs text-gray-500">
+                  {player.weightedScore ? '⭐ Weighted Score' : 'Average Score'}
+                </div>
+                <div className="flex items-center justify-center gap-4 mt-2 text-sm text-gray-400">
+                  <span>{player.quizCount} quizzes</span>
+                  {player.streak > 0 && (
+                    <span className="flex items-center gap-1 text-orange-400">
+                      <Zap className="w-3 h-3" />
+                      {player.streak}d
+                    </span>
+                  )}
+                </div>
+                <div className="mt-3 flex items-center justify-center gap-2">
+                  <span className="text-2xl">{getRankBadge(rank)}</span>
+                  <span className="text-sm text-gray-500">Rank #{rank}</span>
+                </div>
               </div>
-              <div className="text-sm sm:text-base md:text-xl font-bold text-white truncate">
-                {player.userName}
-              </div>
-              <div className="text-xl sm:text-2xl md:text-3xl font-bold text-accent mt-1">
-                {player.weightedScore || player.averageScore}%
-              </div>
-              <div className="text-[10px] text-muted">
-                {player.weightedScore ? "⭐ Weighted Score" : "Average Score"}
-              </div>
-              <div className="flex items-center justify-center gap-2 sm:gap-4 mt-2 text-[10px] sm:text-xs md:text-sm text-muted flex-wrap">
-                <span>{player.quizCount} quizzes</span>
-                {player.streak > 0 && (
-                  <span className="flex items-center gap-1 text-orange-400">
-                    <Zap className="w-3 h-3" />
-                    {player.streak}d streak
-                  </span>
-                )}
-              </div>
-              <div className="mt-2 flex items-center justify-center gap-1">
-                {getRankIcon(index + 1)}
-                <span className="text-[10px] sm:text-xs text-muted">
-                  Rank #{index + 1}
-                </span>
-              </div>
-            </motion.div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      <div className="glass-card p-3 sm:p-6">
-        <h3 className="text-white font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-          <Trophy className="w-4 h-4 text-yellow-400" />
+      {/* All Players List */}
+      <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+        <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+          <Users className="w-4 h-4 text-blue-400" />
           All Players
-          <span className="text-xs text-muted ml-2">
+          <span className="text-sm text-gray-500 ml-2">
             ({filteredPlayers.length} players)
           </span>
         </h3>
-        <div className="space-y-1.5 sm:space-y-2 max-h-[400px] overflow-y-auto pr-1 sm:pr-2">
-          {filteredPlayers.slice(0, 50).map((player) => {
+        <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+          {filteredPlayers.slice(0, 50).map((player, index) => {
             const isCurrentUser = currentUser?.id === player.userId;
             return (
-              <motion.div
+              <div
                 key={player.userId}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: (player.rank || 0) * 0.02 }}
-                className={`flex items-center justify-between p-2 sm:p-3 rounded-lg transition-colors ${
+                className={`flex items-center justify-between p-3 rounded-lg transition-all ${
                   isCurrentUser
-                    ? "bg-accent/10 border border-accent/30"
+                    ? "bg-blue-500/10 border border-blue-500/20"
                     : "hover:bg-white/5"
                 }`}
               >
-                <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-                  <div className="w-5 sm:w-8 text-center flex-shrink-0">
-                    {getRankIcon(player.rank)}
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="w-8 text-center flex-shrink-0">
+                    <span className="text-lg font-bold text-gray-400">#{player.rank}</span>
                   </div>
-                  <span className="text-lg sm:text-xl md:text-2xl flex-shrink-0">
+                  <span className="text-xl flex-shrink-0">
                     {player.avatar || "🧠"}
                   </span>
-                  <span className="text-white font-medium text-xs sm:text-sm md:text-base truncate">
+                  <span className="text-white font-medium truncate">
                     {player.userName}
                     {isCurrentUser && (
-                      <span className="ml-1 sm:ml-2 text-[10px] sm:text-xs text-accent">
-                        (You)
-                      </span>
+                      <span className="ml-2 text-sm text-blue-400">(You)</span>
                     )}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-                  <div className="hidden sm:flex items-center gap-2 text-xs text-muted">
+                <div className="flex items-center gap-4 flex-shrink-0">
+                  <div className="hidden sm:flex items-center gap-2 text-sm text-gray-400">
                     <Calendar className="w-3 h-3" />
                     {player.quizCount}
                   </div>
                   {player.streak > 0 && (
-                    <div className="flex items-center gap-1 text-xs text-orange-400">
+                    <div className="flex items-center gap-1 text-sm text-orange-400">
                       <Zap className="w-3 h-3" />
                       <span className="hidden sm:inline">{player.streak}d</span>
                     </div>
                   )}
                   <div className="text-right">
-                    <div
-                      className={`text-sm sm:text-lg font-bold ${getScoreColor(player.weightedScore || player.averageScore || 0)}`}
-                    >
+                    <div className={`text-lg font-bold ${getScoreColor(player.weightedScore || player.averageScore || 0)}`}>
                       {player.weightedScore || player.averageScore || 0}%
                     </div>
-                    <div className="text-[8px] sm:text-xs text-muted">
-                      {player.weightedScore ? "⭐ Weighted" : "Avg"}
+                    <div className="text-xs text-gray-500">
+                      {player.weightedScore ? '⭐ Weighted' : 'Avg'}
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             );
           })}
         </div>
       </div>
 
+      {/* Empty State */}
       {filteredPlayers.length === 0 && (
-        <div className="glass-card p-8 sm:p-12 text-center">
-          <div className="flex flex-col items-center gap-3 sm:gap-4">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-accent/10 flex items-center justify-center">
-              <Users className="w-8 h-8 sm:w-10 sm:h-10 text-accent" />
+        <div className="bg-white/5 border border-white/10 rounded-xl p-12 text-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-20 h-20 rounded-full bg-blue-500/10 flex items-center justify-center">
+              <Users className="w-10 h-10 text-blue-400" />
             </div>
-            <h3 className="text-lg sm:text-xl font-bold text-white">
-              No Players Yet
-            </h3>
-            <p className="text-muted text-sm sm:text-base max-w-md">
-              Be the first to take a quiz and claim your spot on the
-              leaderboard! 🏆
+            <h3 className="text-xl font-bold text-white">No Players Yet</h3>
+            <p className="text-gray-400 max-w-md">
+              Be the first to take a quiz and claim your spot on the leaderboard! 🏆
             </p>
             <button
               onClick={() => (window.location.href = "/categories")}
-              className="mt-2 px-6 py-2 bg-accent text-white rounded-lg hover:bg-[#6d28d9] transition-colors"
+              className="px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all"
             >
               Start a Quiz
             </button>
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
 

@@ -47,13 +47,10 @@ const ReadAndTest = () => {
   }, []);
 
   const getCurrentUser = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     setUser(user);
   };
 
-  // Save article to history when read
   const saveArticleToHistory = async (articleId) => {
     if (!user) return;
     try {
@@ -94,18 +91,13 @@ const ReadAndTest = () => {
         .single();
 
       const currentStats = userData?.stats || {};
-
       const { data: articles } = await supabase
         .from("article_history")
         .select("id")
         .eq("user_id", user.id);
 
       const readArticles = articles?.length || 0;
-
-      const updatedStats = {
-        ...currentStats,
-        read_articles: readArticles,
-      };
+      const updatedStats = { ...currentStats, read_articles: readArticles };
 
       await supabase
         .from("users")
@@ -142,7 +134,7 @@ const ReadAndTest = () => {
         (m) =>
           m.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
           m.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          m.subcategory.toLowerCase().includes(searchTerm.toLowerCase()),
+          m.subcategory.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -157,7 +149,6 @@ const ReadAndTest = () => {
     setCurrentQuestion(0);
     setShowResults(false);
     setIsSubmitting(false);
-
     saveArticleToHistory(material.id);
   };
 
@@ -238,115 +229,115 @@ const ReadAndTest = () => {
     }
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+  };
+
   const renderBrowseView = () => {
     return (
-      <div className="space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className="space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12"
+      >
+        <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2 sm:gap-3">
-              <BookOpen className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-[#6C2BD9]" />
+              <BookOpen className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-blue-400" />
               Read & Test
             </h1>
             <p className="text-gray-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
               Read educational content and test your comprehension
             </p>
           </div>
-          <div className="glass-card px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2">
-            <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-[#6C2BD9]" />
+          <motion.div 
+            whileHover={{ scale: 1.05 }}
+            className="glass-card px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2"
+          >
+            <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
             <span className="text-xs sm:text-sm text-gray-300">
               {materials.length} Articles
             </span>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
-        <div className="flex flex-wrap gap-1.5 sm:gap-2">
-          <button
-            onClick={() => setSelectedCategory("all")}
-            className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs md:text-sm transition-all whitespace-nowrap ${
-              selectedCategory === "all"
-                ? "bg-[#6C2BD9] text-white"
-                : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
-            }`}
-          >
-            All ({materials.length})
-          </button>
-          {categories
-            .filter((c) => c !== "all")
-            .map((category) => {
-              const count = materials.filter(
-                (m) => m.category === category,
-              ).length;
-              return (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs md:text-sm transition-all whitespace-nowrap ${
-                    selectedCategory === category
-                      ? "bg-[#6C2BD9] text-white"
-                      : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
-                  }`}
-                >
-                  {category} ({count})
-                </button>
-              );
-            })}
-        </div>
+        <motion.div variants={itemVariants} className="flex flex-wrap gap-1.5 sm:gap-2">
+          {["all", ...categories.filter(c => c !== "all")].map((category) => {
+            const count = category === "all" ? materials.length : materials.filter((m) => m.category === category).length;
+            return (
+              <motion.button
+                key={category}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs md:text-sm transition-all whitespace-nowrap ${
+                  selectedCategory === category
+                    ? "bg-blue-500 text-white"
+                    : "bg-white/5 text-gray-400 hover:bg-white/10"
+                }`}
+              >
+                {category === "all" ? "All" : category} ({count})
+              </motion.button>
+            );
+          })}
+        </motion.div>
 
         {selectedCategory !== "all" && (
-          <div className="flex flex-wrap gap-1.5 sm:gap-2">
-            <button
-              onClick={() => setSelectedSubcategory("all")}
-              className={`px-2 py-0.5 sm:py-1 rounded-lg text-[8px] sm:text-[10px] md:text-xs transition-all ${
-                selectedSubcategory === "all"
-                  ? "bg-[#6C2BD9] text-white"
-                  : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              All Subcategories
-            </button>
-            {subcategories
-              .filter((s) => s !== "all")
-              .map((sub) => (
-                <button
-                  key={sub}
-                  onClick={() => setSelectedSubcategory(sub)}
-                  className={`px-2 py-0.5 sm:py-1 rounded-lg text-[8px] sm:text-[10px] md:text-xs transition-all ${
-                    selectedSubcategory === sub
-                      ? "bg-[#6C2BD9] text-white"
-                      : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
-                  }`}
-                >
-                  {sub}
-                </button>
-              ))}
-          </div>
+          <motion.div variants={itemVariants} className="flex flex-wrap gap-1.5 sm:gap-2">
+            {["all", ...subcategories.filter(s => s !== "all")].map((sub) => (
+              <motion.button
+                key={sub}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setSelectedSubcategory(sub)}
+                className={`px-2 py-0.5 sm:py-1 rounded-lg text-[8px] sm:text-[10px] md:text-xs transition-all ${
+                  selectedSubcategory === sub
+                    ? "bg-blue-500 text-white"
+                    : "bg-white/5 text-gray-400 hover:bg-white/10"
+                }`}
+              >
+                {sub === "all" ? "All Subcategories" : sub}
+              </motion.button>
+            ))}
+          </motion.div>
         )}
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-gray-500" />
+        <motion.div variants={itemVariants} className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-gray-500" />
           <input
             type="text"
             placeholder="Search articles..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-8 sm:pl-9 md:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 md:py-3 bg-[#2D2D5E] rounded-lg border border-white/10 text-white placeholder-gray-500 focus:border-[#6C2BD9] focus:outline-none focus:ring-2 focus:ring-[#6C2BD9]/20 transition-all text-xs sm:text-sm md:text-base"
+            className="w-full pl-8 sm:pl-9 md:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 md:py-3 bg-[#262626] rounded-lg border border-white/10 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all text-xs sm:text-sm md:text-base"
           />
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          {filteredMaterials.map((material) => (
+        <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          {filteredMaterials.map((material, index) => (
             <motion.div
               key={material.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              whileHover={{ scale: 1.01 }}
-              className="glass-card p-4 sm:p-5 md:p-6 hover:border-[#6C2BD9]/30 transition-all cursor-pointer"
+              transition={{ delay: index * 0.05 }}
+              whileHover={{ y: -5, borderColor: 'rgba(59,130,246,0.3)' }}
+              className="glass-card p-4 sm:p-5 md:p-6 hover:border-blue-500/30 transition-all cursor-pointer"
               onClick={() => startReading(material)}
             >
               <div className="flex items-start justify-between mb-2 sm:mb-3">
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <span className="text-xl sm:text-2xl">{material.icon}</span>
-                  <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 bg-[#6C2BD9]/20 text-[#6C2BD9] rounded-full">
+                  <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 bg-blue-500/20 text-blue-400 rounded-full">
                     {material.category}
                   </span>
                 </div>
@@ -354,15 +345,13 @@ const ReadAndTest = () => {
                   <span className="text-[8px] sm:text-[10px] md:text-xs text-gray-500">
                     {material.subcategory}
                   </span>
-                  <span
-                    className={`text-[8px] sm:text-[10px] md:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${
-                      material.difficulty === "Easy"
-                        ? "bg-green-500/20 text-green-400"
-                        : material.difficulty === "Medium"
-                          ? "bg-yellow-500/20 text-yellow-400"
-                          : "bg-red-500/20 text-red-400"
-                    }`}
-                  >
+                  <span className={`text-[8px] sm:text-[10px] md:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${
+                    material.difficulty === "Easy"
+                      ? "bg-green-500/20 text-green-400"
+                      : material.difficulty === "Medium"
+                        ? "bg-teal-500/20 text-teal-400"
+                        : "bg-red-500/20 text-red-400"
+                  }`}>
                     {material.difficulty}
                   </span>
                 </div>
@@ -383,13 +372,17 @@ const ReadAndTest = () => {
                   {material.questions.length} questions
                 </span>
               </div>
-              <button className="mt-3 sm:mt-4 w-full btn-secondary text-[10px] sm:text-xs md:text-sm flex items-center justify-center gap-1.5 sm:gap-2 py-1.5 sm:py-2">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="mt-3 sm:mt-4 w-full btn-secondary text-[10px] sm:text-xs md:text-sm flex items-center justify-center gap-1.5 sm:gap-2 py-1.5 sm:py-2"
+              >
                 Start Reading <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
-              </button>
+              </motion.button>
             </motion.div>
           ))}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     );
   };
 
@@ -397,22 +390,31 @@ const ReadAndTest = () => {
     if (!selectedMaterial) return null;
 
     return (
-      <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12">
-        <button
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="max-w-3xl mx-auto space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12"
+      >
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={handleGoBack}
           className="text-gray-400 hover:text-white transition-colors flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm"
         >
           <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" /> Back to Articles
-        </button>
+        </motion.button>
 
-        <div className="glass-card p-4 sm:p-6 md:p-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="glass-card p-4 sm:p-6 md:p-8"
+        >
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 mb-3 sm:mb-4">
             <div>
               <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
-                <span className="text-xl sm:text-2xl">
-                  {selectedMaterial.icon}
-                </span>
-                <span className="text-[10px] sm:text-xs md:text-sm text-[#6C2BD9]">
+                <span className="text-xl sm:text-2xl">{selectedMaterial.icon}</span>
+                <span className="text-[10px] sm:text-xs md:text-sm text-blue-400">
                   {selectedMaterial.category}
                 </span>
                 <span className="text-[8px] sm:text-[10px] md:text-xs text-gray-500">
@@ -423,15 +425,13 @@ const ReadAndTest = () => {
                 {selectedMaterial.title}
               </h2>
             </div>
-            <span
-              className={`text-[8px] sm:text-[10px] md:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${
-                selectedMaterial.difficulty === "Easy"
-                  ? "bg-green-500/20 text-green-400"
-                  : selectedMaterial.difficulty === "Medium"
-                    ? "bg-yellow-500/20 text-yellow-400"
-                    : "bg-red-500/20 text-red-400"
-              }`}
-            >
+            <span className={`text-[8px] sm:text-[10px] md:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${
+              selectedMaterial.difficulty === "Easy"
+                ? "bg-green-500/20 text-green-400"
+                : selectedMaterial.difficulty === "Medium"
+                  ? "bg-teal-500/20 text-teal-400"
+                  : "bg-red-500/20 text-red-400"
+            }`}>
               {selectedMaterial.difficulty}
             </span>
           </div>
@@ -449,7 +449,7 @@ const ReadAndTest = () => {
             className="prose prose-invert max-w-none text-gray-300 leading-relaxed text-sm sm:text-base"
             dangerouslySetInnerHTML={{ __html: selectedMaterial.content }}
           />
-        </div>
+        </motion.div>
 
         <motion.button
           whileHover={{ scale: 1.02 }}
@@ -461,7 +461,7 @@ const ReadAndTest = () => {
           Start Comprehension Quiz
           <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
         </motion.button>
-      </div>
+      </motion.div>
     );
   };
 
@@ -473,15 +473,26 @@ const ReadAndTest = () => {
     const progress = ((currentQuestion + 1) / totalQuestions) * 100;
 
     return (
-      <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12">
-        <button
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="max-w-2xl mx-auto space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12"
+      >
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={handleGoBack}
           className="text-gray-400 hover:text-white transition-colors flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm"
         >
           <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" /> Back to Reading
-        </button>
+        </motion.button>
 
-        <div className="glass-card p-4 sm:p-6 md:p-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="glass-card p-4 sm:p-6 md:p-8"
+        >
           <div className="flex items-center justify-between mb-3 sm:mb-4">
             <span className="text-[10px] sm:text-xs md:text-sm text-gray-400">
               Question {currentQuestion + 1} of {totalQuestions}
@@ -491,9 +502,11 @@ const ReadAndTest = () => {
             </span>
           </div>
           <div className="w-full h-1.5 sm:h-2 bg-white/10 rounded-full overflow-hidden mb-4 sm:mb-6">
-            <div
-              className="h-full bg-gradient-to-r from-[#6C2BD9] to-[#8B5CF6] transition-all duration-300"
-              style={{ width: `${progress}%` }}
+            <motion.div
+              className="h-full bg-gradient-to-r from-blue-500 to-teal-400 rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.5 }}
             />
           </div>
 
@@ -505,37 +518,23 @@ const ReadAndTest = () => {
             {questions[currentQuestion].options.map((option, index) => {
               const isSelected = answers[currentQuestion] === index;
               const isCorrect = index === questions[currentQuestion].correct;
-              const showCorrect =
-                answers[currentQuestion] !== undefined && isCorrect;
-              const showWrong =
-                answers[currentQuestion] !== undefined &&
-                isSelected &&
-                !isCorrect;
+              const showCorrect = answers[currentQuestion] !== undefined && isCorrect;
+              const showWrong = answers[currentQuestion] !== undefined && isSelected && !isCorrect;
 
               return (
                 <motion.button
                   key={index}
-                  whileHover={
-                    answers[currentQuestion] === undefined
-                      ? { scale: 1.02 }
-                      : {}
-                  }
-                  whileTap={
-                    answers[currentQuestion] === undefined
-                      ? { scale: 0.98 }
-                      : {}
-                  }
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  whileHover={answers[currentQuestion] === undefined ? { scale: 1.02 } : {}}
+                  whileTap={answers[currentQuestion] === undefined ? { scale: 0.98 } : {}}
                   onClick={() => {
-                    if (
-                      answers[currentQuestion] === undefined &&
-                      !isSubmitting
-                    ) {
+                    if (answers[currentQuestion] === undefined && !isSubmitting) {
                       handleAnswerSelect(currentQuestion, index);
                     }
                   }}
-                  disabled={
-                    answers[currentQuestion] !== undefined || isSubmitting
-                  }
+                  disabled={answers[currentQuestion] !== undefined || isSubmitting}
                   className={`w-full text-left px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg transition-all duration-200 text-xs sm:text-sm md:text-base ${
                     answers[currentQuestion] === undefined
                       ? "bg-white/5 hover:bg-white/10 text-gray-300 border border-transparent"
@@ -550,12 +549,8 @@ const ReadAndTest = () => {
                     <span className="break-words">{option}</span>
                     {answers[currentQuestion] !== undefined && (
                       <span className="flex-shrink-0">
-                        {isCorrect && (
-                          <Check className="w-4 h-4 sm:w-5 sm:h-5 text-[#00C9A7]" />
-                        )}
-                        {isSelected && !isCorrect && (
-                          <X className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
-                        )}
+                        {isCorrect && <Check className="w-4 h-4 sm:w-5 sm:h-5 text-[#00C9A7]" />}
+                        {isSelected && !isCorrect && <X className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />}
                       </span>
                     )}
                   </div>
@@ -563,7 +558,7 @@ const ReadAndTest = () => {
               );
             })}
           </div>
-        </div>
+        </motion.div>
 
         <div className="flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4">
           <span className="text-[10px] sm:text-xs text-gray-500 text-center sm:text-left">
@@ -573,7 +568,7 @@ const ReadAndTest = () => {
             {currentQuestion + 1}/{totalQuestions}
           </span>
         </div>
-      </div>
+      </motion.div>
     );
   };
 

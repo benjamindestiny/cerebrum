@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock,
   ChevronLeft,
@@ -15,6 +15,8 @@ import {
   Brain,
   Sparkles,
   SkipForward,
+  Flame,
+  Award,
 } from "lucide-react";
 import { fetchQuestions, shuffleArray, decodeHTML } from "../services/quizApi";
 import { getCustomQuestions } from "../data/customQuestions";
@@ -75,6 +77,14 @@ const Quiz = () => {
   const [timerStarted, setTimerStarted] = useState(false);
   const [saveError, setSaveError] = useState(null);
 
+  // Combo System
+  const [combo, setCombo] = useState(0);
+  const [maxCombo, setMaxCombo] = useState(0);
+  const [comboMultiplier, setComboMultiplier] = useState(1);
+  const [comboBonus, setComboBonus] = useState(0);
+  const [showComboCelebration, setShowComboCelebration] = useState(false);
+  const [comboCelebrationText, setComboCelebrationText] = useState("");
+
   useEffect(() => {
     const storedCategory = sessionStorage.getItem("selectedCategory");
     if (storedCategory) {
@@ -99,6 +109,10 @@ const Quiz = () => {
     setDifficulty(diff);
     setQuizStartTime(Date.now());
     setTimerStarted(false);
+    setCombo(0);
+    setMaxCombo(0);
+    setComboMultiplier(1);
+    setComboBonus(0);
 
     try {
       const storedCategory = sessionStorage.getItem("selectedCategory");
@@ -116,7 +130,6 @@ const Quiz = () => {
 
       let fetchedQuestions = [];
 
-      // Try Groq
       try {
         const groqQuestions = await generateQuestionsWithGroq(
           categoryName,
@@ -137,9 +150,10 @@ const Quiz = () => {
             explanation: q.explanation || "",
           }));
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn("Groq failed:", e);
+      }
 
-      // Try Custom Questions
       if (fetchedQuestions.length === 0 && typeof categoryId === "string") {
         try {
           const customQ = getCustomQuestions(categoryId, count);
@@ -152,10 +166,11 @@ const Quiz = () => {
               ]),
             }));
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn("Custom questions failed:", e);
+        }
       }
 
-      // Try Open Trivia DB
       if (fetchedQuestions.length === 0) {
         try {
           const apiQuestions = await fetchQuestions(
@@ -173,10 +188,11 @@ const Quiz = () => {
               ]),
             }));
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn("Trivia DB failed:", e);
+        }
       }
 
-      // Fallback
       if (fetchedQuestions.length === 0) {
         const fallback = FALLBACK_QUESTIONS.slice(
           0,
@@ -192,7 +208,6 @@ const Quiz = () => {
       }
 
       setQuestions(fetchedQuestions);
-      // Reset answers when loading new questions
       setAnswers({});
       setCurrentIndex(0);
       setSelectedAnswer(null);
@@ -245,6 +260,8 @@ const Quiz = () => {
       setIsAnswered(true);
       const updatedAnswers = { ...answers, [currentIndex]: null };
       setAnswers(updatedAnswers);
+      setCombo(0);
+      setComboMultiplier(1);
       if (currentIndex === questions.length - 1) {
         setIsFinishing(true);
         setTimeout(() => finishQuiz(updatedAnswers), 800);
@@ -259,29 +276,74 @@ const Quiz = () => {
     setTimerStarted(true);
     setTimeLeft(selectedTimePerQuestion);
     setQuizStartTime(Date.now());
+    setCombo(0);
+    setMaxCombo(0);
+    setComboMultiplier(1);
+    setComboBonus(0);
+  };
+
+  const updateCombo = (isCorrect) => {
+    if (isCorrect) {
+      const newCombo = combo + 1;
+      setCombo(newCombo);
+      setMaxCombo(Math.max(maxCombo, newCombo));
+
+      let multiplier = 1;
+      let celebrationText = "";
+
+      if (newCombo >= 10) {
+        multiplier = 2.0;
+        celebrationText = "🔥 LEGENDARY! 10x COMBO!";
+      } else if (newCombo >= 8) {
+        multiplier = 1.8;
+        celebrationText = "⭐ AMAZING! 8x COMBO!";
+      } else if (newCombo >= 5) {
+        multiplier = 1.5;
+        celebrationText = "🔥 ON FIRE! 5x COMBO!";
+      } else if (newCombo >= 3) {
+        multiplier = 1.2;
+        celebrationText = "✨ COMBO! 3x!";
+      }
+
+      setComboMultiplier(multiplier);
+
+      if (multiplier > 1) {
+        const bonus = Math.floor(10 * multiplier);
+        setComboBonus((prev) => prev + bonus);
+      }
+
+      if (newCombo === 3 || newCombo === 5 || newCombo === 8 || newCombo === 10) {
+        setComboCelebrationText(celebrationText);
+        setShowComboCelebration(true);
+        setTimeout(() => setShowComboCelebration(false), 1500);
+      }
+
+      return multiplier;
+    } else {
+      setCombo(0);
+      setComboMultiplier(1);
+      return 1;
+    }
   };
 
   const handleAnswerSelect = (answer) => {
     if (isFinishing) return;
 
-    // ✅ FIX: When user selects an answer on a previous question
-    // Update the answer for the current index
     const updatedAnswers = { ...answers, [currentIndex]: answer };
     setAnswers(updatedAnswers);
     setSelectedAnswer(answer);
     setIsAnswered(true);
 
-    // ✅ FIX: Check if we're on the last question
+    const isCorrect = answer === questions[currentIndex]?.correct_answer;
+    const multiplier = updateCombo(isCorrect);
+
     if (currentIndex === questions.length - 1) {
-      // Last question - finish quiz
       setIsFinishing(true);
       setTimeout(() => finishQuiz(updatedAnswers), 1200);
     } else {
-      // ✅ FIX: Auto-advance to next question after selection
       setTimeout(() => {
         const nextIndex = currentIndex + 1;
         setCurrentIndex(nextIndex);
-        // Check if next question already has an answer
         const nextAnswer = updatedAnswers[nextIndex];
         setSelectedAnswer(nextAnswer !== undefined ? nextAnswer : null);
         setIsAnswered(nextAnswer !== undefined);
@@ -312,7 +374,6 @@ const Quiz = () => {
       setCurrentIndex(prevIndex);
       const existingAnswer = answers[prevIndex];
       setSelectedAnswer(existingAnswer !== undefined ? existingAnswer : null);
-      // ✅ FIX: Don't mark as answered if no answer exists
       setIsAnswered(existingAnswer !== undefined);
       setTimeLeft(selectedTimePerQuestion);
     }
@@ -336,6 +397,7 @@ const Quiz = () => {
   };
 
   const handleGoBack = () => navigate("/categories");
+  
   const handleRetry = () => {
     setShowDifficultySelect(true);
     setShowTimeSelect(false);
@@ -348,6 +410,10 @@ const Quiz = () => {
     setSaveError(null);
     setSelectedAnswer(null);
     setIsAnswered(false);
+    setCombo(0);
+    setMaxCombo(0);
+    setComboMultiplier(1);
+    setComboBonus(0);
   };
 
   const finishQuiz = async (finalAnswers) => {
@@ -367,6 +433,9 @@ const Quiz = () => {
     const percentage = Math.round((correct / questions.length) * 100);
     const timeTaken = Math.floor((Date.now() - quizStartTime) / 1000);
 
+    const basePoints = Math.floor(percentage / 10);
+    const totalPoints = basePoints + comboBonus;
+
     const resultData = {
       score: percentage,
       correct,
@@ -376,12 +445,15 @@ const Quiz = () => {
       category: categoryInfo?.name || "General Knowledge",
       difficulty: difficulty || "medium",
       timestamp: new Date().toISOString(),
+      combo: {
+        maxCombo: maxCombo,
+        bonusPoints: comboBonus,
+      },
     };
     sessionStorage.setItem("quizResults", JSON.stringify(resultData));
 
     if (user) {
       try {
-        // Save quiz data
         const quizData = {
           user_id: user.id,
           category: categoryInfo?.name || "General Knowledge",
@@ -389,11 +461,11 @@ const Quiz = () => {
           total_questions: questions.length,
           percentage: parseFloat(percentage.toFixed(2)),
           time_taken: timeTaken,
-          points: Math.floor(percentage / 10),
+          points: totalPoints,
           answers: completedAnswers,
+          combo_bonus: comboBonus,
+          max_combo: maxCombo,
         };
-
-        console.log("📤 SAVING QUIZ DATA:", quizData);
 
         const { data, error } = await supabase
           .from("quiz_results")
@@ -404,20 +476,17 @@ const Quiz = () => {
           console.error("❌ Error saving quiz:", error);
           setSaveError(error.message);
           return;
-        } else {
-          console.log("✅ Quiz saved successfully!", data);
         }
 
-        // ✅ Send quiz results email
         try {
           await sendEmail({
             to: user.email,
             subject: `📊 Your ${categoryInfo?.name || "Quiz"} Results`,
             html: emailTemplates.quizResults(
-              user.user_metadata?.name,
+              user.user_metadata?.name || "User",
               categoryInfo?.name || "Quiz",
               percentage,
-              Math.floor(percentage / 10),
+              totalPoints,
             ).html,
           });
           console.log("✅ Quiz result email sent");
@@ -425,7 +494,6 @@ const Quiz = () => {
           console.error("❌ Quiz result email failed:", emailError);
         }
 
-        // Update user stats
         try {
           const { data: userData } = await supabase
             .from("users")
@@ -438,10 +506,8 @@ const Quiz = () => {
           const totalScore = (currentStats.total_score || 0) + percentage;
           const bestScore = Math.max(currentStats.best_score || 0, percentage);
           const averageScore = Math.round(totalScore / totalQuizzes);
-          const totalPoints =
-            (currentStats.total_points || 0) + Math.floor(percentage / 10);
-          const perfectScores =
-            (currentStats.perfect_scores || 0) + (percentage === 100 ? 1 : 0);
+          const totalPointsSum = (currentStats.total_points || 0) + totalPoints;
+          const perfectScores = (currentStats.perfect_scores || 0) + (percentage === 100 ? 1 : 0);
 
           let streak = currentStats.streak || 0;
           const today = new Date();
@@ -474,7 +540,7 @@ const Quiz = () => {
                 total_score: totalScore,
                 best_score: bestScore,
                 average_score: averageScore,
-                total_points: totalPoints,
+                total_points: totalPointsSum,
                 streak: streak,
                 perfect_scores: perfectScores,
                 last_quiz_date: new Date().toISOString(),
@@ -500,140 +566,130 @@ const Quiz = () => {
     setTimeout(() => navigate("/results"), 1200);
   };
 
-  // ============================================
-  // DIFFICULTY SELECTION SCREEN
-  // ============================================
+  // Difficulty Selection Screen
   if (showDifficultySelect) {
     const difficulties = [
-      {
-        id: "easy",
-        label: "Easy",
-        icon: "🌱",
-        color: "text-green-400",
-        bg: "bg-green-500/10",
-        border: "border-green-500/20",
-        desc: "Perfect for beginners",
-      },
-      {
-        id: "medium",
-        label: "Medium",
-        icon: "⚡",
-        color: "text-yellow-400",
-        bg: "bg-yellow-500/10",
-        border: "border-yellow-500/20",
-        desc: "For intermediate learners",
-      },
-      {
-        id: "hard",
-        label: "Hard",
-        icon: "🔥",
-        color: "text-red-400",
-        bg: "bg-red-500/10",
-        border: "border-red-500/20",
-        desc: "Challenge yourself!",
-      },
+      { id: "easy", label: "Easy", icon: "🌱", color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/20", desc: "Perfect for beginners" },
+      { id: "medium", label: "Medium", icon: "⚡", color: "text-teal-400", bg: "bg-teal-500/10", border: "border-teal-500/20", desc: "For intermediate learners" },
+      { id: "hard", label: "Hard", icon: "🔥", color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/20", desc: "Challenge yourself!" },
     ];
 
     return (
-      <div className="max-w-md mx-auto px-4 sm:px-0">
-        <div className="glass-card p-4 sm:p-8 text-center">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="max-w-md mx-auto px-4 sm:px-0"
+      >
+        <motion.div 
+          initial={{ scale: 0.9, y: 20 }}
+          animate={{ scale: 1, y: 0 }}
+          transition={{ type: "spring", damping: 25 }}
+          className="glass-card p-4 sm:p-8 text-center"
+        >
           <div className="mb-4 sm:mb-6">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Brain className="w-6 h-6 sm:w-8 sm:h-8 text-[#7c3aed]" />
+            <motion.div 
+              initial={{ scale: 0, rotate: -10 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: 0.1, type: "spring" }}
+              className="flex items-center justify-center gap-2 mb-2"
+            >
+              <Brain className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400" />
               <span className="text-xs sm:text-sm text-gray-400">Quiz</span>
-            </div>
+            </motion.div>
             <h2 className="text-xl sm:text-2xl font-bold text-white">
               {categoryInfo?.name || "General Knowledge"}
             </h2>
-            <p className="text-xs sm:text-sm text-gray-400 mt-1">
-              Choose your difficulty
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              {questionCount} questions
-            </p>
+            <p className="text-xs sm:text-sm text-gray-400 mt-1">Choose your difficulty</p>
+            <p className="text-xs text-gray-500 mt-1">{questionCount} questions</p>
           </div>
 
           <div className="space-y-2 sm:space-y-3">
-            {difficulties.map((diff) => (
+            {difficulties.map((diff, index) => (
               <motion.button
                 key={diff.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 + index * 0.08 }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => loadQuestions(diff.id)}
                 disabled={loading}
-                className={`w-full p-3 sm:p-4 rounded-xl ${diff.bg} border ${diff.border} hover:border-[#7c3aed]/50 transition-all flex items-center justify-between group ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+                className={`w-full p-3 sm:p-4 rounded-xl ${diff.bg} border ${diff.border} hover:border-blue-500/50 transition-all flex items-center justify-between group ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 <div className="flex items-center gap-2 sm:gap-3">
                   <span className="text-xl sm:text-2xl">{diff.icon}</span>
                   <div className="text-left">
-                    <div
-                      className={`font-semibold text-sm sm:text-base ${diff.color}`}
-                    >
-                      {diff.label}
-                    </div>
-                    <div className="text-[10px] sm:text-xs text-gray-500">
-                      {diff.desc}
-                    </div>
+                    <div className={`font-semibold text-sm sm:text-base ${diff.color}`}>{diff.label}</div>
+                    <div className="text-[10px] sm:text-xs text-gray-500">{diff.desc}</div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-[10px] sm:text-xs text-gray-500">
-                    {questionCount} questions
-                  </div>
-                  <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 group-hover:text-[#7c3aed] transition-colors" />
+                  <div className="text-[10px] sm:text-xs text-gray-500">{questionCount} questions</div>
+                  <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 group-hover:text-blue-400 transition-colors" />
                 </div>
               </motion.button>
             ))}
           </div>
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={handleGoBack}
             className="mt-4 sm:mt-6 text-xs sm:text-sm text-gray-400 hover:text-white transition-colors flex items-center gap-2 mx-auto"
           >
             <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" /> Back to Categories
-          </button>
-        </div>
-      </div>
+          </motion.button>
+        </motion.div>
+      </motion.div>
     );
   }
 
-  // ============================================
-  // TIME SELECTION SCREEN
-  // ============================================
+  // Time Selection Screen
   if (showTimeSelect) {
     return (
-      <div className="max-w-md mx-auto px-4 sm:px-0">
-        <div className="glass-card p-4 sm:p-8 text-center">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="max-w-md mx-auto px-4 sm:px-0"
+      >
+        <motion.div 
+          initial={{ scale: 0.9, y: 20 }}
+          animate={{ scale: 1, y: 0 }}
+          transition={{ type: "spring", damping: 25 }}
+          className="glass-card p-4 sm:p-8 text-center"
+        >
           <div className="mb-4 sm:mb-6">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-[#7c3aed]" />
-              <span className="text-xs sm:text-sm text-gray-400">
-                Time per Question
-              </span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-white">
-              Set Your Pace
-            </h2>
-            <p className="text-xs sm:text-sm text-gray-400 mt-1">
-              How much time per question?
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Time runs out = question failed
-            </p>
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.1, type: "spring" }}
+              className="flex items-center justify-center gap-2 mb-2"
+            >
+              <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400" />
+              <span className="text-xs sm:text-sm text-gray-400">Time per Question</span>
+            </motion.div>
+            <h2 className="text-xl sm:text-2xl font-bold text-white">Set Your Pace</h2>
+            <p className="text-xs sm:text-sm text-gray-400 mt-1">How much time per question?</p>
+            <p className="text-xs text-gray-500 mt-1">Time runs out = question failed</p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6">
-            {TIME_OPTIONS.map((option) => (
+            {TIME_OPTIONS.map((option, index) => (
               <motion.button
                 key={option.value}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 + index * 0.05 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setSelectedTimePerQuestion(option.value)}
-                className={`p-3 rounded-xl border-2 transition-all ${selectedTimePerQuestion === option.value ? "border-[#7c3aed] bg-[#7c3aed]/20 text-white" : "border-white/10 bg-white/5 text-gray-400 hover:border-white/30"}`}
+                className={`p-3 rounded-xl border-2 transition-all ${
+                  selectedTimePerQuestion === option.value
+                    ? "border-blue-500 bg-blue-500/20 text-white"
+                    : "border-white/10 bg-white/5 text-gray-400 hover:border-white/30"
+                }`}
               >
-                <div
-                  className={`text-lg font-bold ${selectedTimePerQuestion === option.value ? "text-[#7c3aed]" : "text-gray-400"}`}
-                >
+                <div className={`text-lg font-bold ${selectedTimePerQuestion === option.value ? "text-blue-400" : "text-gray-400"}`}>
                   {option.label}
                 </div>
                 <div className="text-[10px] text-gray-500">per question</div>
@@ -642,63 +698,69 @@ const Quiz = () => {
           </div>
 
           <div className="flex gap-3">
-            <button
-              onClick={() => {
-                setShowDifficultySelect(true);
-                setShowTimeSelect(false);
-              }}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => { setShowDifficultySelect(true); setShowTimeSelect(false); }}
               className="flex-1 btn-secondary py-2.5 sm:py-3 text-sm sm:text-base"
             >
               Back
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={startQuiz}
               className="flex-1 btn-primary py-2.5 sm:py-3 text-sm sm:text-base flex items-center justify-center gap-2"
             >
               <Zap className="w-4 h-4" /> Start Quiz
-            </button>
+            </motion.button>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     );
   }
 
-  // ============================================
-  // LOADING STATE
-  // ============================================
+  // Loading State
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[300px] sm:min-h-[400px] px-4">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex items-center justify-center min-h-[300px] sm:min-h-[400px] px-4"
+      >
         <div className="text-center">
-          <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 text-[#7c3aed] animate-spin mx-auto mb-3" />
-          <p className="text-gray-400 text-xs sm:text-sm">
-            Loading {difficulty} questions...
-          </p>
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          >
+            <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 text-blue-400 mx-auto mb-3" />
+          </motion.div>
+          <p className="text-gray-400 text-xs sm:text-sm">Loading {difficulty} questions...</p>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
-  // ============================================
-  // QUIZ ACTIVE
-  // ============================================
+  // No Questions
   if (questions.length === 0) {
     return (
-      <div className="text-center py-8 sm:py-12 max-w-md mx-auto px-4">
-        <AlertCircle className="w-12 h-12 sm:w-16 sm:h-16 text-yellow-400 mx-auto mb-4" />
-        <h2 className="text-xl sm:text-2xl font-bold text-white">
-          No Questions
-        </h2>
-        <p className="text-gray-400 text-sm sm:text-base mt-2">
-          Please try again.
-        </p>
-        <button
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="text-center py-8 sm:py-12 max-w-md mx-auto px-4"
+      >
+        <AlertCircle className="w-12 h-12 sm:w-16 sm:h-16 text-teal-400 mx-auto mb-4" />
+        <h2 className="text-xl sm:text-2xl font-bold text-white">No Questions</h2>
+        <p className="text-gray-400 text-sm sm:text-base mt-2">Please try again.</p>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={handleRetry}
           className="btn-primary mt-4 sm:mt-6 flex items-center gap-2 mx-auto text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
         >
           <RefreshCw className="w-4 h-4" /> Try Again
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
     );
   }
 
@@ -707,40 +769,108 @@ const Quiz = () => {
   const options = currentQuestion?.shuffledOptions || [];
 
   return (
-    <div className="max-w-3xl mx-auto px-3 sm:px-4">
-      <div className="flex items-center justify-between mb-3 sm:mb-4 flex-wrap gap-2">
-        <button
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="max-w-3xl mx-auto px-3 sm:px-4"
+    >
+      {/* Combo Celebration */}
+      <AnimatePresence>
+        {showComboCelebration && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0, opacity: 0, y: -20 }}
+            transition={{ type: "spring", stiffness: 400, damping: 20 }}
+            className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none"
+          >
+            <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 sm:px-8 py-4 sm:py-5 rounded-2xl shadow-2xl text-center max-w-sm">
+              <motion.div 
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 0.5 }}
+                className="text-4xl sm:text-5xl mb-1"
+              >
+                🔥
+              </motion.div>
+              <div className="text-xl sm:text-2xl font-bold">{comboCelebrationText}</div>
+              <div className="text-sm opacity-90">×{comboMultiplier.toFixed(1)} points multiplier</div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Header */}
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between mb-3 sm:mb-4 flex-wrap gap-2"
+      >
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={handleGoBack}
           className="text-gray-400 hover:text-white transition-colors flex items-center gap-1 text-xs sm:text-sm"
         >
           <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" /> Exit
-        </button>
+        </motion.button>
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <span className="text-[10px] sm:text-xs text-gray-500 truncate max-w-[80px] sm:max-w-none">
             {categoryInfo?.name}
           </span>
-          <span
-            className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${difficulty === "easy" ? "bg-green-500/20 text-green-400" : difficulty === "medium" ? "bg-yellow-500/20 text-yellow-400" : "bg-red-500/20 text-red-400"}`}
-          >
+          <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${difficulty === "easy" ? "bg-green-500/20 text-green-400" : difficulty === "medium" ? "bg-teal-500/20 text-teal-400" : "bg-red-500/20 text-red-400"}`}>
             {difficulty}
           </span>
-          <span className="text-[10px] sm:text-xs text-gray-500">
-            {questions.length} Qs
-          </span>
-          <span className="text-[10px] sm:text-xs text-gray-500">
-            ⏱ {selectedTimePerQuestion}s
-          </span>
-          <span className="text-[10px] sm:text-xs text-gray-500">
-            {Object.keys(answers).length}/{questions.length} answered
-          </span>
+          <span className="text-[10px] sm:text-xs text-gray-500">{questions.length} Qs</span>
+          <span className="text-[10px] sm:text-xs text-gray-500">⏱ {selectedTimePerQuestion}s</span>
+          <span className="text-[10px] sm:text-xs text-gray-500">{Object.keys(answers).length}/{questions.length} answered</span>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="glass-card p-3 sm:p-4 mb-4 sm:mb-6">
+      {/* Combo Display */}
+      {combo > 0 && (
+        <motion.div 
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="flex items-center justify-between mb-3 p-2 sm:p-3 bg-white/5 rounded-lg border border-white/10"
+        >
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2">
+              <motion.div 
+                animate={combo >= 5 ? { scale: [1, 1.2, 1] } : {}}
+                transition={{ duration: 1, repeat: Infinity }}
+                className={`text-2xl ${combo >= 5 ? "animate-pulse" : ""}`}
+              >
+                🔥
+              </motion.div>
+              <div>
+                <div className={`font-bold text-lg sm:text-xl ${combo >= 10 ? "text-red-500" : combo >= 8 ? "text-orange-500" : combo >= 5 ? "text-teal-400" : "text-amber-400"}`}>
+                  {combo}x COMBO!
+                </div>
+                <div className="text-xs text-gray-400">
+                  {comboMultiplier > 1 ? `×${comboMultiplier.toFixed(1)} multiplier` : "Keep going!"}
+                </div>
+              </div>
+            </div>
+            {comboMultiplier > 1 && (
+              <div className="px-2 sm:px-3 py-1 bg-orange-500/20 rounded-full border border-orange-500/30">
+                <span className="text-orange-400 text-xs sm:text-sm font-bold">
+                  +{Math.floor(10 * comboMultiplier)} bonus pts
+                </span>
+              </div>
+            )}
+          </div>
+          <div className="text-xs text-gray-500">Best: {maxCombo}x</div>
+        </motion.div>
+      )}
+
+      {/* Progress Bar */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="glass-card p-3 sm:p-4 mb-4 sm:mb-6"
+      >
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs sm:text-sm text-gray-400">
-            {currentIndex + 1} / {questions.length}
-          </span>
+          <span className="text-xs sm:text-sm text-gray-400">{currentIndex + 1} / {questions.length}</span>
           <motion.div
             className={`flex items-center gap-1 text-xs sm:text-sm ${timeLeft <= 5 ? "text-red-400" : timeLeft <= 10 ? "text-orange-400" : "text-[#00C9A7]"}`}
             animate={timeLeft <= 5 ? { scale: [1, 1.1, 1] } : {}}
@@ -752,7 +882,7 @@ const Quiz = () => {
         </div>
         <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-[#7c3aed] to-[#a78bfa]"
+            className="h-full bg-gradient-to-r from-blue-500 to-teal-400"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.5 }}
@@ -760,14 +890,24 @@ const Quiz = () => {
         </div>
         <div className="flex gap-1 mt-2 justify-center flex-wrap">
           {questions.map((_, i) => (
-            <div
+            <motion.div
               key={i}
-              className={`w-2 h-2 rounded-full transition-all ${i === currentIndex ? "bg-[#7c3aed] scale-125" : answers[i] !== undefined ? "bg-green-500" : "bg-white/20"}`}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: i * 0.02 }}
+              className={`w-2 h-2 rounded-full transition-all ${
+                i === currentIndex
+                  ? "bg-blue-500 scale-125"
+                  : answers[i] !== undefined
+                  ? "bg-green-500"
+                  : "bg-white/20"
+              }`}
             />
           ))}
         </div>
-      </div>
+      </motion.div>
 
+      {/* Question */}
       <motion.div
         key={currentIndex}
         initial={{ opacity: 0, x: 20 }}
@@ -791,18 +931,20 @@ const Quiz = () => {
             return (
               <motion.button
                 key={index}
-                whileHover={!isAnswered && !isFinishing ? { scale: 1.01 } : {}}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+                whileHover={!isAnswered && !isFinishing ? { scale: 1.02 } : {}}
                 whileTap={!isAnswered && !isFinishing ? { scale: 0.98 } : {}}
                 onClick={() => {
-                  // ✅ FIX: Allow selecting an answer even if already answered
                   if (!isFinishing) {
                     handleAnswerSelect(answer);
                   }
                 }}
                 disabled={isFinishing}
                 className={`w-full text-left px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg transition-all duration-200 text-xs sm:text-sm
-                  ${isFinishing ? "cursor-default" : "hover:bg-white/10 cursor-pointer"}
-                  ${isSelected && !isAnswered ? "bg-[#7c3aed]/30 border border-[#7c3aed] text-white" : ""}
+                  ${isFinishing ? "cursor-default" : "hover:bg-white/15 cursor-pointer"}
+                  ${isSelected && !isAnswered ? "bg-blue-500/30 border border-blue-500 text-white" : ""}
                   ${showCorrect ? "bg-[#00C9A7]/30 border border-[#00C9A7] text-white" : ""}
                   ${showWrong ? "bg-red-500/30 border border-red-500 text-white" : ""}
                   ${wasAnswered && !isSelected && hasAnswer && !isAnswered ? "bg-blue-500/20 border border-blue-500/30 text-white" : ""}
@@ -824,9 +966,7 @@ const Quiz = () => {
                     </span>
                   )}
                   {!isAnswered && wasAnswered && hasAnswer && (
-                    <span className="flex-shrink-0 text-blue-400 text-xs">
-                      ✓
-                    </span>
+                    <span className="flex-shrink-0 text-blue-400 text-xs">✓</span>
                   )}
                 </div>
               </motion.button>
@@ -835,37 +975,51 @@ const Quiz = () => {
         </div>
       </motion.div>
 
-      <div className="flex justify-between gap-3 sm:gap-4 flex-wrap">
-        <button
+      {/* Navigation */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="flex justify-between gap-3 sm:gap-4 flex-wrap"
+      >
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={handlePrevious}
           disabled={currentIndex === 0}
           className="btn-secondary text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-1 sm:gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" /> Back
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={goToCurrent}
-          className="text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg flex items-center gap-1 sm:gap-2 transition-colors bg-[#7c3aed]/20 text-[#a78bfa] hover:bg-[#7c3aed]/30 border border-[#7c3aed]/30"
+          className="text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg flex items-center gap-1 sm:gap-2 transition-colors bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/30"
         >
           <SkipForward className="w-3 h-3 sm:w-4 sm:h-4" /> Go to Current
-        </button>
+        </motion.button>
 
         <span className="text-[10px] sm:text-xs text-gray-500 flex items-center">
           {isAnswered && answers[currentIndex] !== undefined
             ? "✓ Answered"
             : answers[currentIndex] !== undefined
-              ? "📝 Answer saved"
-              : "Select an answer"}
+            ? "📝 Answer saved"
+            : "Select an answer"}
         </span>
-      </div>
+      </motion.div>
 
       {saveError && (
-        <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs">
+        <motion.div 
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs"
+        >
           ⚠️ Error saving results: {saveError}. Please try again.
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 };
 

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import {
   Mail,
   Edit2,
@@ -88,7 +87,7 @@ const AdminEmailTemplates = () => {
             <li>🏆 Compete on the leaderboard</li>
           </ul>
           <p>Start your learning journey now!</p>
-          <a href="{{site_url}}/categories" style="background: #7c3aed; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none;">
+          <a href="{{site_url}}/categories" style="background: #3B82F6; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none;">
             Start Learning
           </a>
           <p style="margin-top: 20px; color: #666; font-size: 12px;">
@@ -108,7 +107,7 @@ const AdminEmailTemplates = () => {
           <p>You scored <strong>{{score}}%</strong> on the "{{category}}" quiz!</p>
           <p>You earned <strong>{{points}} points</strong>.</p>
           <p>Keep up the great work!</p>
-          <a href="{{site_url}}/dashboard" style="background: #7c3aed; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none;">
+          <a href="{{site_url}}/dashboard" style="background: #3B82F6; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none;">
             View Dashboard
           </a>
         `,
@@ -124,7 +123,7 @@ const AdminEmailTemplates = () => {
           <p>Congratulations {{name}}!</p>
           <p>You've earned the <strong>{{achievement}}</strong> achievement.</p>
           <p>Keep going to unlock more achievements!</p>
-          <a href="{{site_url}}/profile" style="background: #7c3aed; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none;">
+          <a href="{{site_url}}/profile" style="background: #3B82F6; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none;">
             View Profile
           </a>
         `,
@@ -147,7 +146,7 @@ const AdminEmailTemplates = () => {
             <li>📚 Articles read: {{articles_read}}</li>
           </ul>
           <p>Keep up the great work!</p>
-          <a href="{{site_url}}/dashboard" style="background: #7c3aed; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none;">
+          <a href="{{site_url}}/dashboard" style="background: #3B82F6; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none;">
             View Dashboard
           </a>
         `,
@@ -163,7 +162,7 @@ const AdminEmailTemplates = () => {
           <p>Hi {{name}},</p>
           <p>You've had a <strong>{{streak}}-day streak</strong>!</p>
           <p>Don't break it now. Come take a quiz today!</p>
-          <a href="{{site_url}}/categories" style="background: #7c3aed; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none;">
+          <a href="{{site_url}}/categories" style="background: #3B82F6; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none;">
             Take a Quiz
           </a>
         `,
@@ -393,56 +392,56 @@ const AdminEmailTemplates = () => {
 
   if (loading && templates.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-10 h-10 text-[#7c3aed] animate-spin" />
+      <div className="flex items-center justify-center min-h-[400px]  text-white border-[#2A2A4A]">
+        <Loader2 className="w-10 h-10 text-blue-400 animate-spin  text-white border-[#2A2A4A]" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-7xl mx-auto px-4 py-6  text-white border-[#2A2A4A]">
+      <div className="flex items-center justify-between mb-6  text-white border-[#2A2A4A]">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Mail className="w-7 h-7 text-[#7c3aed]" />
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2  text-white border-[#2A2A4A]">
+            <Mail className="w-7 h-7 text-blue-400  text-white border-[#2A2A4A]" />
             Email Templates
           </h1>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-gray-400 text-sm mt-1  text-white border-[#2A2A4A]">
             Manage and customize email templates
           </p>
         </div>
         <button
           onClick={loadTemplates}
-          className="p-2 rounded-lg hover:bg-white/5 transition-colors"
+          className="p-2 rounded-lg /5 transition-colors  text-white border-[#2A2A4A]"
         >
-          <RefreshCw className="w-5 h-5 text-gray-400" />
+          <RefreshCw className="w-5 h-5 text-gray-400  text-white border-[#2A2A4A]" />
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6  text-white border-[#2A2A4A]">
         {/* Template List */}
-        <div className="lg:col-span-1 space-y-3">
-          <div className="glass-card p-4">
-            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-              <FileText className="w-4 h-4 text-gray-400" />
+        <div className="lg:col-span-1 space-y-3  text-white border-[#2A2A4A]">
+          <div className="glass-card p-4  text-white border-[#2A2A4A]">
+            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2  text-white border-[#2A2A4A]">
+              <FileText className="w-4 h-4 text-gray-400  text-white border-[#2A2A4A]" />
               Templates
             </h3>
-            <div className="space-y-2 max-h-[600px] overflow-y-auto">
+            <div className="space-y-2 max-h-[600px] overflow-y-auto  text-white border-[#2A2A4A]">
               {templates.map((template) => (
                 <button
                   key={template.id}
                   onClick={() => handleTemplateSelect(template)}
                   className={`w-full text-left px-3 py-2 rounded-lg transition-all ${
                     selectedTemplate?.id === template.id
-                      ? "bg-[#7c3aed]/20 border border-[#7c3aed] text-white"
-                      : "hover:bg-white/5 text-gray-300"
+                      ? " border border-blue-500 text-white"
+                      : "/5 text-gray-300"
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium truncate">
+                  <div className="flex items-center justify-between  text-white border-[#2A2A4A]">
+                    <span className="text-sm font-medium truncate  text-white border-[#2A2A4A]">
                       {template.name}
                     </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-gray-400">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-gray-400  text-white border-[#2A2A4A]">
                       {template.category || "general"}
                     </span>
                   </div>
@@ -452,42 +451,42 @@ const AdminEmailTemplates = () => {
           </div>
 
           {/* Users Stats */}
-          <div className="glass-card p-4">
-            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-              <Users className="w-4 h-4 text-gray-400" />
+          <div className="glass-card p-4  text-white border-[#2A2A4A]">
+            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2  text-white border-[#2A2A4A]">
+              <Users className="w-4 h-4 text-gray-400  text-white border-[#2A2A4A]" />
               Users
             </h3>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-white/5 rounded-lg p-3 text-center">
-                <div className="text-xl font-bold text-white">{users.length}</div>
-                <div className="text-[10px] text-gray-400">Total Users</div>
+            <div className="grid grid-cols-2 gap-2  text-white border-[#2A2A4A]">
+              <div className="bg-white/5 rounded-lg p-3 text-center  text-white border-[#2A2A4A]">
+                <div className="text-xl font-bold text-white  text-white border-[#2A2A4A]">{users.length}</div>
+                <div className="text-[10px] text-gray-400  text-white border-[#2A2A4A]">Total Users</div>
               </div>
-              <div className="bg-white/5 rounded-lg p-3 text-center">
-                <div className="text-xl font-bold text-green-400">
+              <div className="bg-white/5 rounded-lg p-3 text-center  text-white border-[#2A2A4A]">
+                <div className="text-xl font-bold text-green-400  text-white border-[#2A2A4A]">
                   {users.filter((u) => u.stats?.total_quizzes > 0).length}
                 </div>
-                <div className="text-[10px] text-gray-400">Active</div>
+                <div className="text-[10px] text-gray-400  text-white border-[#2A2A4A]">Active</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Template Editor */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2  text-white border-[#2A2A4A]">
           {selectedTemplate ? (
-            <div className="glass-card p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-lg font-bold text-white">
+            <div className="glass-card p-6  text-white border-[#2A2A4A]">
+              <div className="flex items-center justify-between mb-4  text-white border-[#2A2A4A]">
+                <div className="flex items-center gap-3  text-white border-[#2A2A4A]">
+                  <h3 className="text-lg font-bold text-white  text-white border-[#2A2A4A]">
                     {isEditing ? "Editing" : "Viewing"}: {selectedTemplate.name}
                   </h3>
                   {selectedTemplate.category && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-gray-400">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-gray-400  text-white border-[#2A2A4A]">
                       {selectedTemplate.category}
                     </span>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2  text-white border-[#2A2A4A]">
                   {!isEditing ? (
                     <>
                       <button
@@ -495,15 +494,15 @@ const AdminEmailTemplates = () => {
                           setIsEditing(true);
                           setPreviewMode(false);
                         }}
-                        className="px-3 py-1.5 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors text-sm flex items-center gap-1"
+                        className="px-3 py-1.5 bg-blue-500 text-white rounded-lg  transition-colors text-sm flex items-center gap-1  text-white border-[#2A2A4A]"
                       >
-                        <Edit2 className="w-4 h-4" /> Edit
+                        <Edit2 className="w-4 h-4  text-white border-[#2A2A4A]" /> Edit
                       </button>
                       <button
                         onClick={() => setPreviewMode(!previewMode)}
-                        className="px-3 py-1.5 bg-white/10 text-gray-300 rounded-lg hover:bg-white/20 transition-colors text-sm flex items-center gap-1"
+                        className="px-3 py-1.5 bg-white/10 text-gray-300 rounded-lg /20 transition-colors text-sm flex items-center gap-1  text-white border-[#2A2A4A]"
                       >
-                        {previewMode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        {previewMode ? <EyeOff className="w-4 h-4  text-white border-[#2A2A4A]" /> : <Eye className="w-4 h-4  text-white border-[#2A2A4A]" />}
                         {previewMode ? "Hide Preview" : "Preview"}
                       </button>
                     </>
@@ -514,19 +513,19 @@ const AdminEmailTemplates = () => {
                           setIsEditing(false);
                           loadTemplates();
                         }}
-                        className="px-3 py-1.5 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors text-sm flex items-center gap-1"
+                        className="px-3 py-1.5 bg-red-500/10 text-red-400 rounded-lg /20 transition-colors text-sm flex items-center gap-1  text-white border-[#2A2A4A]"
                       >
-                        <X className="w-4 h-4" /> Cancel
+                        <X className="w-4 h-4  text-white border-[#2A2A4A]" /> Cancel
                       </button>
                       <button
                         onClick={handleSaveTemplate}
                         disabled={loading}
-                        className="px-3 py-1.5 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors text-sm flex items-center gap-1"
+                        className="px-3 py-1.5 bg-blue-500 text-white rounded-lg  transition-colors text-sm flex items-center gap-1  text-white border-[#2A2A4A]"
                       >
                         {loading ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <Loader2 className="w-4 h-4 animate-spin  text-white border-[#2A2A4A]" />
                         ) : (
-                          <Save className="w-4 h-4" />
+                          <Save className="w-4 h-4  text-white border-[#2A2A4A]" />
                         )}
                         Save
                       </button>
@@ -536,26 +535,26 @@ const AdminEmailTemplates = () => {
               </div>
 
               {isEditing ? (
-                <div className="space-y-4">
+                <div className="space-y-4  text-white border-[#2A2A4A]">
                   <div>
-                    <label className="text-sm text-gray-400 block mb-1">
+                    <label className="text-sm text-gray-400 block mb-1  text-white border-[#2A2A4A]">
                       Template Name
                     </label>
                     <input
                       type="text"
                       value={templateName}
                       onChange={(e) => setTemplateName(e.target.value)}
-                      className="w-full px-4 py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white focus:border-[#7c3aed] focus:outline-none"
+                      className="w-full px-4 py-2 bg-[#262626] rounded-lg border border-white/10 text-white focus:border-blue-500 focus:outline-none  text-white border-[#2A2A4A]"
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-gray-400 block mb-1">
+                    <label className="text-sm text-gray-400 block mb-1  text-white border-[#2A2A4A]">
                       Category
                     </label>
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      className="w-full px-4 py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white focus:border-[#7c3aed] focus:outline-none"
+                      className="w-full px-4 py-2 bg-[#262626] rounded-lg border border-white/10 text-white focus:border-blue-500 focus:outline-none  text-white border-[#2A2A4A]"
                     >
                       <option value="general">General</option>
                       <option value="welcome">Welcome</option>
@@ -566,7 +565,7 @@ const AdminEmailTemplates = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="text-sm text-gray-400 block mb-1">
+                    <label className="text-sm text-gray-400 block mb-1  text-white border-[#2A2A4A]">
                       Subject Line
                     </label>
                     <input
@@ -575,13 +574,13 @@ const AdminEmailTemplates = () => {
                       onChange={(e) =>
                         handleTemplateChange("subject", e.target.value)
                       }
-                      className="w-full px-4 py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white focus:border-[#7c3aed] focus:outline-none"
+                      className="w-full px-4 py-2 bg-[#262626] rounded-lg border border-white/10 text-white focus:border-blue-500 focus:outline-none  text-white border-[#2A2A4A]"
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-gray-400 block mb-1">
+                    <label className="text-sm text-gray-400 block mb-1  text-white border-[#2A2A4A]">
                       HTML Body
-                      <span className="text-xs text-gray-500 ml-2">
+                      <span className="text-xs text-gray-500 ml-2  text-white border-[#2A2A4A]">
                         Use {{variable}} for dynamic content
                       </span>
                     </label>
@@ -591,18 +590,18 @@ const AdminEmailTemplates = () => {
                         handleTemplateChange("body", e.target.value)
                       }
                       rows={12}
-                      className="w-full px-4 py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white focus:border-[#7c3aed] focus:outline-none font-mono text-sm"
+                      className="w-full px-4 py-2 bg-[#262626] rounded-lg border border-white/10 text-white focus:border-blue-500 focus:outline-none font-mono text-sm  text-white border-[#2A2A4A]"
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-gray-400 block mb-1">
+                    <label className="text-sm text-gray-400 block mb-1  text-white border-[#2A2A4A]">
                       Available Variables
                     </label>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2  text-white border-[#2A2A4A]">
                       {selectedTemplate.variables?.map((varName) => (
                         <span
                           key={varName}
-                          className="text-xs px-2 py-1 bg-[#7c3aed]/20 text-[#a78bfa] rounded-lg"
+                          className="text-xs px-2 py-1  text-[#3B82F6CC] rounded-lg  text-white border-[#2A2A4A]"
                         >
                           {`{{${varName}}}`}
                         </span>
@@ -612,37 +611,37 @@ const AdminEmailTemplates = () => {
                 </div>
               ) : previewMode ? (
                 <div
-                  className="prose prose-invert max-w-none p-4 bg-white/5 rounded-lg"
+                  className="prose prose-invert max-w-none p-4 bg-white/5 rounded-lg  text-white border-[#2A2A4A]"
                   dangerouslySetInnerHTML={{ __html: renderPreview() }}
                 />
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-4  text-white border-[#2A2A4A]">
                   <div>
-                    <label className="text-sm text-gray-400 block mb-1">
+                    <label className="text-sm text-gray-400 block mb-1  text-white border-[#2A2A4A]">
                       Subject
                     </label>
-                    <div className="px-4 py-2 bg-white/5 rounded-lg text-white">
+                    <div className="px-4 py-2 bg-white/5 rounded-lg text-white  text-white border-[#2A2A4A]">
                       {selectedTemplate.subject}
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm text-gray-400 block mb-1">
+                    <label className="text-sm text-gray-400 block mb-1  text-white border-[#2A2A4A]">
                       Body
                     </label>
                     <div
-                      className="p-4 bg-white/5 rounded-lg max-h-[400px] overflow-y-auto"
+                      className="p-4 bg-white/5 rounded-lg max-h-[400px] overflow-y-auto  text-white border-[#2A2A4A]"
                       dangerouslySetInnerHTML={{ __html: renderPreview() }}
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-gray-400 block mb-1">
+                    <label className="text-sm text-gray-400 block mb-1  text-white border-[#2A2A4A]">
                       Variables Used
                     </label>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2  text-white border-[#2A2A4A]">
                       {selectedTemplate.variables?.map((varName) => (
                         <span
                           key={varName}
-                          className="text-xs px-2 py-1 bg-[#7c3aed]/20 text-[#a78bfa] rounded-lg"
+                          className="text-xs px-2 py-1  text-[#3B82F6CC] rounded-lg  text-white border-[#2A2A4A]"
                         >
                           {`{{${varName}}}`}
                         </span>
@@ -654,20 +653,20 @@ const AdminEmailTemplates = () => {
 
               {/* Send Email Section */}
               {!isEditing && (
-                <div className="mt-6 pt-6 border-t border-white/10">
-                  <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                    <Send className="w-4 h-4 text-[#7c3aed]" />
+                <div className="mt-6 pt-6 border-t border-white/10  text-white border-[#2A2A4A]">
+                  <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2  text-white border-[#2A2A4A]">
+                    <Send className="w-4 h-4 text-blue-400  text-white border-[#2A2A4A]" />
                     Send Email
                   </h4>
-                  <div className="space-y-3">
+                  <div className="space-y-3  text-white border-[#2A2A4A]">
                     <div>
-                      <label className="text-sm text-gray-400 block mb-1">
+                      <label className="text-sm text-gray-400 block mb-1  text-white border-[#2A2A4A]">
                         Recipients
                       </label>
                       <select
                         value={selectedUsers}
                         onChange={(e) => setSelectedUsers(e.target.value)}
-                        className="w-full px-4 py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white focus:border-[#7c3aed] focus:outline-none"
+                        className="w-full px-4 py-2 bg-[#262626] rounded-lg border border-white/10 text-white focus:border-blue-500 focus:outline-none  text-white border-[#2A2A4A]"
                       >
                         <option value="all">All Users ({users.length})</option>
                         <option value="active">Active Users</option>
@@ -678,35 +677,35 @@ const AdminEmailTemplates = () => {
 
                     {selectedUsers === "custom" && (
                       <div>
-                        <label className="text-sm text-gray-400 block mb-1">
+                        <label className="text-sm text-gray-400 block mb-1  text-white border-[#2A2A4A]">
                           Email Addresses (comma separated)
                         </label>
                         <textarea
                           value={customUsers}
                           onChange={(e) => setCustomUsers(e.target.value)}
                           placeholder="user1@email.com, user2@email.com"
-                          className="w-full px-4 py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white focus:border-[#7c3aed] focus:outline-none"
+                          className="w-full px-4 py-2 bg-[#262626] rounded-lg border border-white/10 text-white focus:border-blue-500 focus:outline-none  text-white border-[#2A2A4A]"
                           rows={2}
                         />
                       </div>
                     )}
 
-                    <div className="flex gap-3">
+                    <div className="flex gap-3  text-white border-[#2A2A4A]">
                       <button
                         onClick={() => setShowTestModal(true)}
-                        className="px-4 py-2 bg-white/10 text-gray-300 rounded-lg hover:bg-white/20 transition-colors text-sm flex items-center gap-2"
+                        className="px-4 py-2 bg-white/10 text-gray-300 rounded-lg /20 transition-colors text-sm flex items-center gap-2  text-white border-[#2A2A4A]"
                       >
-                        <Mail className="w-4 h-4" /> Test Email
+                        <Mail className="w-4 h-4  text-white border-[#2A2A4A]" /> Test Email
                       </button>
                       <button
                         onClick={handleSendEmail}
                         disabled={sending}
-                        className="flex-1 px-4 py-2 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors text-sm flex items-center justify-center gap-2"
+                        className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg  transition-colors text-sm flex items-center justify-center gap-2  text-white border-[#2A2A4A]"
                       >
                         {sending ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <Loader2 className="w-4 h-4 animate-spin  text-white border-[#2A2A4A]" />
                         ) : (
-                          <Send className="w-4 h-4" />
+                          <Send className="w-4 h-4  text-white border-[#2A2A4A]" />
                         )}
                         {sending ? "Sending..." : "Send to All"}
                       </button>
@@ -716,12 +715,12 @@ const AdminEmailTemplates = () => {
               )}
             </div>
           ) : (
-            <div className="glass-card p-12 text-center">
-              <Mail className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-white">
+            <div className="glass-card p-12 text-center  text-white border-[#2A2A4A]">
+              <Mail className="w-16 h-16 text-gray-600 mx-auto mb-4  text-white border-[#2A2A4A]" />
+              <h3 className="text-lg font-semibold text-white  text-white border-[#2A2A4A]">
                 Select a Template
               </h3>
-              <p className="text-gray-400 text-sm mt-1">
+              <p className="text-gray-400 text-sm mt-1  text-white border-[#2A2A4A]">
                 Choose a template from the list to edit or preview
               </p>
             </div>
@@ -731,20 +730,20 @@ const AdminEmailTemplates = () => {
 
       {/* Test Email Modal */}
       {showTestModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="glass-card p-6 max-w-md w-full">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-white">Send Test Email</h3>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4  text-white border-[#2A2A4A]">
+          <div className="glass-card p-6 max-w-md w-full  text-white border-[#2A2A4A]">
+            <div className="flex items-center justify-between mb-4  text-white border-[#2A2A4A]">
+              <h3 className="text-lg font-bold text-white  text-white border-[#2A2A4A]">Send Test Email</h3>
               <button
                 onClick={() => setShowTestModal(false)}
-                className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+                className="p-1 /15 rounded-lg transition-colors  text-white border-[#2A2A4A]"
               >
-                <X className="w-5 h-5 text-gray-400" />
+                <X className="w-5 h-5 text-gray-400  text-white border-[#2A2A4A]" />
               </button>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-4  text-white border-[#2A2A4A]">
               <div>
-                <label className="text-sm text-gray-400 block mb-1">
+                <label className="text-sm text-gray-400 block mb-1  text-white border-[#2A2A4A]">
                   Email Address
                 </label>
                 <input
@@ -752,25 +751,25 @@ const AdminEmailTemplates = () => {
                   value={testEmail}
                   onChange={(e) => setTestEmail(e.target.value)}
                   placeholder="test@email.com"
-                  className="w-full px-4 py-2 bg-[#2D2D5E] rounded-lg border border-white/10 text-white focus:border-[#7c3aed] focus:outline-none"
+                  className="w-full px-4 py-2 bg-[#262626] rounded-lg border border-white/10 text-white focus:border-blue-500 focus:outline-none  text-white border-[#2A2A4A]"
                 />
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-3  text-white border-[#2A2A4A]">
                 <button
                   onClick={() => setShowTestModal(false)}
-                  className="flex-1 px-4 py-2 bg-white/10 text-gray-300 rounded-lg hover:bg-white/20 transition-colors"
+                  className="flex-1 px-4 py-2 bg-white/10 text-gray-300 rounded-lg /20 transition-colors  text-white border-[#2A2A4A]"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleTestEmail}
                   disabled={sending}
-                  className="flex-1 px-4 py-2 bg-[#7c3aed] text-white rounded-lg hover:bg-[#6d28d9] transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg  transition-colors flex items-center justify-center gap-2  text-white border-[#2A2A4A]"
                 >
                   {sending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin  text-white border-[#2A2A4A]" />
                   ) : (
-                    <Send className="w-4 h-4" />
+                    <Send className="w-4 h-4  text-white border-[#2A2A4A]" />
                   )}
                   Send Test
                 </button>
