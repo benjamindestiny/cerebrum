@@ -32,7 +32,7 @@ import TestGroq from "./pages/TestGroq";
 import CookieConsent from "./components/Common/CookieConsent";
 import { supabase } from "./services/supabase";
 
-// ✅ Admin imports
+//  Admin imports
 import AdminProvider from "./context/AdminContext";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";

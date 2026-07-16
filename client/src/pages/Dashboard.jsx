@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { sendEmail, emailTemplates } from "../services/emailService";
+import DailyMissions from "../components/Common/DailyMissions";
 import { motion } from "framer-motion";
 import {
   Trophy,
@@ -49,7 +50,6 @@ const Dashboard = () => {
     try {
       console.log("📊 Loading dashboard for user:", currentUser.id);
 
-      // Get quiz results
       const { data: quizResults, error } = await supabase
         .from("quiz_results")
         .select("*")
@@ -78,7 +78,6 @@ const Dashboard = () => {
         return;
       }
 
-      // Calculate stats
       let totalQuizzes = quizResults.length;
       let totalPoints = 0;
       let totalScore = 0;
@@ -98,7 +97,6 @@ const Dashboard = () => {
 
       const averageScore = Math.round(totalScore / totalQuizzes);
 
-      // Calculate streak
       let streak = 0;
       const dates = quizResults
         .map((q) => new Date(q.created_at).toISOString().split("T")[0])
@@ -211,6 +209,7 @@ const Dashboard = () => {
     );
   }
 
+  // ✅ FIX: DailyMissions component is now properly inside the return
   return (
     <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12">
       <div className="glass-card p-5 sm:p-6 md:p-8">
@@ -248,6 +247,15 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* ✅ Daily Missions Component */}
+      <DailyMissions
+        userId={currentUser?.id}
+        onMissionComplete={(data) => {
+          console.log("Mission complete!", data);
+          loadDashboardData();
+        }}
+      />
 
       {/* Email Subscribe Component */}
       <EmailSubscribe userEmail={currentUser?.email} />

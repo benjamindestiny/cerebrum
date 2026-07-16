@@ -26,8 +26,10 @@ import {
 } from "lucide-react";
 import { riddles, getDailyRiddle } from "../data/riddles";
 import { supabase } from "../services/supabase";
+import { toast } from "react-toastify";
 
 const Riddles = () => {
+  // State
   const [answer, setAnswer] = useState("");
   const [showHint, setShowHint] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
@@ -37,6 +39,7 @@ const Riddles = () => {
   const [streak, setStreak] = useState(0);
   const [history, setHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [filter, setFilter] = useState("all");
   const [expandedRiddle, setExpandedRiddle] = useState(null);
   const [inputValues, setInputValues] = useState({});
@@ -51,19 +54,20 @@ const Riddles = () => {
   const [timeUntilNext, setTimeUntilNext] = useState("");
   const [dailyRiddleData, setDailyRiddleData] = useState(null);
   const [user, setUser] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const [userStats, setUserStats] = useState(null);
 
   const inputRefs = useRef({});
 
+  // ============================================
+  // LOAD USER AND DATA
+  // ============================================
   useEffect(() => {
     getCurrentUser();
   }, []);
 
   useEffect(() => {
     if (user) {
-      loadUserRiddleStats();
-      loadDailyRiddle();
+      loadAllRiddleData();
     }
   }, [user]);
 
@@ -82,61 +86,122 @@ const Riddles = () => {
     }
   };
 
-  // ✅ FIX: Load user's riddle stats from database
-  const loadUserRiddleStats = async () => {
+  // ============================================
+  // LOAD ALL RIDDLE DATA FROM DATABASE
+  // ============================================
+  const loadAllRiddleData = async () => {
     if (!user) return;
+    setIsLoading(true);
+
     try {
-      // Get user stats
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("stats")
-        .eq("id", user.id)
-        .single();
+      // 1. Load user stats
+      await loadUserStats();
 
-      if (userError) {
-        console.error("Error loading user stats:", userError);
-        return;
-      }
+      // 2. Load riddle history
+      await loadRiddleHistory();
 
-      if (userData?.stats) {
-        const stats = userData.stats;
-        setSolvedCount(stats.riddles_solved || 0);
-        setPoints(stats.total_points || 0);
-        // Streak might be stored elsewhere, use local for now
-      }
+      // 3. Load daily riddle
+      loadDailyRiddle();
 
-      // ✅ FIX: Load riddle history
-      const { data: historyData, error: historyError } = await supabase
-        .from("riddle_history")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("solved_at", { ascending: false });
-
-      if (historyError) {
-        // Table might not exist, create it
-        console.warn("Riddle history table may not exist:", historyError);
-        return;
-      }
-
-      if (historyData) {
-        // Calculate stats from history
-        const solved = historyData.filter((h) => h.solved === true).length;
-        const totalPoints = historyData.reduce(
-          (sum, h) => sum + (h.points || 0),
-          0,
-        );
-        setSolvedCount(solved);
-        setPoints(totalPoints);
-        setHistory(historyData);
-      }
+      // 4. Load saved progress from localStorage (for streak)
+      loadLocalProgress();
     } catch (error) {
-      console.error("Error loading riddle stats:", error);
+      console.error("Error loading riddle data:", error);
+      toast.error("Failed to load riddle data");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ✅ FIX: Load daily riddle with saved state
+  // ============================================
+  // LOAD USER STATS FROM DATABASE
+  // ============================================
+  const loadUserStats = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        .select("stats")
+        .eq("id", user.id)
+        .single();
+
+      if (error) {
+        console.error("Error loading user stats:", error);
+        return;
+      }
+
+      if (data?.stats) {
+        setUserStats(data.stats);
+        setSolvedCount(data.stats.riddles_solved || 0);
+        setPoints(data.stats.total_points || 0);
+        setStreak(data.stats.riddle_streak || 0);
+      }
+    } catch (error) {
+      console.error("Error loading user stats:", error);
+    }
+  };
+
+  // ============================================
+  // LOAD RIDDLE HISTORY FROM DATABASE
+  // ============================================
+  const loadRiddleHistory = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("riddle_history")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("solved_at", { ascending: false });
+
+      if (error) {
+        // Table might not exist - create it silently
+        console.warn("Riddle history table may not exist:", error);
+        return;
+      }
+
+      if (data) {
+        setHistory(data);
+      }
+    } catch (error) {
+      console.error("Error loading riddle history:", error);
+    }
+  };
+
+  // ============================================
+  // LOAD LOCAL PROGRESS (Streak)
+  // ============================================
+  const loadLocalProgress = () => {
+    try {
+      const saved = localStorage.getItem("cerebrum_riddle_progress");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.streak && parsed.date === new Date().toDateString()) {
+          setStreak(parsed.streak);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading local progress:", error);
+    }
+  };
+
+  // ============================================
+  // SAVE LOCAL PROGRESS
+  // ============================================
+  const saveLocalProgress = (newStreak) => {
+    try {
+      localStorage.setItem(
+        "cerebrum_riddle_progress",
+        JSON.stringify({
+          streak: newStreak,
+          date: new Date().toDateString(),
+        })
+      );
+    } catch (error) {
+      console.error("Error saving local progress:", error);
+    }
+  };
+
+  // ============================================
+  // LOAD DAILY RIDDLE
+  // ============================================
   const loadDailyRiddle = () => {
     const daily = getDailyRiddle();
     setDailyRiddleData(daily);
@@ -147,7 +212,6 @@ const Riddles = () => {
     setDailyAttempts(0);
     setDailyHintUsed(false);
     setDailyAnswerRevealed(false);
-    setDailySolved(false);
 
     // Check if daily riddle was already solved today
     const today = new Date().toISOString().split("T")[0];
@@ -155,19 +219,24 @@ const Riddles = () => {
       (h) =>
         h.riddle_id === daily.id &&
         h.solved === true &&
-        h.solved_at?.split("T")[0] === today,
+        h.solved_at?.split("T")[0] === today
     );
 
     if (dailySolvedToday) {
       setDailySolved(true);
       setIsCorrect(true);
       setShowAnswer(true);
+    } else {
+      setDailySolved(false);
     }
   };
 
-  // ✅ FIX: Save riddle to history
+  // ============================================
+  // SAVE RIDDLE TO HISTORY
+  // ============================================
   const saveRiddleToHistory = async (riddleId, solved, pointsEarned = 0) => {
     if (!user) return;
+
     try {
       // Check if entry already exists
       const { data: existing } = await supabase
@@ -192,28 +261,35 @@ const Riddles = () => {
         if (error) throw error;
       } else {
         // Insert new
-        const { error } = await supabase.from("riddle_history").insert({
-          user_id: user.id,
-          riddle_id: riddleId,
-          solved: solved,
-          solved_at: solved ? new Date().toISOString() : null,
-          points: pointsEarned,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
+        const { error } = await supabase
+          .from("riddle_history")
+          .insert({
+            user_id: user.id,
+            riddle_id: riddleId,
+            solved: solved,
+            solved_at: solved ? new Date().toISOString() : null,
+            points: pointsEarned,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
 
         if (error) throw error;
       }
+
+      // Refresh history
+      await loadRiddleHistory();
     } catch (error) {
       console.error("Error saving riddle history:", error);
     }
   };
 
-  // ✅ FIX: Update user stats
-  const updateUserStats = async () => {
+  // ============================================
+  // UPDATE USER STATS IN DATABASE
+  // ============================================
+  const updateUserStats = async (newSolvedCount, newPoints, newStreak) => {
     if (!user) return;
+
     try {
-      // Get current user stats
       const { data: userData } = await supabase
         .from("users")
         .select("stats")
@@ -222,20 +298,12 @@ const Riddles = () => {
 
       const currentStats = userData?.stats || {};
 
-      // Get all solved riddles
-      const { data: historyData } = await supabase
-        .from("riddle_history")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("solved", true);
-
-      const solvedCount = historyData?.length || 0;
-      const totalPoints = historyData?.reduce((sum, h) => sum + (h.points || 0), 0) || 0;
-
       const updatedStats = {
         ...currentStats,
-        riddles_solved: solvedCount,
-        total_points: (currentStats.total_points || 0) + totalPoints,
+        riddles_solved: newSolvedCount,
+        total_points: newPoints,
+        riddle_streak: newStreak,
+        last_riddle_date: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
 
@@ -255,7 +323,9 @@ const Riddles = () => {
     }
   };
 
-  // ✅ FIX: Handle daily riddle submit
+  // ============================================
+  // HANDLE DAILY RIDDLE SUBMIT
+  // ============================================
   const handleDailySubmit = async () => {
     if (dailySolved || !dailyRiddleData) return;
     const userAnswer = answer.trim().toLowerCase();
@@ -273,49 +343,43 @@ const Riddles = () => {
       setIsCorrect(true);
       setShowAnswer(true);
       setDailySolved(true);
-      setSolvedCount((prev) => prev + 1);
-      setPoints((prev) => prev + dailyRiddleData.points);
-      setStreak((prev) => prev + 1);
 
-      const newHistory = {
-        id: Date.now(),
-        riddle_id: dailyRiddleData.id,
-        question: dailyRiddleData.question,
-        answer: dailyRiddleData.answer,
-        userAnswer: userAnswer,
-        solved: true,
-        points: dailyRiddleData.points,
-        solved_at: new Date().toISOString(),
-      };
-      setHistory((prev) => [newHistory, ...prev]);
+      const newSolvedCount = solvedCount + 1;
+      const newPoints = points + dailyRiddleData.points;
+      const newStreak = streak + 1;
 
-      // ✅ Save to database
+      setSolvedCount(newSolvedCount);
+      setPoints(newPoints);
+      setStreak(newStreak);
+
+      // Save to database
       await saveRiddleToHistory(dailyRiddleData.id, true, dailyRiddleData.points);
-      await updateUserStats();
+      await updateUserStats(newSolvedCount, newPoints, newStreak);
+      saveLocalProgress(newStreak);
+
+      toast.success(`🎉 Correct! +${dailyRiddleData.points} points`);
+
+      // Refresh stats
+      await loadUserStats();
     } else {
       setIsCorrect(false);
+      const newStreak = 0;
       setStreak(0);
-      setHistory((prev) => [
-        {
-          id: Date.now(),
-          riddle_id: dailyRiddleData.id,
-          question: dailyRiddleData.question,
-          answer: dailyRiddleData.answer,
-          userAnswer: userAnswer,
-          solved: false,
-          points: 0,
-          solved_at: null,
-        },
-        ...prev,
-      ]);
+      saveLocalProgress(0);
+      await updateUserStats(solvedCount, points, 0);
 
       if (dailyAttempts + 1 >= 3) {
         setShowAnswer(true);
+        toast.info("💡 Answer revealed after 3 attempts");
+      } else {
+        toast.error(`❌ Not quite right. Try again! (${dailyAttempts + 1}/3)`);
       }
     }
   };
 
-  // ✅ FIX: Handle regular riddle submit
+  // ============================================
+  // HANDLE REGULAR RIDDLE SUBMIT
+  // ============================================
   const handleSubmitRiddle = async (riddleId) => {
     const riddle = riddles.find((r) => r.id === riddleId);
     if (!riddle) return;
@@ -338,65 +402,49 @@ const Riddles = () => {
 
     if (isCorrectAnswer) {
       setShowAnswerMap((prev) => ({ ...prev, [riddleId]: true }));
-      setSolvedCount((prev) => prev + 1);
-      setPoints((prev) => prev + riddle.points);
-      setStreak((prev) => prev + 1);
-      setHistory((prev) => [
-        {
-          id: Date.now(),
-          riddle_id: riddle.id,
-          question: riddle.question,
-          answer: riddle.answer,
-          userAnswer: userAnswer,
-          solved: true,
-          points: riddle.points,
-          solved_at: new Date().toISOString(),
-        },
-        ...prev,
-      ]);
+      const newSolvedCount = solvedCount + 1;
+      const newPoints = points + riddle.points;
+      const newStreak = streak + 1;
 
+      setSolvedCount(newSolvedCount);
+      setPoints(newPoints);
+      setStreak(newStreak);
+
+      // Save to database
       await saveRiddleToHistory(riddle.id, true, riddle.points);
-      await updateUserStats();
+      await updateUserStats(newSolvedCount, newPoints, newStreak);
+      saveLocalProgress(newStreak);
+
+      toast.success(`🎉 Correct! +${riddle.points} points`);
+
+      // Refresh stats
+      await loadUserStats();
     } else {
+      const newStreak = 0;
       setStreak(0);
+      saveLocalProgress(0);
+      await updateUserStats(solvedCount, points, 0);
+
       if ((attemptsMap[riddleId] || 0) + 1 >= 3) {
         setShowAnswerMap((prev) => ({ ...prev, [riddleId]: true }));
+        toast.info("💡 Answer revealed after 3 attempts");
+      } else {
+        toast.error(`❌ Not quite right. Try again!`);
       }
     }
   };
 
-  // ✅ FIX: Refresh stats
+  // ============================================
+  // REFRESH STATS
+  // ============================================
   const refreshStats = async () => {
-    setRefreshing(true);
-    await loadUserRiddleStats();
-    setRefreshing(false);
+    await loadAllRiddleData();
+    toast.success("🔄 Stats refreshed!");
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleDailySubmit();
-    }
-  };
-
-  const handleKeyPressRiddle = (riddleId, e) => {
-    if (e.key === "Enter") {
-      handleSubmitRiddle(riddleId);
-    }
-  };
-
-  const toggleRiddle = (riddleId) => {
-    if (expandedRiddle === riddleId) {
-      setExpandedRiddle(null);
-    } else {
-      setExpandedRiddle(riddleId);
-      setInputValues((prev) => ({ ...prev, [riddleId]: "" }));
-      setShowHintMap((prev) => ({ ...prev, [riddleId]: false }));
-      setShowAnswerMap((prev) => ({ ...prev, [riddleId]: false }));
-      setResultMap((prev) => ({ ...prev, [riddleId]: null }));
-      setAttemptsMap((prev) => ({ ...prev, [riddleId]: 0 }));
-    }
-  };
-
+  // ============================================
+  // UTILITY FUNCTIONS
+  // ============================================
   const handleDailyHint = () => {
     if (dailySolved) return;
     if (dailyHintUsed) return;
@@ -423,6 +471,35 @@ const Riddles = () => {
     const attempts = attemptsMap[riddleId] || 0;
     if (attempts < 3) return;
     setShowAnswerMap((prev) => ({ ...prev, [riddleId]: !prev[riddleId] }));
+  };
+
+  const handleInputChange = (riddleId, value) => {
+    setInputValues((prev) => ({ ...prev, [riddleId]: value }));
+  };
+
+  const toggleRiddle = (riddleId) => {
+    if (expandedRiddle === riddleId) {
+      setExpandedRiddle(null);
+    } else {
+      setExpandedRiddle(riddleId);
+      setInputValues((prev) => ({ ...prev, [riddleId]: "" }));
+      setShowHintMap((prev) => ({ ...prev, [riddleId]: false }));
+      setShowAnswerMap((prev) => ({ ...prev, [riddleId]: false }));
+      setResultMap((prev) => ({ ...prev, [riddleId]: null }));
+      setAttemptsMap((prev) => ({ ...prev, [riddleId]: 0 }));
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleDailySubmit();
+    }
+  };
+
+  const handleKeyPressRiddle = (riddleId, e) => {
+    if (e.key === "Enter") {
+      handleSubmitRiddle(riddleId);
+    }
   };
 
   const getDifficultyColor = (difficulty) => {
@@ -462,6 +539,9 @@ const Riddles = () => {
 
   const filteredRiddles = getFilteredRiddles();
 
+  // ============================================
+  // TIMER FOR DAILY RIDDLE
+  // ============================================
   useEffect(() => {
     if (dailyRiddleData) {
       const updateTimer = () => {
@@ -485,6 +565,9 @@ const Riddles = () => {
     }
   }, [dailyRiddleData]);
 
+  // ============================================
+  // RENDER
+  // ============================================
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -498,6 +581,7 @@ const Riddles = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white flex items-center gap-3">
@@ -511,10 +595,9 @@ const Riddles = () => {
         <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={refreshStats}
-            disabled={refreshing}
             className="glass-card px-4 py-2 flex items-center gap-2 hover:border-[#6C2BD9] transition-colors"
           >
-            <RefreshCw className={`w-4 h-4 text-gray-400 ${refreshing ? "animate-spin" : ""}`} />
+            <RefreshCw className="w-4 h-4 text-gray-400" />
             <span className="text-sm text-gray-300">Refresh</span>
           </button>
           <div className="glass-card px-4 py-2 flex items-center gap-2">
@@ -528,6 +611,7 @@ const Riddles = () => {
         </div>
       </div>
 
+      {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="glass-card p-4 text-center">
           <div className="text-2xl font-bold text-[#6C2BD9]">{solvedCount}</div>
@@ -549,6 +633,7 @@ const Riddles = () => {
         </div>
       </div>
 
+      {/* Daily Riddle */}
       {dailyRiddleData && (
         <div className="glass-card p-6 bg-gradient-to-r from-[#6C2BD9]/10 to-[#8B5CF6]/10 border border-[#6C2BD9]/20">
           <div className="flex items-start justify-between mb-4">
@@ -591,7 +676,11 @@ const Riddles = () => {
                 <button
                   onClick={handleDailySubmit}
                   disabled={dailySolved}
-                  className={`absolute right-2 top-1/2 transform -translate-y-1/2 px-4 py-1.5 rounded-lg transition-all ${dailySolved ? "bg-green-500/20 text-green-400 cursor-not-allowed" : "bg-[#6C2BD9] text-white hover:bg-[#5A1BB8]"}`}
+                  className={`absolute right-2 top-1/2 transform -translate-y-1/2 px-4 py-1.5 rounded-lg transition-all ${
+                    dailySolved
+                      ? "bg-green-500/20 text-green-400 cursor-not-allowed"
+                      : "bg-[#6C2BD9] text-white hover:bg-[#5A1BB8]"
+                  }`}
                 >
                   {dailySolved ? (
                     <Check className="w-5 h-5" />
@@ -614,7 +703,13 @@ const Riddles = () => {
               <button
                 onClick={handleDailyHint}
                 disabled={dailySolved}
-                className={`text-sm px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${dailySolved || dailyAttempts < 2 ? "bg-gray-700/50 text-gray-500 cursor-not-allowed" : showHint ? "bg-yellow-500/20 text-yellow-400 border border-yellow-400/30 cursor-pointer hover:bg-yellow-500/30" : "bg-gray-700 text-gray-400 cursor-not-allowed"}`}
+                className={`text-sm px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+                  dailySolved || dailyAttempts < 2
+                    ? "bg-gray-700/50 text-gray-500 cursor-not-allowed"
+                    : showHint
+                    ? "bg-yellow-500/20 text-yellow-400 border border-yellow-400/30 cursor-pointer hover:bg-yellow-500/30"
+                    : "bg-gray-700 text-gray-400 cursor-not-allowed"
+                }`}
               >
                 <Lightbulb className="w-4 h-4" />
                 {showHint ? "Hide Hint" : "Show Hint"}
@@ -622,7 +717,13 @@ const Riddles = () => {
               <button
                 onClick={handleDailyReveal}
                 disabled={dailySolved}
-                className={`text-sm px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${dailySolved || dailyAttempts < 3 ? "bg-gray-700/50 text-gray-500 cursor-not-allowed" : showAnswer ? "bg-blue-500/20 text-blue-400 border border-blue-400/30 cursor-pointer hover:bg-blue-500/30" : "bg-gray-700 text-gray-400 cursor-not-allowed"}`}
+                className={`text-sm px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+                  dailySolved || dailyAttempts < 3
+                    ? "bg-gray-700/50 text-gray-500 cursor-not-allowed"
+                    : showAnswer
+                    ? "bg-blue-500/20 text-blue-400 border border-blue-400/30 cursor-pointer hover:bg-blue-500/30"
+                    : "bg-gray-700 text-gray-400 cursor-not-allowed"
+                }`}
               >
                 {showAnswer ? (
                   <EyeOff className="w-4 h-4" />
@@ -655,11 +756,12 @@ const Riddles = () => {
         </div>
       )}
 
+      {/* All Riddles */}
       <div className="glass-card p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-[#6C2BD9]" />
-            All Riddles
+            All Riddles ({riddles.length})
           </h3>
           <div className="flex gap-2">
             <select
@@ -692,7 +794,11 @@ const Riddles = () => {
                 key={riddle.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`rounded-lg border transition-all ${isSolved ? "border-[#00C9A7]/30 bg-[#00C9A7]/5" : "border-white/10 bg-white/5"} ${isExpanded ? "ring-1 ring-[#6C2BD9]" : ""}`}
+                className={`rounded-lg border transition-all ${
+                  isSolved
+                    ? "border-[#00C9A7]/30 bg-[#00C9A7]/5"
+                    : "border-white/10 bg-white/5"
+                } ${isExpanded ? "ring-1 ring-[#6C2BD9]" : ""}`}
               >
                 <div
                   className="p-4 cursor-pointer hover:bg-white/5 transition-colors rounded-lg"
@@ -702,7 +808,9 @@ const Riddles = () => {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span
-                          className={`text-xs px-2 py-0.5 rounded-full ${getDifficultyColor(riddle.difficulty)}`}
+                          className={`text-xs px-2 py-0.5 rounded-full ${getDifficultyColor(
+                            riddle.difficulty
+                          )}`}
                         >
                           {getDifficultyEmoji(riddle.difficulty)}{" "}
                           {riddle.difficulty}
@@ -772,7 +880,11 @@ const Riddles = () => {
                               <button
                                 onClick={() => handleSubmitRiddle(riddle.id)}
                                 disabled={result === true}
-                                className={`absolute right-2 top-1/2 transform -translate-y-1/2 px-4 py-1.5 rounded-lg transition-all ${result === true ? "bg-green-500/20 text-green-400 cursor-not-allowed" : "bg-[#6C2BD9] text-white hover:bg-[#5A1BB8]"}`}
+                                className={`absolute right-2 top-1/2 transform -translate-y-1/2 px-4 py-1.5 rounded-lg transition-all ${
+                                  result === true
+                                    ? "bg-green-500/20 text-green-400 cursor-not-allowed"
+                                    : "bg-[#6C2BD9] text-white hover:bg-[#5A1BB8]"
+                                }`}
                               >
                                 {result === true ? (
                                   <Check className="w-5 h-5" />
@@ -795,7 +907,13 @@ const Riddles = () => {
                             <button
                               onClick={() => handleRiddleHint(riddle.id)}
                               disabled={result === true}
-                              className={`text-sm px-3 py-2 rounded-lg flex items-center gap-1 transition-all ${result === true || attempts < 2 ? "bg-gray-700/50 text-gray-500 cursor-not-allowed" : showHintForRiddle ? "bg-yellow-500/20 text-yellow-400 border border-yellow-400/30 cursor-pointer hover:bg-yellow-500/30" : "bg-gray-700 text-gray-400 cursor-not-allowed"}`}
+                              className={`text-sm px-3 py-2 rounded-lg flex items-center gap-1 transition-all ${
+                                result === true || attempts < 2
+                                  ? "bg-gray-700/50 text-gray-500 cursor-not-allowed"
+                                  : showHintForRiddle
+                                  ? "bg-yellow-500/20 text-yellow-400 border border-yellow-400/30 cursor-pointer hover:bg-yellow-500/30"
+                                  : "bg-gray-700 text-gray-400 cursor-not-allowed"
+                              }`}
                             >
                               <Lightbulb className="w-4 h-4" />
                               {showHintForRiddle ? "Hide" : "Hint"}
@@ -803,7 +921,13 @@ const Riddles = () => {
                             <button
                               onClick={() => handleRiddleReveal(riddle.id)}
                               disabled={result === true}
-                              className={`text-sm px-3 py-2 rounded-lg flex items-center gap-1 transition-all ${result === true || attempts < 3 ? "bg-gray-700/50 text-gray-500 cursor-not-allowed" : showAnswerForRiddle ? "bg-blue-500/20 text-blue-400 border border-blue-400/30 cursor-pointer hover:bg-blue-500/30" : "bg-gray-700 text-gray-400 cursor-not-allowed"}`}
+                              className={`text-sm px-3 py-2 rounded-lg flex items-center gap-1 transition-all ${
+                                result === true || attempts < 3
+                                  ? "bg-gray-700/50 text-gray-500 cursor-not-allowed"
+                                  : showAnswerForRiddle
+                                  ? "bg-blue-500/20 text-blue-400 border border-blue-400/30 cursor-pointer hover:bg-blue-500/30"
+                                  : "bg-gray-700 text-gray-400 cursor-not-allowed"
+                              }`}
                             >
                               {showAnswerForRiddle ? (
                                 <EyeOff className="w-4 h-4" />
@@ -825,10 +949,22 @@ const Riddles = () => {
 
                         {showAnswerForRiddle && (
                           <div
-                            className={`p-3 rounded-lg border ${result === true ? "bg-[#00C9A7]/10 border-[#00C9A7]/20" : result === false ? "bg-red-500/10 border-red-500/20" : "bg-[#00C9A7]/10 border-[#00C9A7]/20"}`}
+                            className={`p-3 rounded-lg border ${
+                              result === true
+                                ? "bg-[#00C9A7]/10 border-[#00C9A7]/20"
+                                : result === false
+                                ? "bg-red-500/10 border-red-500/20"
+                                : "bg-[#00C9A7]/10 border-[#00C9A7]/20"
+                            }`}
                           >
                             <p
-                              className={`text-sm ${result === true ? "text-[#00C9A7]" : result === false ? "text-red-400" : "text-[#00C9A7]"}`}
+                              className={`text-sm ${
+                                result === true
+                                  ? "text-[#00C9A7]"
+                                  : result === false
+                                  ? "text-red-400"
+                                  : "text-[#00C9A7]"
+                              }`}
                             >
                               <span className="font-semibold">Answer:</span>{" "}
                               {riddle.answer}
@@ -841,7 +977,11 @@ const Riddles = () => {
 
                         {result !== null && (
                           <div
-                            className={`p-3 rounded-lg border ${result ? "border-[#00C9A7]/30 bg-[#00C9A7]/5 text-[#00C9A7]" : "border-red-400/30 bg-red-400/5 text-red-400"}`}
+                            className={`p-3 rounded-lg border ${
+                              result
+                                ? "border-[#00C9A7]/30 bg-[#00C9A7]/5 text-[#00C9A7]"
+                                : "border-red-400/30 bg-red-400/5 text-red-400"
+                            }`}
                           >
                             <div className="flex items-center gap-2">
                               {result ? (
