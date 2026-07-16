@@ -1,3 +1,4 @@
+// src/components/Common/DailyMissions.jsx
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
@@ -202,6 +203,7 @@ const DailyMissions = ({ userId, onMissionComplete, refreshTrigger }) => {
           progress = 0;
       }
 
+      // ✅ FIX: Check if progress meets target
       return progress >= target;
     } catch (error) {
       console.error("Error checking mission progress:", error);
@@ -211,7 +213,10 @@ const DailyMissions = ({ userId, onMissionComplete, refreshTrigger }) => {
 
   // ✅ FIX: Only complete mission if actually achieved
   const handleMissionCheck = async (mission) => {
-    if (mission.completed) return;
+    if (mission.completed) {
+      toast.info("This mission is already complete!");
+      return;
+    }
 
     // Check if the mission is actually completed
     const isActuallyCompleted = await checkMissionProgress(mission);
@@ -269,7 +274,6 @@ const DailyMissions = ({ userId, onMissionComplete, refreshTrigger }) => {
     }
   };
 
-  // Refresh missions (call this from parent when user does something)
   const refreshMissions = async () => {
     setRefreshing(true);
     await loadMissions();

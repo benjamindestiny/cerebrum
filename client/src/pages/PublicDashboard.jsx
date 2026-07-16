@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -20,10 +20,78 @@ import {
   Gift,
   FolderTree,
   Target,
+  Loader2,
 } from "lucide-react";
+import { supabase } from "../services/supabase";
 
 const PublicDashboard = () => {
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalQuizzes: 0,
+    totalQuestions: 0,
+    totalCategories: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadRealStats();
+  }, []);
+
+  const loadRealStats = async () => {
+    setLoading(true);
+    try {
+      // Get total users
+      const { count: userCount } = await supabase
+        .from("users")
+        .select("*", { count: "exact", head: true });
+
+      // Get total quiz results
+      const { count: quizCount } = await supabase
+        .from("quiz_results")
+        .select("*", { count: "exact", head: true });
+
+      // Get total questions from quiz_results
+      const { data: quizData } = await supabase
+        .from("quiz_results")
+        .select("total_questions");
+
+      let totalQuestions = 0;
+      if (quizData) {
+        totalQuestions = quizData.reduce(
+          (sum, q) => sum + (q.total_questions || 0),
+          0
+        );
+      }
+
+      // Get categories from categories table or count distinct categories
+      const { data: categories } = await supabase
+        .from("quiz_results")
+        .select("category")
+        .not("category", "is", null);
+
+      const uniqueCategories = new Set(categories?.map(c => c.category) || []);
+      const totalCategories = uniqueCategories.size || 12; // fallback
+
+      setStats({
+        totalUsers: userCount || 0,
+        totalQuizzes: quizCount || 0,
+        totalQuestions: totalQuestions || 0,
+        totalCategories: Math.max(totalCategories, 12),
+      });
+    } catch (error) {
+      console.error("Error loading stats:", error);
+      // Fallback to reasonable numbers
+      setStats({
+        totalUsers: 24,
+        totalQuizzes: 0,
+        totalQuestions: 0,
+        totalCategories: 12,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const features = [
     {
@@ -52,15 +120,24 @@ const PublicDashboard = () => {
     },
   ];
 
-  const stats = [
-    { icon: Brain, value: "1000+", label: "Questions" },
-    { icon: Users, value: "5,000+", label: "Active Learners" },
-    { icon: Trophy, value: "50+", label: "Categories" },
-    { icon: Zap, value: "24/7", label: "Available" },
+  const statsData = [
+    { icon: Trophy, value: stats.totalQuizzes, label: "Quizzes Taken" },
+    { icon: Users, value: stats.totalUsers, label: "Active Learners" },
+    { icon: Brain, value: stats.totalCategories, label: "Categories" },
+    { icon: Zap, value: stats.totalQuestions, label: "Questions" },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-10 h-10 text-[#7c3aed] animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 sm:space-y-10 md:space-y-12 pb-12 px-3 sm:px-4">
+      {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[300px] sm:w-[400px] md:w-[600px] h-[300px] sm:h-[400px] md:h-[600px] bg-[#6C2BD9]/10 rounded-full blur-3xl -z-10"></div>
         <div className="absolute bottom-0 left-0 w-[250px] sm:w-[350px] md:w-[500px] h-[250px] sm:h-[350px] md:h-[500px] bg-[#00C9A7]/10 rounded-full blur-3xl -z-10"></div>
@@ -119,7 +196,7 @@ const PublicDashboard = () => {
                 <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-yellow-400" />
                 <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-yellow-400" />
                 <span className="ml-1 sm:ml-2 text-gray-400">
-                  5,000+ learners
+                  {stats.totalUsers} learners
                 </span>
               </span>
               <span className="hidden sm:inline text-gray-600">•</span>
@@ -137,16 +214,19 @@ const PublicDashboard = () => {
         </div>
       </section>
 
+      {/* Stats Section */}
       <section className="container mx-auto px-2 sm:px-4 max-w-7xl">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          {stats.map((stat, index) => (
+          {statsData.map((stat, index) => (
             <div
               key={index}
               className="glass-card p-3 sm:p-4 md:p-6 text-center"
             >
               <stat.icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-[#6C2BD9] mx-auto mb-1 sm:mb-2" />
               <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white">
-                {stat.value}
+                {stat.value > 1000
+                  ? `${(stat.value / 1000).toFixed(1)}K+`
+                  : stat.value || 0}
               </div>
               <div className="text-[10px] sm:text-xs md:text-sm text-gray-400">
                 {stat.label}
@@ -156,6 +236,7 @@ const PublicDashboard = () => {
         </div>
       </section>
 
+      {/* Features Section */}
       <section className="container mx-auto px-2 sm:px-4 max-w-7xl">
         <div className="text-center mb-6 sm:mb-8 md:mb-12">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 sm:mb-4">
@@ -190,6 +271,7 @@ const PublicDashboard = () => {
         </div>
       </section>
 
+      {/* CTA Section */}
       <section className="container mx-auto px-2 sm:px-4 max-w-7xl">
         <div className="glass-card p-6 sm:p-8 md:p-10 lg:p-12 bg-gradient-to-r from-[#6C2BD9]/30 to-[#00C9A7]/30 border border-white/10 text-center">
           <div className="max-w-3xl mx-auto">
@@ -200,8 +282,8 @@ const PublicDashboard = () => {
               Ready to Start Learning?
             </h2>
             <p className="text-gray-300 text-sm sm:text-base md:text-lg mb-6 sm:mb-8 max-w-xl mx-auto">
-              Join thousands of learners and start mastering new topics today.
-              It's completely free!
+              Join {stats.totalUsers} learners and start mastering new topics
+              today. It's completely free!
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <button

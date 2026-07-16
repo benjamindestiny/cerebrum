@@ -25,7 +25,6 @@ import {
 } from "lucide-react";
 import { supabase } from "../services/supabase";
 import { useAuth } from "../context/AuthContext";
-import EmailSubscribe from "../components/Email/EmailSubscribe";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -42,6 +41,7 @@ const Dashboard = () => {
   const [recentActivity, setRecentActivity] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const loadDashboardData = useCallback(async () => {
     if (!currentUser) return;
@@ -154,6 +154,7 @@ const Dashboard = () => {
   const refreshDashboard = async () => {
     setRefreshing(true);
     await loadDashboardData();
+    setRefreshTrigger((prev) => prev + 1);
     setRefreshing(false);
   };
 
@@ -209,9 +210,9 @@ const Dashboard = () => {
     );
   }
 
-  // ✅ FIX: DailyMissions component is now properly inside the return
   return (
     <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 px-3 sm:px-4 pb-12">
+      {/* Welcome Card */}
       <div className="glass-card p-5 sm:p-6 md:p-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div>
@@ -248,16 +249,17 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* ✅ Daily Missions Component */}
+      {/* Daily Missions */}
       <DailyMissions
         userId={currentUser?.id}
         onMissionComplete={(data) => {
           console.log("Mission complete!", data);
           loadDashboardData();
         }}
+        refreshTrigger={refreshTrigger}
       />
 
-
+      {/* Stats Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="glass-card p-3 sm:p-4 text-center">
           <Trophy className="w-5 h-5 text-yellow-400 mx-auto mb-1" />
@@ -293,6 +295,7 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Quick Action Buttons */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <button
           onClick={() => navigate("/categories")}
@@ -336,6 +339,7 @@ const Dashboard = () => {
         </button>
       </div>
 
+      {/* Recent Activity */}
       {recentActivity.length > 0 && (
         <div className="glass-card p-4 sm:p-6">
           <h3 className="text-white font-semibold mb-3 flex items-center gap-2 text-sm sm:text-base">
@@ -365,6 +369,7 @@ const Dashboard = () => {
         </div>
       )}
 
+      {/* Daily Challenge CTA */}
       <div className="glass-card p-4 sm:p-6 border border-[#7c3aed]/20 bg-[#7c3aed]/5">
         <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
           <div className="flex-1 text-center sm:text-left">
