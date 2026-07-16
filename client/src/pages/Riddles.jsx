@@ -13,10 +13,6 @@ import {
   Send,
   Eye,
   EyeOff,
-  Star,
-  Medal,
-  Award,
-  Users,
   Loader2,
   BookOpen,
   ChevronDown,
@@ -52,7 +48,6 @@ const Riddles = () => {
   const [timeUntilNext, setTimeUntilNext] = useState("");
   const [dailyRiddleData, setDailyRiddleData] = useState(null);
   const [user, setUser] = useState(null);
-  const [userStats, setUserStats] = useState(null);
 
   const inputRefs = useRef({});
 
@@ -84,10 +79,12 @@ const Riddles = () => {
     setIsLoading(true);
 
     try {
+      // Load user stats
       await loadUserStats();
+      // Load riddle history
       await loadRiddleHistory();
+      // Load daily riddle
       loadDailyRiddle();
-      loadLocalProgress();
     } catch (error) {
       console.error("Error loading riddle data:", error);
       toast.error("Failed to load riddle data");
@@ -110,7 +107,6 @@ const Riddles = () => {
       }
 
       if (data?.stats) {
-        setUserStats(data.stats);
         setSolvedCount(data.stats.riddles_solved || 0);
         setPoints(data.stats.total_points || 0);
         setStreak(data.stats.riddle_streak || 0);
@@ -135,34 +131,12 @@ const Riddles = () => {
 
       if (data) {
         setHistory(data);
+        // Update solved count from history
+        const solved = data.filter(h => h.solved === true).length;
+        setSolvedCount(solved);
       }
     } catch (error) {
       console.error("Error loading riddle history:", error);
-    }
-  };
-
-  const loadLocalProgress = () => {
-    try {
-      const saved = localStorage.getItem("cerebrum_riddle_progress");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.streak && parsed.date === new Date().toDateString()) {
-          setStreak(parsed.streak);
-        }
-      }
-    } catch (error) {
-      console.error("Error loading local progress:", error);
-    }
-  };
-
-  const saveLocalProgress = (newStreak) => {
-    try {
-      localStorage.setItem("cerebrum_riddle_progress", JSON.stringify({
-        streak: newStreak,
-        date: new Date().toDateString(),
-      }));
-    } catch (error) {
-      console.error("Error saving local progress:", error);
     }
   };
 
@@ -177,9 +151,13 @@ const Riddles = () => {
     setDailyHintUsed(false);
     setDailyAnswerRevealed(false);
 
+    // Check if daily riddle was already solved today
     const today = new Date().toISOString().split("T")[0];
     const dailySolvedToday = history.some(
-      (h) => h.riddle_id === daily.id && h.solved === true && h.solved_at?.split("T")[0] === today
+      (h) =>
+        h.riddle_id === daily.id &&
+        h.solved === true &&
+        h.solved_at?.split("T")[0] === today
     );
 
     if (dailySolvedToday) {
@@ -195,6 +173,7 @@ const Riddles = () => {
     if (!user) return;
 
     try {
+      // Check if entry already exists
       const { data: existing } = await supabase
         .from("riddle_history")
         .select("*")
@@ -203,6 +182,7 @@ const Riddles = () => {
         .maybeSingle();
 
       if (existing) {
+        // Update existing
         const { error } = await supabase
           .from("riddle_history")
           .update({
@@ -215,6 +195,7 @@ const Riddles = () => {
 
         if (error) throw error;
       } else {
+        // Insert new
         const { error } = await supabase
           .from("riddle_history")
           .insert({
@@ -230,6 +211,7 @@ const Riddles = () => {
         if (error) throw error;
       }
 
+      // Refresh history
       await loadRiddleHistory();
     } catch (error) {
       console.error("Error saving riddle history:", error);
@@ -279,7 +261,8 @@ const Riddles = () => {
     if (!userAnswer) return;
 
     const correctAnswer = dailyRiddleData.answer.toLowerCase();
-    const isCorrectAnswer = userAnswer === correctAnswer ||
+    const isCorrectAnswer =
+      userAnswer === correctAnswer ||
       userAnswer.includes(correctAnswer) ||
       correctAnswer.includes(userAnswer);
 
@@ -298,9 +281,9 @@ const Riddles = () => {
       setPoints(newPoints);
       setStreak(newStreak);
 
+      // Save to database
       await saveRiddleToHistory(dailyRiddleData.id, true, dailyRiddleData.points);
       await updateUserStats(newSolvedCount, newPoints, newStreak);
-      saveLocalProgress(newStreak);
 
       toast.success(`🎉 Correct! +${dailyRiddleData.points} points`);
       await loadUserStats();
@@ -308,7 +291,6 @@ const Riddles = () => {
       setIsCorrect(false);
       const newStreak = 0;
       setStreak(0);
-      saveLocalProgress(0);
       await updateUserStats(solvedCount, points, 0);
 
       if (dailyAttempts + 1 >= 3) {
@@ -333,7 +315,8 @@ const Riddles = () => {
     }));
 
     const correctAnswer = riddle.answer.toLowerCase();
-    const isCorrectAnswer = userAnswer === correctAnswer ||
+    const isCorrectAnswer =
+      userAnswer === correctAnswer ||
       userAnswer.includes(correctAnswer) ||
       correctAnswer.includes(userAnswer);
 
@@ -351,14 +334,12 @@ const Riddles = () => {
 
       await saveRiddleToHistory(riddle.id, true, riddle.points);
       await updateUserStats(newSolvedCount, newPoints, newStreak);
-      saveLocalProgress(newStreak);
 
       toast.success(`🎉 Correct! +${riddle.points} points`);
       await loadUserStats();
     } else {
       const newStreak = 0;
       setStreak(0);
-      saveLocalProgress(0);
       await updateUserStats(solvedCount, points, 0);
 
       if ((attemptsMap[riddleId] || 0) + 1 >= 3) {
@@ -497,7 +478,7 @@ const Riddles = () => {
   }
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
