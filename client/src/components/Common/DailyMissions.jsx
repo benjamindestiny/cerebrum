@@ -1,5 +1,6 @@
 // src/components/Common/DailyMissions.jsx
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   CheckCircle,
@@ -13,11 +14,13 @@ import {
   BookOpen,
   Target,
   Flame,
+  ArrowRight,
 } from "lucide-react";
 import { supabase } from "../../services/supabase";
 import { toast } from "react-toastify";
 
 const DailyMissions = ({ userId, onMissionComplete, refreshTrigger }) => {
+  const navigate = useNavigate();
   const [missions, setMissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -131,7 +134,38 @@ const DailyMissions = ({ userId, onMissionComplete, refreshTrigger }) => {
     }
   };
 
-  // ✅ FIX: Check if mission is actually completed based on user activity
+  // ✅ FIX: Navigate to the correct page based on mission type
+  const handleMissionClick = (mission) => {
+    if (mission.completed) {
+      toast.info("✅ This mission is already complete!");
+      return;
+    }
+
+    // Navigate to the relevant page
+    switch (mission.mission_type) {
+      case "quiz":
+        navigate("/categories");
+        toast.info("📝 Take a quiz to complete this mission!");
+        break;
+      case "riddle":
+        navigate("/riddles");
+        toast.info("🧩 Solve a riddle to complete this mission!");
+        break;
+      case "read":
+        navigate("/read-and-test");
+        toast.info("📖 Read an article to complete this mission!");
+        break;
+      case "score":
+        navigate("/categories");
+        toast.info("🎯 Score 80%+ on a quiz to complete this mission!");
+        break;
+      default:
+        navigate("/categories");
+        toast.info("Complete the required action to earn points!");
+    }
+  };
+
+  // Check if mission is actually completed based on user activity
   const checkMissionProgress = async (mission) => {
     const today = new Date().toISOString().split("T")[0];
     const missionType = mission.mission_type;
@@ -142,7 +176,6 @@ const DailyMissions = ({ userId, onMissionComplete, refreshTrigger }) => {
 
       switch (missionType) {
         case "quiz": {
-          // Count quizzes taken today
           const { data, error } = await supabase
             .from("quiz_results")
             .select("id")
@@ -155,7 +188,6 @@ const DailyMissions = ({ userId, onMissionComplete, refreshTrigger }) => {
           break;
         }
         case "riddle": {
-          // Count riddles solved today
           const { data, error } = await supabase
             .from("riddle_history")
             .select("id")
@@ -169,7 +201,6 @@ const DailyMissions = ({ userId, onMissionComplete, refreshTrigger }) => {
           break;
         }
         case "read": {
-          // Count articles read today
           const { data, error } = await supabase
             .from("article_history")
             .select("id")
@@ -182,7 +213,6 @@ const DailyMissions = ({ userId, onMissionComplete, refreshTrigger }) => {
           break;
         }
         case "score": {
-          // Check if user scored 80%+ today
           const { data, error } = await supabase
             .from("quiz_results")
             .select("percentage")
@@ -203,7 +233,6 @@ const DailyMissions = ({ userId, onMissionComplete, refreshTrigger }) => {
           progress = 0;
       }
 
-      // ✅ FIX: Check if progress meets target
       return progress >= target;
     } catch (error) {
       console.error("Error checking mission progress:", error);
@@ -211,8 +240,8 @@ const DailyMissions = ({ userId, onMissionComplete, refreshTrigger }) => {
     }
   };
 
-  // ✅ FIX: Only complete mission if actually achieved
-  const handleMissionCheck = async (mission) => {
+  // Complete mission if actually achieved
+  const handleMissionComplete = async (mission) => {
     if (mission.completed) {
       toast.info("This mission is already complete!");
       return;
@@ -348,6 +377,17 @@ const DailyMissions = ({ userId, onMissionComplete, refreshTrigger }) => {
     return descriptions[mission.mission_type] || "Complete this mission";
   };
 
+  const getMissionPath = (mission) => {
+    const paths = {
+      quiz: "/categories",
+      riddle: "/riddles",
+      read: "/read-and-test",
+      score: "/categories",
+      speed: "/categories",
+    };
+    return paths[mission.mission_type] || "/categories";
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-6">
@@ -429,12 +469,20 @@ const DailyMissions = ({ userId, onMissionComplete, refreshTrigger }) => {
               className={`flex items-center justify-between p-3 rounded-lg transition-all ${
                 isCompleted
                   ? "bg-green-500/10 border border-green-500/20"
-                  : "bg-white/5 hover:bg-white/10"
+                  : "bg-white/5 hover:bg-white/10 cursor-pointer"
               }`}
+              onClick={() => handleMissionClick(mission)}
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <button
-                  onClick={() => handleMissionCheck(mission)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isCompleted) {
+                      toast.info("✅ This mission is already complete!");
+                    } else {
+                      handleMissionComplete(mission);
+                    }
+                  }}
                   disabled={isCompleted}
                   className={`flex-shrink-0 transition-all ${
                     isCompleted
@@ -461,6 +509,9 @@ const DailyMissions = ({ userId, onMissionComplete, refreshTrigger }) => {
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                {!isCompleted && (
+                  <ArrowRight className="w-4 h-4 text-gray-500 group-hover:text-[#7c3aed] transition-colors" />
+                )}
                 <span className="text-xs text-yellow-400">
                   +{mission.points_earned} pts
                 </span>
