@@ -16,7 +16,7 @@ import {
 import { supabase } from "../../services/supabase";
 import { toast } from "react-toastify";
 
-const DailyMissions = ({ userId, onMissionComplete }) => {
+const DailyMissions = ({ userId, onMissionComplete, refreshTrigger }) => {
   const [missions, setMissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -26,13 +26,12 @@ const DailyMissions = ({ userId, onMissionComplete }) => {
     points: 0,
     bonusEarned: false,
   });
-  const [userStats, setUserStats] = useState(null);
 
   useEffect(() => {
     if (userId) {
       loadMissions();
     }
-  }, [userId]);
+  }, [userId, refreshTrigger]);
 
   const loadMissions = async () => {
     if (!userId) return;
@@ -40,7 +39,6 @@ const DailyMissions = ({ userId, onMissionComplete }) => {
     try {
       const today = new Date().toISOString().split("T")[0];
 
-      // Get today's missions
       const { data: missionData, error: missionError } = await supabase
         .from("daily_missions")
         .select("*")
@@ -49,7 +47,6 @@ const DailyMissions = ({ userId, onMissionComplete }) => {
 
       if (missionError) throw missionError;
 
-      // If no missions today, generate random ones
       if (!missionData || missionData.length === 0) {
         await generateRandomMissions();
         return;
@@ -57,7 +54,6 @@ const DailyMissions = ({ userId, onMissionComplete }) => {
 
       setMissions(missionData);
 
-      // Calculate stats
       const completed = missionData.filter((m) => m.completed).length;
       const total = missionData.length;
       const points = missionData.reduce(
@@ -67,14 +63,6 @@ const DailyMissions = ({ userId, onMissionComplete }) => {
 
       const bonusEarned = completed === total && total > 0;
       setStats({ completed, total, points, bonusEarned });
-
-      // Check if all missions completed
-      if (bonusEarned && !stats.bonusEarned) {
-        await handleAllMissionsComplete();
-      }
-
-      // Load user stats
-      await loadUserStats();
     } catch (error) {
       console.error("Error loading missions:", error);
       toast.error("Failed to load missions");
@@ -83,97 +71,39 @@ const DailyMissions = ({ userId, onMissionComplete }) => {
     }
   };
 
-  const loadUserStats = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("users")
-        .select("stats")
-        .eq("id", userId)
-        .single();
-
-      if (error) throw error;
-      setUserStats(data?.stats || {});
-    } catch (error) {
-      console.error("Error loading user stats:", error);
-    }
-  };
-
   const generateRandomMissions = async () => {
     try {
       const today = new Date().toISOString().split("T")[0];
 
-      // Get all active mission definitions
-      const { data: definitions, error: defError } = await supabase
-        .from("mission_definitions")
-        .select("*")
-        .eq("is_active", true);
+      const missionDefinitions = [
+        { mission_type: "quiz", target: 2, points: 100, name: "Quiz Master" },
+        {
+          mission_type: "riddle",
+          target: 3,
+          points: 75,
+          name: "Riddle Solver",
+        },
+        {
+          mission_type: "read",
+          target: 1,
+          points: 50,
+          name: "Knowledge Seeker",
+        },
+        {
+          mission_type: "score",
+          target: 1,
+          points: 100,
+          name: "Perfect Score",
+        },
+      ];
 
-      if (defError) throw defError;
-
-      if (!definitions || definitions.length === 0) {
-        // Fallback definitions if table is empty
-        const fallbackDefinitions = [
-          { mission_type: "quiz", target: 2, points: 100, name: "Quiz Master" },
-          {
-            mission_type: "riddle",
-            target: 3,
-            points: 75,
-            name: "Riddle Solver",
-          },
-          {
-            mission_type: "read",
-            target: 1,
-            points: 50,
-            name: "Knowledge Seeker",
-          },
-          {
-            mission_type: "score",
-            target: 1,
-            points: 100,
-            name: "Perfect Score",
-          },
-        ];
-
-        const missionsToInsert = fallbackDefinitions.map((def) => ({
-          user_id: userId,
-          mission_type: def.mission_type,
-          mission_data: { target: def.target, name: def.name },
-          date: today,
-          points_earned: def.points,
-          completed: false,
-          created_at: new Date().toISOString(),
-        }));
-
-        const { data, error } = await supabase
-          .from("daily_missions")
-          .insert(missionsToInsert)
-          .select();
-
-        if (error) throw error;
-        setMissions(data || []);
-        setStats({
-          completed: 0,
-          total: data.length,
-          points: 0,
-          bonusEarned: false,
-        });
-        return;
-      }
-
-      // Pick 4 random missions
-      const shuffled = [...definitions].sort(() => 0.5 - Math.random());
+      const shuffled = [...missionDefinitions].sort(() => 0.5 - Math.random());
       const selected = shuffled.slice(0, 4);
 
-      // If less than 4, use all available
       const missionsToInsert = selected.map((def) => ({
         user_id: userId,
         mission_type: def.mission_type,
-        mission_data: {
-          target: def.target,
-          name: def.name,
-          description: def.description,
-          icon: def.icon,
-        },
+        mission_data: { target: def.target, name: def.name },
         date: today,
         points_earned: def.points,
         completed: false,
@@ -194,14 +124,106 @@ const DailyMissions = ({ userId, onMissionComplete }) => {
         points: 0,
         bonusEarned: false,
       });
-      toast.success("🎯 New daily missions available!");
     } catch (error) {
       console.error("Error generating missions:", error);
       toast.error("Failed to generate missions");
     }
   };
 
-  const handleMissionComplete = async (missionId) => {
+  // ✅ FIX: Check if mission is actually completed based on user activity
+  const checkMissionProgress = async (mission) => {
+    const today = new Date().toISOString().split("T")[0];
+    const missionType = mission.mission_type;
+    const target = mission.mission_data?.target || 1;
+
+    try {
+      let progress = 0;
+
+      switch (missionType) {
+        case "quiz": {
+          // Count quizzes taken today
+          const { data, error } = await supabase
+            .from("quiz_results")
+            .select("id")
+            .eq("user_id", userId)
+            .gte("created_at", `${today}T00:00:00`)
+            .lte("created_at", `${today}T23:59:59`);
+
+          if (error) throw error;
+          progress = data?.length || 0;
+          break;
+        }
+        case "riddle": {
+          // Count riddles solved today
+          const { data, error } = await supabase
+            .from("riddle_history")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("solved", true)
+            .gte("solved_at", `${today}T00:00:00`)
+            .lte("solved_at", `${today}T23:59:59`);
+
+          if (error) throw error;
+          progress = data?.length || 0;
+          break;
+        }
+        case "read": {
+          // Count articles read today
+          const { data, error } = await supabase
+            .from("article_history")
+            .select("id")
+            .eq("user_id", userId)
+            .gte("read_at", `${today}T00:00:00`)
+            .lte("read_at", `${today}T23:59:59`);
+
+          if (error) throw error;
+          progress = data?.length || 0;
+          break;
+        }
+        case "score": {
+          // Check if user scored 80%+ today
+          const { data, error } = await supabase
+            .from("quiz_results")
+            .select("percentage")
+            .eq("user_id", userId)
+            .gte("created_at", `${today}T00:00:00`)
+            .lte("created_at", `${today}T23:59:59`)
+            .order("percentage", { ascending: false })
+            .limit(1);
+
+          if (error) throw error;
+          if (data && data.length > 0) {
+            const pct = parseFloat(data[0].percentage) || 0;
+            progress = pct >= 80 ? 1 : 0;
+          }
+          break;
+        }
+        default:
+          progress = 0;
+      }
+
+      return progress >= target;
+    } catch (error) {
+      console.error("Error checking mission progress:", error);
+      return false;
+    }
+  };
+
+  // ✅ FIX: Only complete mission if actually achieved
+  const handleMissionCheck = async (mission) => {
+    if (mission.completed) return;
+
+    // Check if the mission is actually completed
+    const isActuallyCompleted = await checkMissionProgress(mission);
+
+    if (!isActuallyCompleted) {
+      toast.warning(
+        `Complete ${getMissionDescription(mission)} to earn points!`,
+      );
+      return;
+    }
+
+    // If actually completed, mark as done
     try {
       const { data, error } = await supabase
         .from("daily_missions")
@@ -209,14 +231,14 @@ const DailyMissions = ({ userId, onMissionComplete }) => {
           completed: true,
           completed_at: new Date().toISOString(),
         })
-        .eq("id", missionId)
+        .eq("id", mission.id)
         .select();
 
       if (error) throw error;
 
       // Update local state
       const updatedMissions = missions.map((m) =>
-        m.id === missionId ? { ...m, completed: true } : m,
+        m.id === mission.id ? { ...m, completed: true } : m,
       );
       setMissions(updatedMissions);
 
@@ -230,18 +252,14 @@ const DailyMissions = ({ userId, onMissionComplete }) => {
       const bonusEarned = completed === total && total > 0;
       setStats({ completed, total, points, bonusEarned });
 
-      // Toast notification
-      const mission = updatedMissions.find((m) => m.id === missionId);
       toast.success(
-        `✅ ${getMissionName(mission.mission_type)} complete! +${mission?.points_earned} points`,
+        `✅ ${getMissionName(mission.mission_type)} complete! +${mission.points_earned} points`,
       );
 
-      // Callback for parent
       if (onMissionComplete) {
-        onMissionComplete({ missionId, completed, points });
+        onMissionComplete({ missionId: mission.id, completed, points });
       }
 
-      // Check if all missions complete
       if (bonusEarned) {
         await handleAllMissionsComplete();
       }
@@ -251,11 +269,16 @@ const DailyMissions = ({ userId, onMissionComplete }) => {
     }
   };
 
+  // Refresh missions (call this from parent when user does something)
+  const refreshMissions = async () => {
+    setRefreshing(true);
+    await loadMissions();
+    setRefreshing(false);
+  };
+
   const handleAllMissionsComplete = async () => {
-    // Bonus for completing all missions
     const bonusPoints = 50;
     try {
-      // Update user stats with bonus
       const { data: userData } = await supabase
         .from("users")
         .select("stats")
@@ -285,12 +308,6 @@ const DailyMissions = ({ userId, onMissionComplete }) => {
     } catch (error) {
       console.error("Error giving mission bonus:", error);
     }
-  };
-
-  const refreshMissions = async () => {
-    setRefreshing(true);
-    await loadMissions();
-    setRefreshing(false);
   };
 
   const getMissionIcon = (type) => {
@@ -398,7 +415,6 @@ const DailyMissions = ({ userId, onMissionComplete }) => {
       <div className="space-y-2.5">
         {missions.map((mission, index) => {
           const isCompleted = mission.completed;
-          const missionIcon = getMissionIcon(mission.mission_type);
 
           return (
             <motion.div
@@ -409,21 +425,17 @@ const DailyMissions = ({ userId, onMissionComplete }) => {
               className={`flex items-center justify-between p-3 rounded-lg transition-all ${
                 isCompleted
                   ? "bg-green-500/10 border border-green-500/20"
-                  : "bg-white/5 hover:bg-white/10 cursor-pointer"
+                  : "bg-white/5 hover:bg-white/10"
               }`}
-              onClick={() => !isCompleted && handleMissionComplete(mission.id)}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    !isCompleted && handleMissionComplete(mission.id);
-                  }}
+                  onClick={() => handleMissionCheck(mission)}
                   disabled={isCompleted}
                   className={`flex-shrink-0 transition-all ${
                     isCompleted
-                      ? "text-green-400"
-                      : "text-gray-500 hover:text-[#7c3aed]"
+                      ? "text-green-400 cursor-default"
+                      : "text-gray-500 hover:text-[#7c3aed] cursor-pointer"
                   }`}
                 >
                   {isCompleted ? (
@@ -432,19 +444,19 @@ const DailyMissions = ({ userId, onMissionComplete }) => {
                     <Circle className="w-5 h-5" />
                   )}
                 </button>
-                <div className="flex items-center gap-2">
-                  {missionIcon}
-                  <div>
-                    <div className="text-sm text-white font-medium">
+                <div className="flex items-center gap-2 min-w-0">
+                  {getMissionIcon(mission.mission_type)}
+                  <div className="min-w-0">
+                    <div className="text-sm text-white font-medium truncate">
                       {getMissionName(mission.mission_type)}
                     </div>
-                    <div className="text-xs text-gray-400">
+                    <div className="text-xs text-gray-400 truncate">
                       {getMissionDescription(mission)}
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                 <span className="text-xs text-yellow-400">
                   +{mission.points_earned} pts
                 </span>

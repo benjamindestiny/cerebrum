@@ -257,8 +257,6 @@ const Dashboard = () => {
         }}
       />
 
-      {/* Email Subscribe Component */}
-      <EmailSubscribe userEmail={currentUser?.email} />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="glass-card p-3 sm:p-4 text-center">
