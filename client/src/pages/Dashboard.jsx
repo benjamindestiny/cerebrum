@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import DailyMissions from "../components/Common/DailyMissions";
+import StreakFreeze from "../components/Common/StreakFreeze";
 import {
   Trophy,
   Brain,
@@ -257,6 +258,18 @@ const Dashboard = () => {
           userId={currentUser?.id}
           onMissionComplete={() => loadDashboardData()}
           refreshTrigger={refreshTrigger}
+        />
+      </motion.div>
+
+      {/* Streak Freeze */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.12, duration: 0.4 }}
+      >
+        <StreakFreeze 
+          userId={currentUser?.id} 
+          currentStreak={stats.streak} 
         />
       </motion.div>
 

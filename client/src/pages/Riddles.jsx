@@ -19,6 +19,7 @@ import {
   ChevronUp,
   Timer,
   RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 import { riddles, getDailyRiddle } from "../data/riddles";
 import { supabase } from "../services/supabase";
@@ -29,6 +30,8 @@ const Riddles = () => {
   const [showHint, setShowHint] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
   const [isCorrect, setIsCorrect] = useState(null);
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [feedbackType, setFeedbackType] = useState(""); // 'success', 'error', 'info'
   const [solvedCount, setSolvedCount] = useState(0);
   const [points, setPoints] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -79,11 +82,8 @@ const Riddles = () => {
     setIsLoading(true);
 
     try {
-      // Load user stats
       await loadUserStats();
-      // Load riddle history
       await loadRiddleHistory();
-      // Load daily riddle
       loadDailyRiddle();
     } catch (error) {
       console.error("Error loading riddle data:", error);
@@ -131,7 +131,6 @@ const Riddles = () => {
 
       if (data) {
         setHistory(data);
-        // Update solved count from history
         const solved = data.filter(h => h.solved === true).length;
         setSolvedCount(solved);
       }
@@ -147,11 +146,12 @@ const Riddles = () => {
     setShowHint(false);
     setShowAnswer(false);
     setIsCorrect(null);
+    setFeedbackMessage("");
+    setFeedbackType("");
     setDailyAttempts(0);
     setDailyHintUsed(false);
     setDailyAnswerRevealed(false);
 
-    // Check if daily riddle was already solved today
     const today = new Date().toISOString().split("T")[0];
     const dailySolvedToday = history.some(
       (h) =>
@@ -164,6 +164,8 @@ const Riddles = () => {
       setDailySolved(true);
       setIsCorrect(true);
       setShowAnswer(true);
+      setFeedbackMessage("✅ You already solved today's riddle!");
+      setFeedbackType("success");
     } else {
       setDailySolved(false);
     }
@@ -173,7 +175,6 @@ const Riddles = () => {
     if (!user) return;
 
     try {
-      // Check if entry already exists
       const { data: existing } = await supabase
         .from("riddle_history")
         .select("*")
@@ -182,7 +183,6 @@ const Riddles = () => {
         .maybeSingle();
 
       if (existing) {
-        // Update existing
         const { error } = await supabase
           .from("riddle_history")
           .update({
@@ -195,7 +195,6 @@ const Riddles = () => {
 
         if (error) throw error;
       } else {
-        // Insert new
         const { error } = await supabase
           .from("riddle_history")
           .insert({
@@ -211,7 +210,6 @@ const Riddles = () => {
         if (error) throw error;
       }
 
-      // Refresh history
       await loadRiddleHistory();
     } catch (error) {
       console.error("Error saving riddle history:", error);
@@ -255,23 +253,75 @@ const Riddles = () => {
     }
   };
 
-  const handleDailySubmit = async () => {
-    if (dailySolved || !dailyRiddleData) return;
-    const userAnswer = answer.trim().toLowerCase();
-    if (!userAnswer) return;
+  const checkAnswer = (userAnswer, correctAnswer) => {
+    // Normalize both answers
+    const normalizedUser = userAnswer.trim().toLowerCase();
+    const normalizedCorrect = correctAnswer.trim().toLowerCase();
 
-    const correctAnswer = dailyRiddleData.answer.toLowerCase();
-    const isCorrectAnswer =
-      userAnswer === correctAnswer ||
-      userAnswer.includes(correctAnswer) ||
-      correctAnswer.includes(userAnswer);
+    // Exact match
+    if (normalizedUser === normalizedCorrect) {
+      return { correct: true, message: "✅ Perfect! That's exactly right!" };
+    }
+
+    // Check if user answer contains the correct answer
+    if (normalizedCorrect.includes(normalizedUser) && normalizedUser.length > 2) {
+      return { correct: true, message: "✅ Close enough! That works!" };
+    }
+
+    // Check if correct answer contains user answer (partial)
+    if (normalizedUser.includes(normalizedCorrect) && normalizedCorrect.length > 2) {
+      return { correct: true, message: "✅ That's right!" };
+    }
+
+    // Check for common variations (singular/plural, etc.)
+    const commonVariations = [
+      { from: "s", to: "" },
+      { from: "es", to: "" },
+      { from: "ies", to: "y" },
+      { from: "ed", to: "" },
+      { from: "ing", to: "" },
+    ];
+
+    let normalizedUserStripped = normalizedUser;
+    let normalizedCorrectStripped = normalizedCorrect;
+
+    commonVariations.forEach(variation => {
+      if (normalizedUserStripped.endsWith(variation.from)) {
+        const test = normalizedUserStripped.slice(0, -variation.from.length) + variation.to;
+        if (test === normalizedCorrectStripped) {
+          return { correct: true, message: "✅ Close enough! That's correct!" };
+        }
+      }
+    });
+
+    return { correct: false, message: "❌ Not quite right. Try again!" };
+  };
+
+  const handleDailySubmit = async () => {
+    if (dailySolved || !dailyRiddleData) {
+      setFeedbackMessage("✅ You already solved this riddle!");
+      setFeedbackType("info");
+      return;
+    }
+
+    const userAnswer = answer.trim();
+    if (!userAnswer) {
+      setFeedbackMessage("📝 Please type an answer first!");
+      setFeedbackType("error");
+      return;
+    }
+
+    const correctAnswer = dailyRiddleData.answer;
+    const result = checkAnswer(userAnswer, correctAnswer);
 
     setDailyAttempts((prev) => prev + 1);
 
-    if (isCorrectAnswer) {
+    if (result.correct) {
       setIsCorrect(true);
       setShowAnswer(true);
       setDailySolved(true);
+      setFeedbackMessage(result.message);
+      setFeedbackType("success");
 
       const newSolvedCount = solvedCount + 1;
       const newPoints = points + dailyRiddleData.points;
@@ -281,7 +331,6 @@ const Riddles = () => {
       setPoints(newPoints);
       setStreak(newStreak);
 
-      // Save to database
       await saveRiddleToHistory(dailyRiddleData.id, true, dailyRiddleData.points);
       await updateUserStats(newSolvedCount, newPoints, newStreak);
 
@@ -289,15 +338,19 @@ const Riddles = () => {
       await loadUserStats();
     } else {
       setIsCorrect(false);
-      const newStreak = 0;
+      setFeedbackMessage(result.message);
+      setFeedbackType("error");
       setStreak(0);
       await updateUserStats(solvedCount, points, 0);
 
       if (dailyAttempts + 1 >= 3) {
         setShowAnswer(true);
+        setFeedbackMessage(`💡 Answer revealed after 3 attempts. The answer was: "${correctAnswer}"`);
+        setFeedbackType("info");
         toast.info("💡 Answer revealed after 3 attempts");
       } else {
-        toast.error(`❌ Not quite right. Try again! (${dailyAttempts + 1}/3)`);
+        const remaining = 3 - (dailyAttempts + 1);
+        toast.error(`❌ Not quite right. ${remaining} attempts remaining!`);
       }
     }
   };
@@ -306,23 +359,21 @@ const Riddles = () => {
     const riddle = riddles.find((r) => r.id === riddleId);
     if (!riddle) return;
 
-    const userAnswer = inputValues[riddleId]?.trim().toLowerCase() || "";
-    if (!userAnswer) return;
+    const userAnswer = inputValues[riddleId]?.trim() || "";
+    if (!userAnswer) {
+      toast.warning("📝 Please type an answer first!");
+      return;
+    }
 
     setAttemptsMap((prev) => ({
       ...prev,
       [riddleId]: (prev[riddleId] || 0) + 1,
     }));
 
-    const correctAnswer = riddle.answer.toLowerCase();
-    const isCorrectAnswer =
-      userAnswer === correctAnswer ||
-      userAnswer.includes(correctAnswer) ||
-      correctAnswer.includes(userAnswer);
+    const result = checkAnswer(userAnswer, riddle.answer);
+    setResultMap((prev) => ({ ...prev, [riddleId]: result.correct }));
 
-    setResultMap((prev) => ({ ...prev, [riddleId]: isCorrectAnswer }));
-
-    if (isCorrectAnswer) {
+    if (result.correct) {
       setShowAnswerMap((prev) => ({ ...prev, [riddleId]: true }));
       const newSolvedCount = solvedCount + 1;
       const newPoints = points + riddle.points;
@@ -331,6 +382,8 @@ const Riddles = () => {
       setSolvedCount(newSolvedCount);
       setPoints(newPoints);
       setStreak(newStreak);
+      setFeedbackMessage(result.message);
+      setFeedbackType("success");
 
       await saveRiddleToHistory(riddle.id, true, riddle.points);
       await updateUserStats(newSolvedCount, newPoints, newStreak);
@@ -338,15 +391,19 @@ const Riddles = () => {
       toast.success(`🎉 Correct! +${riddle.points} points`);
       await loadUserStats();
     } else {
-      const newStreak = 0;
       setStreak(0);
       await updateUserStats(solvedCount, points, 0);
+      setFeedbackMessage(result.message);
+      setFeedbackType("error");
 
       if ((attemptsMap[riddleId] || 0) + 1 >= 3) {
         setShowAnswerMap((prev) => ({ ...prev, [riddleId]: true }));
+        setFeedbackMessage(`💡 The answer is: "${riddle.answer}"`);
+        setFeedbackType("info");
         toast.info("💡 Answer revealed after 3 attempts");
       } else {
-        toast.error(`❌ Not quite right. Try again!`);
+        const remaining = 3 - ((attemptsMap[riddleId] || 0) + 1);
+        toast.error(`❌ Not quite right. ${remaining} attempts remaining!`);
       }
     }
   };
@@ -362,6 +419,8 @@ const Riddles = () => {
     if (dailyAttempts < 2) return;
     setShowHint(true);
     setDailyHintUsed(true);
+    setFeedbackMessage("💡 Hint revealed!");
+    setFeedbackType("info");
   };
 
   const handleDailyReveal = () => {
@@ -370,6 +429,8 @@ const Riddles = () => {
     if (dailyAttempts < 3) return;
     setShowAnswer(true);
     setDailyAnswerRevealed(true);
+    setFeedbackMessage(`💡 The answer is: "${dailyRiddleData.answer}"`);
+    setFeedbackType("info");
   };
 
   const handleRiddleHint = (riddleId) => {
@@ -386,6 +447,8 @@ const Riddles = () => {
 
   const handleInputChange = (riddleId, value) => {
     setInputValues((prev) => ({ ...prev, [riddleId]: value }));
+    setFeedbackMessage("");
+    setFeedbackType("");
   };
 
   const toggleRiddle = (riddleId) => {
@@ -398,6 +461,8 @@ const Riddles = () => {
       setShowAnswerMap((prev) => ({ ...prev, [riddleId]: false }));
       setResultMap((prev) => ({ ...prev, [riddleId]: null }));
       setAttemptsMap((prev) => ({ ...prev, [riddleId]: 0 }));
+      setFeedbackMessage("");
+      setFeedbackType("");
     }
   };
 
@@ -562,7 +627,11 @@ const Riddles = () => {
                 <input
                   type="text"
                   value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
+                  onChange={(e) => {
+                    setAnswer(e.target.value);
+                    setFeedbackMessage("");
+                    setFeedbackType("");
+                  }}
                   onKeyPress={handleKeyPress}
                   placeholder="Type your answer..."
                   className="w-full px-4 py-3 bg-[#262626] rounded-lg border border-white/10 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
@@ -580,6 +649,30 @@ const Riddles = () => {
                   {dailySolved ? <Check className="w-5 h-5" /> : <Send className="w-4 h-4" />}
                 </button>
               </div>
+
+              {/* Feedback Message */}
+              {feedbackMessage && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`mt-2 p-2 rounded-lg text-sm flex items-center gap-2 ${
+                    feedbackType === "success"
+                      ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                      : feedbackType === "error"
+                      ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                      : feedbackType === "info"
+                      ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                      : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                  }`}
+                >
+                  {feedbackType === "success" && <Check className="w-4 h-4" />}
+                  {feedbackType === "error" && <X className="w-4 h-4" />}
+                  {feedbackType === "info" && <AlertCircle className="w-4 h-4" />}
+                  {feedbackType === "" && <AlertCircle className="w-4 h-4" />}
+                  <span>{feedbackMessage}</span>
+                </motion.div>
+              )}
+
               {!dailySolved && (
                 <div className="flex gap-2 mt-2 text-xs text-gray-500">
                   <span>Attempts: {dailyAttempts}/3</span>

@@ -84,6 +84,7 @@ const Quiz = () => {
   const [comboBonus, setComboBonus] = useState(0);
   const [showComboCelebration, setShowComboCelebration] = useState(false);
   const [comboCelebrationText, setComboCelebrationText] = useState("");
+  const [comboFadeTimer, setComboFadeTimer] = useState(null);
 
   useEffect(() => {
     const storedCategory = sessionStorage.getItem("selectedCategory");
@@ -101,6 +102,26 @@ const Quiz = () => {
     });
   }, []);
 
+  // Auto-fade combo after 30 seconds
+  useEffect(() => {
+    if (combo >= 2) {
+      // Clear any existing timer
+      if (comboFadeTimer) {
+        clearTimeout(comboFadeTimer);
+      }
+      // Set new timer to fade after 30 seconds
+      const timer = setTimeout(() => {
+        setShowComboCelebration(false);
+      }, 30000);
+      setComboFadeTimer(timer);
+    }
+    return () => {
+      if (comboFadeTimer) {
+        clearTimeout(comboFadeTimer);
+      }
+    };
+  }, [combo, showComboCelebration]);
+
   const loadQuestions = async (diff) => {
     setLoading(true);
     setQuestions([]);
@@ -113,6 +134,7 @@ const Quiz = () => {
     setMaxCombo(0);
     setComboMultiplier(1);
     setComboBonus(0);
+    setShowComboCelebration(false);
 
     try {
       const storedCategory = sessionStorage.getItem("selectedCategory");
@@ -262,6 +284,7 @@ const Quiz = () => {
       setAnswers(updatedAnswers);
       setCombo(0);
       setComboMultiplier(1);
+      setShowComboCelebration(false);
       if (currentIndex === questions.length - 1) {
         setIsFinishing(true);
         setTimeout(() => finishQuiz(updatedAnswers), 800);
@@ -280,6 +303,7 @@ const Quiz = () => {
     setMaxCombo(0);
     setComboMultiplier(1);
     setComboBonus(0);
+    setShowComboCelebration(false);
   };
 
   const updateCombo = (isCorrect) => {
@@ -291,6 +315,7 @@ const Quiz = () => {
       let multiplier = 1;
       let celebrationText = "";
 
+      // Start combo at 2 correct answers
       if (newCombo >= 10) {
         multiplier = 2.0;
         celebrationText = "🔥 LEGENDARY! 10x COMBO!";
@@ -300,9 +325,9 @@ const Quiz = () => {
       } else if (newCombo >= 5) {
         multiplier = 1.5;
         celebrationText = "🔥 ON FIRE! 5x COMBO!";
-      } else if (newCombo >= 3) {
+      } else if (newCombo >= 2) {
         multiplier = 1.2;
-        celebrationText = "✨ COMBO! 3x!";
+        celebrationText = "✨ COMBO! 2x!";
       }
 
       setComboMultiplier(multiplier);
@@ -312,16 +337,24 @@ const Quiz = () => {
         setComboBonus((prev) => prev + bonus);
       }
 
-      if (newCombo === 3 || newCombo === 5 || newCombo === 8 || newCombo === 10) {
+      // Show celebration at 2, 5, 8, 10
+      if (newCombo === 2 || newCombo === 5 || newCombo === 8 || newCombo === 10) {
         setComboCelebrationText(celebrationText);
         setShowComboCelebration(true);
-        setTimeout(() => setShowComboCelebration(false), 1500);
+        // Clear existing timer
+        if (comboFadeTimer) {
+          clearTimeout(comboFadeTimer);
+        }
       }
 
       return multiplier;
     } else {
       setCombo(0);
       setComboMultiplier(1);
+      setShowComboCelebration(false);
+      if (comboFadeTimer) {
+        clearTimeout(comboFadeTimer);
+      }
       return 1;
     }
   };
@@ -414,6 +447,10 @@ const Quiz = () => {
     setMaxCombo(0);
     setComboMultiplier(1);
     setComboBonus(0);
+    setShowComboCelebration(false);
+    if (comboFadeTimer) {
+      clearTimeout(comboFadeTimer);
+    }
   };
 
   const finishQuiz = async (finalAnswers) => {
@@ -772,28 +809,29 @@ const Quiz = () => {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="max-w-3xl mx-auto px-3 sm:px-4"
+      className="max-w-3xl mx-auto px-3 sm:px-4 relative"
     >
-      {/* Combo Celebration */}
+      {/* Combo Celebration - Floating on the Right */}
       <AnimatePresence>
-        {showComboCelebration && (
+        {showComboCelebration && combo >= 2 && (
           <motion.div
-            initial={{ scale: 0, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0, opacity: 0, y: -20 }}
-            transition={{ type: "spring", stiffness: 400, damping: 20 }}
-            className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none"
+            initial={{ opacity: 0, x: 50, scale: 0.8 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 50, scale: 0.8 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="fixed right-4 top-1/2 -translate-y-1/2 z-40"
           >
-            <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 sm:px-8 py-4 sm:py-5 rounded-2xl shadow-2xl text-center max-w-sm">
+            <div className="glass-card p-4 border border-orange-500/30 bg-orange-500/10 backdrop-blur-sm min-w-[120px] text-center">
               <motion.div 
                 animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 0.5 }}
-                className="text-4xl sm:text-5xl mb-1"
+                transition={{ duration: 1, repeat: Infinity }}
+                className="text-3xl mb-1"
               >
                 🔥
               </motion.div>
-              <div className="text-xl sm:text-2xl font-bold">{comboCelebrationText}</div>
-              <div className="text-sm opacity-90">×{comboMultiplier.toFixed(1)} points multiplier</div>
+              <div className="text-sm font-bold text-orange-400">{combo}x Combo</div>
+              <div className="text-xs text-gray-400">{comboMultiplier.toFixed(1)}x multiplier</div>
+              <div className="text-xs text-green-400 mt-1">+{Math.floor(10 * comboMultiplier)} pts</div>
             </div>
           </motion.div>
         )}
@@ -825,43 +863,6 @@ const Quiz = () => {
           <span className="text-[10px] sm:text-xs text-gray-500">{Object.keys(answers).length}/{questions.length} answered</span>
         </div>
       </motion.div>
-
-      {/* Combo Display */}
-      {combo > 0 && (
-        <motion.div 
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="flex items-center justify-between mb-3 p-2 sm:p-3 bg-white/5 rounded-lg border border-white/10"
-        >
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-2">
-              <motion.div 
-                animate={combo >= 5 ? { scale: [1, 1.2, 1] } : {}}
-                transition={{ duration: 1, repeat: Infinity }}
-                className={`text-2xl ${combo >= 5 ? "animate-pulse" : ""}`}
-              >
-                🔥
-              </motion.div>
-              <div>
-                <div className={`font-bold text-lg sm:text-xl ${combo >= 10 ? "text-red-500" : combo >= 8 ? "text-orange-500" : combo >= 5 ? "text-teal-400" : "text-amber-400"}`}>
-                  {combo}x COMBO!
-                </div>
-                <div className="text-xs text-gray-400">
-                  {comboMultiplier > 1 ? `×${comboMultiplier.toFixed(1)} multiplier` : "Keep going!"}
-                </div>
-              </div>
-            </div>
-            {comboMultiplier > 1 && (
-              <div className="px-2 sm:px-3 py-1 bg-orange-500/20 rounded-full border border-orange-500/30">
-                <span className="text-orange-400 text-xs sm:text-sm font-bold">
-                  +{Math.floor(10 * comboMultiplier)} bonus pts
-                </span>
-              </div>
-            )}
-          </div>
-          <div className="text-xs text-gray-500">Best: {maxCombo}x</div>
-        </motion.div>
-      )}
 
       {/* Progress Bar */}
       <motion.div 
