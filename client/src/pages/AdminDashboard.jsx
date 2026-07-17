@@ -49,13 +49,17 @@ const AdminDashboard = () => {
         .from('quiz_results')
         .select('*', { count: 'exact', head: true });
 
-      // Get active users (have taken at least 1 quiz)
+      // ✅ FIX: Get active users (distinct user_ids from quiz_results)
       const { data: activeData } = await supabase
         .from('quiz_results')
-        .select('user_id')
-        .group('user_id');
+        .select('user_id');
 
-      const activeUsers = activeData?.length || 0;
+      // Count unique user_ids
+      const uniqueUsers = new Set();
+      if (activeData) {
+        activeData.forEach(item => uniqueUsers.add(item.user_id));
+      }
+      const activeUsers = uniqueUsers.size;
 
       // Get total riddles solved
       const { count: riddleCount } = await supabase
@@ -63,11 +67,24 @@ const AdminDashboard = () => {
         .select('*', { count: 'exact', head: true })
         .eq('solved', true);
 
+      // Get total points from all users
+      const { data: userData } = await supabase
+        .from('users')
+        .select('stats');
+
+      let totalPoints = 0;
+      if (userData) {
+        userData.forEach(u => {
+          totalPoints += (u.stats?.total_points || 0);
+        });
+      }
+
       setStats({
         totalUsers: userCount || 0,
         activeUsers: activeUsers || 0,
         totalQuizzes: quizCount || 0,
         totalRiddles: riddleCount || 0,
+        totalPoints: totalPoints || 0,
       });
     } catch (error) {
       console.error('Error loading stats:', error);
@@ -81,7 +98,7 @@ const AdminDashboard = () => {
     navigate('/admin/login');
   };
 
-  // ✅ ALL admin links including Re-engagement
+  // ✅ All admin links
   const adminLinks = [
     {
       icon: MessageSquare,
@@ -160,7 +177,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <div className="glass-card p-4 text-center">
           <div className="text-2xl font-bold text-white">{stats.totalUsers}</div>
           <div className="text-xs text-gray-400">Total Users</div>
@@ -176,6 +193,10 @@ const AdminDashboard = () => {
         <div className="glass-card p-4 text-center">
           <div className="text-2xl font-bold text-purple-400">{stats.totalRiddles}</div>
           <div className="text-xs text-gray-400">Riddles Solved</div>
+        </div>
+        <div className="glass-card p-4 text-center">
+          <div className="text-2xl font-bold text-blue-400">{stats.totalPoints || 0}</div>
+          <div className="text-xs text-gray-400">Total Points</div>
         </div>
       </div>
 

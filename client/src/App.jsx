@@ -17,23 +17,21 @@ import AdminEmail from './pages/AdminEmail';
 import Dashboard from "./pages/Dashboard";
 import Leaderboard from "./pages/Leaderboard";
 import AdminWeeklyReport from "./pages/AdminWeeklyReport";
-import AdminReengagement from "./pages/AdminReengagement";
 import Riddles from "./pages/Riddles";
 import LunchBreak from './pages/LunchBreak';
 import Testimonials from './pages/Testimonials';
-import TestEmail from './pages/TestEmail';
 import Categories from "./pages/Categories";
 import Achievements from "./pages/Achievements";
 import ReadAndTest from "./pages/ReadAndTest";
 import AdminEmailTemplates from "./pages/AdminEmailTemplates";
 import AdminSendMessage from "./pages/AdminSendMessage";
+import AdminReengagement from "./pages/AdminReengagement";
 import ReadAndTestResults from "./pages/ReadAndTestResults";
 import Privacy from "./pages/Privacy";
 import About from "./pages/About";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 import Donate from "./pages/Donate";
-import TestGroq from "./pages/TestGroq";
 import CookieConsent from "./components/Common/CookieConsent";
 import { supabase } from "./services/supabase";
 
@@ -105,16 +103,7 @@ function App() {
                   <AdminEmail />
                 </ProtectedAdminRoute>
               } 
-              />
-              <Route 
-                path="/admin/test-email" 
-                element={
-                  <ProtectedAdminRoute>
-                    <TestEmail />
-                  </ProtectedAdminRoute>
-                } 
-              />
-            
+            />
             <Route 
               path="/admin/subscribers" 
               element={
@@ -139,10 +128,17 @@ function App() {
                 </ProtectedAdminRoute>
               } 
             />
+            <Route 
+              path="/admin/reengagement" 
+              element={
+                <ProtectedAdminRoute>
+                  <AdminReengagement />
+                </ProtectedAdminRoute>
+              } 
+            />
 
             {/* Main Layout routes */}
             <Route path="/" element={<Layout />}>
-              {/* ✅ FIXED: Only one index route */}
               <Route index element={<PublicDashboard />} />
               <Route path="*" element={<NotFound />} />
               <Route path="donate" element={<Donate />} />

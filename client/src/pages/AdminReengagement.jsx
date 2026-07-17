@@ -12,8 +12,6 @@ import {
   Clock,
   Calendar,
   TrendingUp,
-  CheckCircle,
-  XCircle,
   RefreshCw,
   MessageCircle,
   Zap,
@@ -25,7 +23,6 @@ const AdminReengagement = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
-  const [users, setUsers] = useState([]);
   const [selectedType, setSelectedType] = useState('missYou');
   const [stats, setStats] = useState({
     total: 0,
@@ -49,8 +46,7 @@ const AdminReengagement = () => {
         .select('id, name, email, stats');
 
       const userData = allUsers || [];
-      setUsers(userData);
-
+      
       // Calculate stats
       const total = userData.length;
       const active = userData.filter(u => (u.stats?.total_quizzes || 0) > 0).length;
@@ -91,11 +87,15 @@ const AdminReengagement = () => {
   };
 
   const sendEmails = async (type) => {
+    if (!window.confirm(`Send "${type}" emails to ${stats.inactive7} users?`)) {
+      return;
+    }
+
     setSending(true);
     setResults(null);
 
     try {
-      // Get recipients based on type
+      // Get recipients
       let recipients = [];
       const { data: allUsers } = await supabase
         .from('users')
@@ -104,7 +104,7 @@ const AdminReengagement = () => {
       if (type === 'all') {
         recipients = allUsers || [];
       } else {
-        // Get inactive users
+        // Get inactive users (7+ days)
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         recipients = (allUsers || []).filter(u => {
@@ -131,44 +131,64 @@ const AdminReengagement = () => {
           const points = user.stats?.total_points || 0;
 
           // Build email content
-          const subject = type === 'missYou' 
-            ? `👋 We Miss You, ${name}! Your Brain is Waiting!`
-            : type === 'comeback'
-            ? `🏆 Come Back Challenge: Win 100 Bonus Points!`
-            : `🚀 New Features on Cerebrum! Check Them Out!`;
-
-          const body = type === 'missYou'
-            ? `
+          let subject, body;
+          
+          if (type === 'missYou') {
+            subject = `👋 We Miss You, ${name}! Your Brain is Waiting!`;
+            body = `
               <h1>We Miss You, ${name}! 👋</h1>
               <p>Your brain is waiting for a workout!</p>
               ${streak > 0 ? `<p>🔥 You had a ${streak}-day streak! Don't lose it!</p>` : ''}
               <p>You've earned <strong>${points}</strong> points so far.</p>
-              <a href="https://cerebrum-three.vercel.app/dashboard" style="background: #3B82F6; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
-                🚀 Continue Learning
-              </a>
-            `
-            : type === 'comeback'
-            ? `
+              <p style="margin-top: 20px;">
+                <a href="https://cerebrum-three.vercel.app/dashboard" style="background: #3B82F6; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
+                  🚀 Continue Learning
+                </a>
+              </p>
+            `;
+          } else if (type === 'comeback') {
+            subject = `🏆 Come Back Challenge: Win 100 Bonus Points!`;
+            body = `
               <h1>🏆 Come Back Challenge!</h1>
-              <p>Complete 3 quizzes today and earn <strong>100 bonus points</strong>!</p>
-              <a href="https://cerebrum-three.vercel.app/categories" style="background: #3B82F6; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
-                🎯 Accept Challenge
-              </a>
-            `
-            : `
+              <p>Complete 3 quizzes today and earn <strong style="color: #F59E0B;">100 bonus points</strong>!</p>
+              <p style="margin-top: 20px;">
+                <a href="https://cerebrum-three.vercel.app/categories" style="background: #3B82F6; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
+                  🎯 Accept Challenge
+                </a>
+              </p>
+            `;
+          } else {
+            subject = `🚀 New Features on Cerebrum!`;
+            body = `
               <h1>🚀 New Features on Cerebrum!</h1>
-              <p>Check out our new features:</p>
+              <p>Check out what's new:</p>
               <ul>
                 <li>⚡ Quick Fire Mode - 15-second questions</li>
                 <li>🧠 Brain Break Games - Speed Math, Memory Match</li>
                 <li>🔥 Streak Freeze - Never lose your streak</li>
               </ul>
-              <a href="https://cerebrum-three.vercel.app/dashboard" style="background: #3B82F6; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
-                🎮 Try Now
-              </a>
+              <p style="margin-top: 20px;">
+                <a href="https://cerebrum-three.vercel.app/dashboard" style="background: #3B82F6; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
+                  🎮 Try Now
+                </a>
+              </p>
             `;
+          }
 
-          // Send email via fetch to Brevo
+          const htmlContent = `
+            <html>
+              <body style="font-family: Arial, sans-serif; background: #0C0C1A; padding: 40px; color: #fff; margin: 0;">
+                <div style="max-width: 600px; margin: 0 auto; background: #1A1A1A; border-radius: 16px; padding: 40px; border: 1px solid #2A2A2A;">
+                  ${body}
+                  <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #2A2A2A; text-align: center; color: #64748B; font-size: 12px;">
+                    Cerebrum - Your Brain Training Platform
+                  </div>
+                </div>
+              </body>
+            </html>
+          `;
+
+          // Send email
           const response = await fetch('https://api.brevo.com/v3/smtp/email', {
             method: 'POST',
             headers: {
@@ -182,18 +202,7 @@ const AdminReengagement = () => {
               },
               to: [{ email: user.email }],
               subject: subject,
-              htmlContent: `
-                <html>
-                  <body style="font-family: Arial, sans-serif; background: #0C0C1A; padding: 40px; color: #fff;">
-                    <div style="max-width: 600px; margin: 0 auto; background: #1A1A1A; border-radius: 16px; padding: 40px; border: 1px solid #2A2A2A;">
-                      ${body}
-                      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #2A2A2A; text-align: center; color: #64748B; font-size: 12px;">
-                        Cerebrum - Your Brain Training Platform
-                      </div>
-                    </div>
-                  </body>
-                </html>
-              `,
+              htmlContent: htmlContent,
             }),
           });
 
@@ -204,7 +213,7 @@ const AdminReengagement = () => {
             console.error('Failed to send to:', user.email);
           }
 
-          // Rate limit
+          // Rate limit - delay between emails
           await new Promise(resolve => setTimeout(resolve, 500));
 
         } catch (error) {
