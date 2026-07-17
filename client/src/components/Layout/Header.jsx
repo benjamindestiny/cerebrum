@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   Brain,
   LayoutDashboard,
@@ -16,6 +17,8 @@ import {
   Moon,
   Sun,
   Award,
+  Coffee,
+  MessageCircle,
 } from "lucide-react";
 import { supabase } from "../../services/supabase";
 import { useTheme } from "../../context/ThemeContext";
@@ -56,7 +59,7 @@ const Header = () => {
     { path: "/leaderboard", icon: Trophy, label: "Leaderboard" },
     { path: "/riddles", icon: Puzzle, label: "Riddles" },
     { path: "/read-and-test", icon: BookOpen, label: "Read & Test" },
-    { path: "/lunch-break", icon: Coffee, label: "Lunch Break" },
+    { path: "/testimonials", icon: MessageCircle, label: "Testimonials" },
   ];
 
   const userNavLinks = [
@@ -64,9 +67,10 @@ const Header = () => {
     { path: "/categories", icon: FolderTree, label: "Categories" },
     { path: "/leaderboard", icon: Trophy, label: "Leaderboard" },
     { path: "/riddles", icon: Puzzle, label: "Riddles" },
+    { path: "/lunch-break", icon: Coffee, label: "Lunch Break" },
     { path: "/achievements", icon: Award, label: "Achievements" },
     { path: "/read-and-test", icon: BookOpen, label: "Read & Test" },
-    { path: "/lunch-break", icon: Coffee, label: "Lunch Break" },
+    { path: "/testimonials", icon: MessageCircle, label: "Testimonials" },
   ];
 
   const navLinks = user ? userNavLinks : visitorNavLinks;
@@ -74,11 +78,11 @@ const Header = () => {
   if (loading) {
     return (
       <header className="border-b" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4">
+          <div className="flex items-center justify-between h-14 sm:h-16">
             <div className="flex items-center gap-2">
-              <Brain className="w-8 h-8 text-blue-400 icon-hover" />
-              <span className="text-xl font-bold text-white">Cerebrum</span>
+              <Brain className="w-7 h-7 sm:w-8 sm:h-8 text-blue-400" />
+              <span className="text-lg sm:text-xl font-bold text-white">Cerebrum</span>
             </div>
           </div>
         </div>
@@ -88,66 +92,72 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 border-b" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4">
+        <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo */}
           <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2 shrink-0">
-            <div  >
-              <Brain className="w-8 h-8 text-blue-400 icon-hover" />
-            </div>
-            <span className="text-xl font-bold text-white">Cerebrum</span>
+            <motion.div whileHover={{ rotate: -10, scale: 1.1 }} transition={{ type: "spring", stiffness: 400 }}>
+              <Brain className="w-7 h-7 sm:w-8 sm:h-8 text-blue-400" />
+            </motion.div>
+            <span className="text-lg sm:text-xl font-bold text-white hidden xs:block">Cerebrum</span>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1 overflow-x-auto max-w-[60%]">
             {navLinks.map(({ path, icon: Icon, label }) => (
               <Link
                 key={path}
                 to={path}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all  ${
-                  isActive(path)
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-300 text-sm whitespace-nowrap
+                  ${isActive(path)
                     ? "text-blue-400 font-medium"
-                    : "text-gray-400 "
-                }`}
+                    : "text-gray-400 hover:text-white"
+                  }`}
               >
                 <Icon className="w-4 h-4" />
-                <span className="text-sm font-medium">{label}</span>
+                <span className="text-sm">{label}</span>
               </Link>
             ))}
           </nav>
 
           {/* Right side */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-lg text-gray-400  transition-colors"
+              className="p-2 rounded-lg text-gray-400 hover:text-white transition-colors"
               aria-label="Toggle theme"
             >
-              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              {isDark ? <Sun className="w-4 h-4 sm:w-5 sm:h-5" /> : <Moon className="w-4 h-4 sm:w-5 sm:h-5" />}
             </button>
 
             {user ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <Link
                   to="/profile"
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-400  transition-colors"
+                  className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition-colors text-sm"
                 >
-                  <UserCircle className="w-5 h-5" />
-                  <span className="text-sm max-w-[100px] truncate hidden sm:inline">
+                  <UserCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-sm max-w-[80px] truncate">
                     {user.email?.split("@")[0]}
                   </span>
                 </Link>
                 <button
                   onClick={handleSignOut}
-                  className="p-2 rounded-lg text-gray-400  transition-colors"
+                  className="hidden sm:flex p-2 rounded-lg text-gray-400 hover:text-red-400 transition-colors"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
+                <Link
+                  to="/profile"
+                  className="sm:hidden p-2 rounded-lg text-gray-400 hover:text-white transition-colors"
+                >
+                  <UserCircle className="w-5 h-5" />
+                </Link>
               </div>
             ) : (
               <Link
                 to="/auth"
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg  transition-colors text-sm font-medium"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
               >
                 Sign In
               </Link>
@@ -156,9 +166,9 @@ const Header = () => {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg text-gray-400  transition-colors"
+              className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-white transition-colors"
             >
-              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isMobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
             </button>
           </div>
         </div>
@@ -166,61 +176,64 @@ const Header = () => {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t" style={{ borderColor: 'var(--border)' }}>
-          <div className="px-4 py-4 space-y-2">
-            {navLinks.map(({ path, icon: Icon, label }) => (
-              <Link
-                key={path}
-                to={path}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all  ${
-                  isActive(path)
-                    ? "text-blue-400 font-medium"
-                    : "text-gray-400 "
-                }`}
-              >
-                <Icon className="w-5 h-5" />
-                <span className="font-medium">{label}</span>
-              </Link>
-            ))}
-            <button
-              onClick={toggleTheme}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400  transition-colors w-full"
-            >
-              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-              <span className="font-medium">{isDark ? "Light mode" : "Dark mode"}</span>
-            </button>
-            {user ? (
-              <>
+        <div className="lg:hidden border-t" style={{ borderColor: 'var(--border)' }}>
+          <div className="px-3 py-3 max-h-[70vh] overflow-y-auto">
+            <nav className="space-y-1">
+              {navLinks.map(({ path, icon: Icon, label }) => (
                 <Link
-                  to="/profile"
+                  key={path}
+                  to={path}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400  transition-colors"
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 text-base
+                    ${isActive(path)
+                      ? "text-blue-400 font-medium bg-blue-500/10"
+                      : "text-gray-400 hover:text-white hover:bg-white/5"
+                    }`}
                 >
-                  <UserCircle className="w-5 h-5" />
-                  <span className="font-medium">Profile</span>
+                  <Icon className="w-5 h-5" />
+                  <span className="font-medium">{label}</span>
                 </Link>
-                <button
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    handleSignOut();
-                  }}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-red-400 hover:text-red-300 transition-colors w-full"
-                >
-                  <LogOut className="w-5 h-5" />
-                  <span className="font-medium">Sign Out</span>
-                </button>
-              </>
-            ) : (
-              <Link
-                to="/auth"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-500 text-white  transition-colors"
+              ))}
+              <div className="border-t my-2" style={{ borderColor: 'var(--border)' }} />
+              <button
+                onClick={toggleTheme}
+                className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors w-full text-base"
               >
-                <LogIn className="w-5 h-5" />
-                <span className="font-medium">Sign In</span>
-              </Link>
-            )}
+                {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                <span className="font-medium">{isDark ? "Light mode" : "Dark mode"}</span>
+              </button>
+              {user ? (
+                <>
+                  <Link
+                    to="/profile"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-base"
+                  >
+                    <UserCircle className="w-5 h-5" />
+                    <span className="font-medium">Profile</span>
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      handleSignOut();
+                    }}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors w-full text-base"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    <span className="font-medium">Sign Out</span>
+                  </button>
+                </>
+              ) : (
+                <Link
+                  to="/auth"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors text-base"
+                >
+                  <LogIn className="w-5 h-5" />
+                  <span className="font-medium">Sign In</span>
+                </Link>
+              )}
+            </nav>
           </div>
         </div>
       )}

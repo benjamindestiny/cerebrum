@@ -474,7 +474,7 @@ const Profile = () => {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.15, duration: 0.4, type: "spring" }}
-        className="bg-[#1A1A1A] rounded-xl p-4 sm:p-6 border border-white/5"
+        className="glass-card p-4 sm:p-6"
       >
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="relative">
@@ -611,7 +611,7 @@ const Profile = () => {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.25 + index * 0.08, duration: 0.3 }}
             whileHover={{ y: -3 }}
-            className="bg-[#1A1A1A] rounded-xl p-3 text-center border border-white/5"
+            className="glass-card p-3 text-center"
           >
             <item.icon className={`w-5 h-5 ${item.color} mx-auto mb-1`} />
             <div className="text-lg font-bold text-white">{item.value}</div>
@@ -638,7 +638,7 @@ const Profile = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4 + index * 0.08, duration: 0.3 }}
             whileHover={{ y: -2 }}
-            className="bg-[#1A1A1A] rounded-xl p-3 flex items-center gap-3 border border-white/5"
+            className="glass-card p-3 flex items-center gap-3"
           >
             <div className={`p-2 ${item.color.replace('text', 'bg')}/10 rounded-lg`}>
               <item.icon className={`w-5 h-5 ${item.color}`} />
@@ -656,7 +656,7 @@ const Profile = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.4 }}
-        className="bg-[#1A1A1A] rounded-xl p-4 border border-white/5"
+        className="glass-card p-4"
       >
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -704,7 +704,7 @@ const Profile = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6, duration: 0.4 }}
-        className="bg-[#1A1A1A] rounded-xl p-4 border border-white/5"
+        className="glass-card p-4"
       >
         <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
           <Settings className="w-4 h-4 text-gray-400" /> Account Settings

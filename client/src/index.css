@@ -496,3 +496,112 @@ svg.arrow-icon {
   background-size: 200% auto;
   animation: shimmer 2s linear infinite;
 }
+
+/* ============================================
+   RESPONSIVE UTILITIES
+   ============================================ */
+
+/* Mobile-first approach */
+@media (max-width: 480px) {
+  /* Smaller text on mobile */
+  html {
+    font-size: 14px;
+  }
+
+  /* Full width cards */
+  .glass-card {
+    padding: 0.75rem !important;
+    border-radius: 0.75rem !important;
+  }
+
+  /* Stack buttons */
+  .btn-primary,
+  .btn-secondary {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Hide scrollbar on mobile */
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .mobile-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Stack flex items */
+  .flex-stack-mobile {
+    flex-direction: column !important;
+  }
+
+  /* Full width inputs */
+  input,
+  textarea,
+  select {
+    font-size: 16px !important; /* Prevent iOS zoom */
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 481px) and (max-width: 768px) {
+  .glass-card {
+    padding: 1rem !important;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.6rem 1.2rem !important;
+    font-size: 0.9rem !important;
+  }
+}
+
+/* Desktop */
+@media (min-width: 769px) {
+  /* Default styles */
+}
+
+/* Touch-friendly targets */
+@media (hover: none) and (pointer: coarse) {
+  /* Larger touch targets */
+  button,
+  a,
+  .clickable {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+
+  /* Remove hover effects on touch devices */
+  .hover-lift:hover {
+    transform: none !important;
+  }
+  .hover-scale:hover {
+    transform: none !important;
+  }
+}
+
+/* Safe area for notch devices */
+@supports (padding: max(0px)) {
+  .safe-area-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+  .safe-area-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Landscape mode on mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .min-h-screen {
+    min-height: 100vh;
+  }
+  .glass-card {
+    padding: 0.5rem !important;
+  }
+  h1 {
+    font-size: 1.5rem !important;
+  }
+  h2 {
+    font-size: 1.25rem !important;
+  }
+}
