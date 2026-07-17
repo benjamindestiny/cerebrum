@@ -1,21 +1,40 @@
-// Default Avatars - 16 different options
+import {
+  Brain,
+  Rocket,
+  Sparkles,
+  Target,
+  Zap,
+  Wand2,
+  Shield,
+  Flame,
+  Crown,
+  Star,
+  Trophy,
+  Sword,
+  Compass,
+  Gem,
+  Feather,
+  Sun,
+} from 'lucide-react';
+
+// Default Avatars - 16 different options with Lucide icons
 export const defaultAvatars = [
-  { id: 1, emoji: "🧠", bg: "#7c3aed" },
-  { id: 2, emoji: "🚀", bg: "#2563eb" },
-  { id: 3, emoji: "🌟", bg: "#f59e0b" },
-  { id: 4, emoji: "🎯", bg: "#ef4444" },
-  { id: 5, emoji: "💪", bg: "#22c55e" },
-  { id: 6, emoji: "🧙", bg: "#8b5cf6" },
-  { id: 7, emoji: "🦊", bg: "#f97316" },
-  { id: 8, emoji: "🐉", bg: "#14b8a6" },
-  { id: 9, emoji: "🦅", bg: "#3b82f6" },
-  { id: 10, emoji: "🐺", bg: "#6b7280" },
-  { id: 11, emoji: "🦄", bg: "#ec4899" },
-  { id: 12, emoji: "🐼", bg: "#374151" },
-  { id: 13, emoji: "🦁", bg: "#d97706" },
-  { id: 14, emoji: "🐧", bg: "#1e293b" },
-  { id: 15, emoji: "🐱", bg: "#f43f5e" },
-  { id: 16, emoji: "🐶", bg: "#78350f" },
+  { id: 1, icon: Brain, bg: "#7c3aed", label: "Brain" },
+  { id: 2, icon: Rocket, bg: "#2563eb", label: "Rocket" },
+  { id: 3, icon: Sparkles, bg: "#f59e0b", label: "Sparkles" },
+  { id: 4, icon: Target, bg: "#ef4444", label: "Target" },
+  { id: 5, icon: Zap, bg: "#22c55e", label: "Zap" },
+  { id: 6, icon: Wand2, bg: "#8b5cf6", label: "Wand" },
+  { id: 7, icon: Shield, bg: "#f97316", label: "Shield" },
+  { id: 8, icon: Flame, bg: "#14b8a6", label: "Flame" },
+  { id: 9, icon: Crown, bg: "#3b82f6", label: "Crown" },
+  { id: 10, icon: Star, bg: "#6b7280", label: "Star" },
+  { id: 11, icon: Trophy, bg: "#ec4899", label: "Trophy" },
+  { id: 12, icon: Sword, bg: "#374151", label: "Sword" },
+  { id: 13, icon: Compass, bg: "#d97706", label: "Compass" },
+  { id: 14, icon: Gem, bg: "#1e293b", label: "Gem" },
+  { id: 15, icon: Feather, bg: "#f43f5e", label: "Feather" },
+  { id: 16, icon: Sun, bg: "#78350f", label: "Sun" },
 ];
 
 // Get random avatar
@@ -26,4 +45,10 @@ export const getRandomAvatar = () => {
 
 export const getAvatarById = (id) => {
   return defaultAvatars.find(avatar => avatar.id === id) || defaultAvatars[0];
+};
+
+// Get avatar Icon component
+export const getAvatarIcon = (id) => {
+  const avatar = getAvatarById(id);
+  return avatar.icon || Brain;
 };

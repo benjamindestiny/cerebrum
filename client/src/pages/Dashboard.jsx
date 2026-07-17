@@ -291,7 +291,7 @@ const Dashboard = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 + index * 0.08, duration: 0.3 }}
-            className="glass-card p-4 text-center hover-lift"
+            className="glass-card p-4 text-center"
           >
             <item.icon className={`w-6 h-6 ${item.color} mx-auto mb-1`} />
             <div className="text-2xl font-bold text-white">{item.value}</div>
@@ -407,10 +407,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-import TestimonialPopup from '../components/Common/TestimonialPopup';
-const [showTestimonialPopup, setShowTestimonialPopup] = useState(false);
-<TestimonialPopup 
-  userId={currentUser?.id} 
-  userName={currentUser?.user_metadata?.name || 'User'}
-  onClose={() => setShowTestimonialPopup(false)}
-/>
