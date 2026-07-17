@@ -20,6 +20,7 @@ import AdminWeeklyReport from "./pages/AdminWeeklyReport";
 import Riddles from "./pages/Riddles";
 import LunchBreak from './pages/LunchBreak';
 import Testimonials from './pages/Testimonials';
+import TestEmail from './pages/TestEmail';
 import Categories from "./pages/Categories";
 import Achievements from "./pages/Achievements";
 import ReadAndTest from "./pages/ReadAndTest";
@@ -103,7 +104,16 @@ function App() {
                   <AdminEmail />
                 </ProtectedAdminRoute>
               } 
-            />
+              />
+              <Route 
+                path="/admin/test-email" 
+                element={
+                  <ProtectedAdminRoute>
+                    <TestEmail />
+                  </ProtectedAdminRoute>
+                } 
+              />
+            
             <Route 
               path="/admin/subscribers" 
               element={
