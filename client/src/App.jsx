@@ -1,4 +1,3 @@
-import PublicDashboard from "./pages/PublicDashboard";
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -8,6 +7,7 @@ import {
 } from "react-router-dom";
 import Layout from "./components/Layout/Layout";
 import Home from "./pages/Home";
+import PublicDashboard from "./pages/PublicDashboard";
 import AdminSubscribers from './pages/AdminSubscribers';
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
@@ -18,11 +18,13 @@ import Dashboard from "./pages/Dashboard";
 import Leaderboard from "./pages/Leaderboard";
 import AdminWeeklyReport from "./pages/AdminWeeklyReport";
 import Riddles from "./pages/Riddles";
+import LunchBreak from './pages/LunchBreak';
+import Testimonials from './pages/Testimonials';
 import Categories from "./pages/Categories";
 import Achievements from "./pages/Achievements";
 import ReadAndTest from "./pages/ReadAndTest";
 import AdminEmailTemplates from "./pages/AdminEmailTemplates";
-import AdminSendMessage from "./pages/AdminSendMessage"; // ✅ NEW
+import AdminSendMessage from "./pages/AdminSendMessage";
 import ReadAndTestResults from "./pages/ReadAndTestResults";
 import Privacy from "./pages/Privacy";
 import About from "./pages/About";
@@ -33,7 +35,7 @@ import TestGroq from "./pages/TestGroq";
 import CookieConsent from "./components/Common/CookieConsent";
 import { supabase } from "./services/supabase";
 
-//  Admin imports
+// Admin imports
 import AdminProvider from "./context/AdminContext";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -53,8 +55,8 @@ const ProtectedRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen  text-white border-[#2A2A4A]">
-        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin  text-white border-[#2A2A4A]"></div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -70,14 +72,14 @@ function App() {
   return (
     <Router>
       <AdminProvider>
-        <div className="min-h-screen bg-[#0D0D0D]  text-white border-[#2A2A4A]">
+        <div className="min-h-screen bg-[#0D0D0D]">
           <Routes>
             {/* Public routes */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin/callback" element={<AdminLogin />} /> {/* ✅ Moved outside Layout */}
+            <Route path="/admin/callback" element={<AdminLogin />} />
 
-            {/* ✅ Admin routes (protected) */}
+            {/* Admin routes (protected) */}
             <Route 
               path="/admin/dashboard" 
               element={
@@ -119,7 +121,7 @@ function App() {
               } 
             />
             <Route 
-              path="/admin/send-message"  // ✅ NEW ROUTE
+              path="/admin/send-message" 
               element={
                 <ProtectedAdminRoute>
                   <AdminSendMessage />
@@ -129,13 +131,15 @@ function App() {
 
             {/* Main Layout routes */}
             <Route path="/" element={<Layout />}>
-              <Route index element={<Home />} />
-<Route index element={<PublicDashboard />} />
+              {/* ✅ FIXED: Only one index route */}
+              <Route index element={<PublicDashboard />} />
               <Route path="*" element={<NotFound />} />
               <Route path="donate" element={<Donate />} />
               <Route path="categories" element={<Categories />} />
               <Route path="leaderboard" element={<Leaderboard />} />
               <Route path="riddles" element={<Riddles />} />
+              <Route path="lunch-break" element={<LunchBreak />} />
+              <Route path="testimonials" element={<Testimonials />} />
               <Route path="achievements" element={<Achievements />} />
               <Route path="read-and-test" element={<ReadAndTest />} />
               <Route

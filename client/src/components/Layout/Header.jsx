@@ -56,6 +56,7 @@ const Header = () => {
     { path: "/leaderboard", icon: Trophy, label: "Leaderboard" },
     { path: "/riddles", icon: Puzzle, label: "Riddles" },
     { path: "/read-and-test", icon: BookOpen, label: "Read & Test" },
+    { path: "/lunch-break", icon: Coffee, label: "Lunch Break" },
   ];
 
   const userNavLinks = [
@@ -65,6 +66,7 @@ const Header = () => {
     { path: "/riddles", icon: Puzzle, label: "Riddles" },
     { path: "/achievements", icon: Award, label: "Achievements" },
     { path: "/read-and-test", icon: BookOpen, label: "Read & Test" },
+    { path: "/lunch-break", icon: Coffee, label: "Lunch Break" },
   ];
 
   const navLinks = user ? userNavLinks : visitorNavLinks;
