@@ -1,16 +1,8 @@
 import { supabase } from "./supabase";
 
 // ============================================
-// EMAIL SERVICE - ACTUAL SENDING
+// EMAIL SERVICE - API ROUTE
 // ============================================
-
-// Brevo API (Primary)
-const BREVO_API_KEY = import.meta.env.VITE_BREVO_API_KEY || import.meta.env.BREVO_API_KEY || "";
-const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
-
-// SendGrid (Fallback)
-const SENDGRID_API_KEY = import.meta.env.VITE_SENDGRID_API_KEY || "";
-const SENDGRID_API_URL = "https://api.sendgrid.com/v3/mail/send";
 
 export const emailTemplates = {
   welcome: (name) => ({
@@ -49,115 +41,66 @@ export const emailTemplates = {
 };
 
 // ============================================
-// SEND SINGLE EMAIL - ACTUAL SENDING
+// SEND SINGLE EMAIL - Via API Route
 // ============================================
 export const sendEmail = async ({ to, subject, html }) => {
   try {
-    let method = 'none';
-    let success = false;
+    // Try sending via the API route (server-side)
+    console.log("📧 Sending via API route to:", to);
+    
+    const response = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ to, subject, html }),
+    });
 
-    // Try Brevo API first
-    if (BREVO_API_KEY && BREVO_API_KEY !== "") {
-      console.log("📧 Trying Brevo API to:", to);
-      
-      const response = await fetch(BREVO_API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "api-key": BREVO_API_KEY,
-        },
-        body: JSON.stringify({
-          sender: {
-            name: "Cerebrum Team",
-            email: "benjamindestiny449@gmail.com",
-          },
-          to: [{ email: to }],
-          subject: subject,
-          htmlContent: html,
-        }),
-      });
+    const result = await response.json();
 
-      if (response.ok) {
-        console.log(`✅ Email sent via Brevo to ${to}`);
-        success = true;
-        method = 'brevo';
-      } else {
-        const errorData = await response.json();
-        console.error("❌ Brevo Error:", errorData);
-        console.log("🔄 Falling back to SendGrid...");
-      }
-    }
-
-    // If Brevo fails, try SendGrid
-    if (!success && SENDGRID_API_KEY && SENDGRID_API_KEY !== "") {
-      console.log("📧 Trying SendGrid to:", to);
-      
-      const response = await fetch(SENDGRID_API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${SENDGRID_API_KEY}`,
-        },
-        body: JSON.stringify({
-          personalizations: [{ to: [{ email: to }] }],
-          from: { email: "benjamindestiny449@gmail.com", name: "Cerebrum Team" },
-          subject: subject,
-          content: [{ type: "text/html", value: html }],
-        }),
-      });
-
-      if (response.ok) {
-        console.log(`✅ Email sent via SendGrid to ${to}`);
-        success = true;
-        method = 'sendgrid';
-      } else {
-        const errorData = await response.json();
-        console.error("❌ SendGrid Error:", errorData);
-      }
-    }
-
-    // If all fail, log to database
-    if (!success) {
-      console.log("📧 [LOG MODE] Email logged only:", { to, subject });
-      method = 'logged';
-    }
-
-    // Log to database
-    try {
+    if (result.success) {
+      console.log(`✅ Email sent via API route to ${to}`);
+      // Log to database
       await supabase.from("email_logs").insert({
         recipient_email: to,
         subject: subject,
         body: html,
-        status: success ? 'sent' : 'logged',
+        status: 'sent',
         sent_at: new Date().toISOString(),
       });
-    } catch (dbError) {
-      console.error("Error logging email to DB:", dbError);
+      return { success: true, method: result.method || 'api' };
+    } else {
+      console.error("❌ API Error:", result.error);
+      // Fallback to logging
+      return await logEmail(to, subject, html);
     }
-
-    return { 
-      success: success || true, 
-      method,
-      message: success ? `Sent via ${method}` : 'Logged (no real send)'
-    };
 
   } catch (error) {
     console.error("❌ Email service error:", error);
-    // Log to database even on error
-    try {
-      await supabase.from("email_logs").insert({
-        recipient_email: to,
-        subject: subject,
-        body: html,
-        status: 'error',
-        error_message: error.message,
-        sent_at: new Date().toISOString(),
-      });
-    } catch (dbError) {
-      console.error("Error logging email to DB:", dbError);
-    }
-    return { success: false, error: error.message };
+    // Fallback to logging
+    return await logEmail(to, subject, html);
   }
+};
+
+// ============================================
+// LOG EMAIL TO DATABASE (Fallback)
+// ============================================
+const logEmail = async (to, subject, html) => {
+  console.log("📧 [LOG MODE] Email logged only:", { to, subject });
+  
+  try {
+    await supabase.from("email_logs").insert({
+      recipient_email: to,
+      subject: subject,
+      body: html,
+      status: 'logged',
+      sent_at: new Date().toISOString(),
+    });
+  } catch (dbError) {
+    console.error("Error logging email to DB:", dbError);
+  }
+  
+  return { success: true, method: 'logged' };
 };
 
 // ============================================
@@ -167,6 +110,7 @@ export const sendBulkEmail = async ({ recipients, subject, body, variables = [] 
   try {
     let sent = 0;
     let logged = 0;
+    let failed = 0;
 
     for (const recipient of recipients) {
       let personalizedBody = body;
@@ -200,14 +144,21 @@ export const sendBulkEmail = async ({ recipients, subject, body, variables = [] 
         } else {
           sent++;
         }
+      } else {
+        failed++;
       }
+
+      // Small delay to avoid rate limits
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     return {
       success: true,
       sent,
       logged,
+      failed,
       total: recipients.length,
+      message: `✅ ${sent} sent, ${logged} logged, ${failed} failed`,
     };
   } catch (error) {
     console.error("❌ Bulk email error:", error);
