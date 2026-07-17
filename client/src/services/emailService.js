@@ -1,12 +1,8 @@
 import { supabase } from "./supabase";
 
 // ============================================
-// EMAIL SERVICE - SENDGRID FALLBACK
+// EMAIL SERVICE - LOGGING MODE
 // ============================================
-
-// Try SendGrid first, fallback to logging
-const SENDGRID_API_KEY = import.meta.env.VITE_SENDGRID_API_KEY || "";
-const SENDGRID_API_URL = "https://api.sendgrid.com/v3/mail/send";
 
 export const emailTemplates = {
   welcome: (name) => ({
@@ -35,88 +31,94 @@ export const emailTemplates = {
 
 export const sendEmail = async ({ to, subject, html }) => {
   try {
-    // Try SendGrid first
-    if (SENDGRID_API_KEY && SENDGRID_API_KEY !== "") {
-      console.log("📧 Sending via SendGrid to:", to);
-      
-      const response = await fetch(SENDGRID_API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${SENDGRID_API_KEY}`,
-        },
-        body: JSON.stringify({
-          personalizations: [{ to: [{ email: to }] }],
-          from: { email: "benjamindestiny449@gmail.com", name: "Cerebrum Team" },
-          subject: subject,
-          content: [{ type: "text/html", value: html }],
-        }),
-      });
+    console.log("📧 [LOG MODE] Email would be sent to:", to);
+    console.log("📧 Subject:", subject);
+    console.log("📧 Body preview:", html.substring(0, 100) + "...");
 
-      if (response.ok) {
-        console.log(`✅ Email sent to ${to}`);
-        return { success: true, method: 'sendgrid' };
-      } else {
-        const errorData = await response.json();
-        console.error("❌ SendGrid Error:", errorData);
-        
-        // If SendGrid fails, fallback to logging
-        console.log("📧 [FALLBACK] Email logged only:", { to, subject });
-        return { success: true, fallback: true };
-      }
+    // ✅ FIX: Use correct column name 'recipient_email'
+    try {
+      await supabase.from("email_logs").insert({
+        recipient_email: to,
+        subject: subject,
+        body: html,
+        status: "logged",
+        sent_at: new Date().toISOString(),
+      });
+    } catch (dbError) {
+      console.error("Error logging email to DB:", dbError);
+      // If table doesn't exist, just log to console
+      console.log("📧 Email logged to console only:", { to, subject });
     }
 
-    // Fallback: Log it
-    console.log("📧 [LOG MODE] Email would be sent:", { to, subject });
-    return { success: true, fallback: true };
+    return { success: true, logged: true };
 
   } catch (error) {
     console.error("❌ Email service error:", error);
-    return { success: true, fallback: true };
+    return { success: false, error: error.message };
   }
 };
 
 export const sendBulkEmail = async ({ recipients, subject, body, variables = [] }) => {
   try {
-    let sent = 0;
+    let logged = 0;
 
     for (const recipient of recipients) {
-      let personalizedBody = body;
-      let personalizedSubject = subject;
+      try {
+        let personalizedBody = body;
+        let personalizedSubject = subject;
 
-      variables.forEach((varName) => {
-        const value = recipient.data?.[varName] || recipient[varName] || `{{${varName}}}`;
-        const regex = new RegExp(`{{${varName}}}`, "g");
-        personalizedBody = personalizedBody.replace(regex, value);
-        personalizedSubject = personalizedSubject.replace(regex, value);
-      });
+        variables.forEach((varName) => {
+          const value = recipient.data?.[varName] || recipient[varName] || `{{${varName}}}`;
+          const regex = new RegExp(`{{${varName}}}`, "g");
+          personalizedBody = personalizedBody.replace(regex, value);
+          personalizedSubject = personalizedSubject.replace(regex, value);
+        });
 
-      personalizedBody = personalizedBody
-        .replace(/{{name}}/g, recipient.name || "User")
-        .replace(/{{email}}/g, recipient.email || "")
-        .replace(/{{site_url}}/g, import.meta.env.VITE_APP_URL || "https://cerebrum-three.vercel.app");
+        personalizedBody = personalizedBody
+          .replace(/{{name}}/g, recipient.name || "User")
+          .replace(/{{email}}/g, recipient.email || "")
+          .replace(/{{site_url}}/g, import.meta.env.VITE_APP_URL || "https://cerebrum-three.vercel.app");
 
-      personalizedSubject = personalizedSubject
-        .replace(/{{name}}/g, recipient.name || "User")
-        .replace(/{{site_url}}/g, import.meta.env.VITE_APP_URL || "https://cerebrum-three.vercel.app");
+        personalizedSubject = personalizedSubject
+          .replace(/{{name}}/g, recipient.name || "User")
+          .replace(/{{site_url}}/g, import.meta.env.VITE_APP_URL || "https://cerebrum-three.vercel.app");
 
-      const result = await sendEmail({
-        to: recipient.email,
-        subject: personalizedSubject,
-        html: personalizedBody,
-      });
+        console.log(`📧 [LOG MODE] Email to ${recipient.email}: ${personalizedSubject}`);
 
-      if (result.success) sent++;
+        // ✅ FIX: Use correct column name 'recipient_email'
+        try {
+          await supabase.from("email_logs").insert({
+            recipient_email: recipient.email,
+            subject: personalizedSubject,
+            body: personalizedBody,
+            status: "logged",
+            sent_at: new Date().toISOString(),
+          });
+        } catch (dbError) {
+          console.error("Error logging email to DB:", dbError);
+        }
+
+        logged++;
+
+      } catch (error) {
+        console.error("Error logging email for:", recipient.email, error);
+      }
     }
 
     return {
       success: true,
-      sent,
+      logged,
       total: recipients.length,
+      message: `✅ ${logged} emails logged`,
     };
   } catch (error) {
     console.error("❌ Bulk email error:", error);
-    return { success: false, error: error.message };
+    return {
+      success: false,
+      error: error.message,
+      logged: 0,
+      total: recipients.length,
+    };
   }
 };
 
