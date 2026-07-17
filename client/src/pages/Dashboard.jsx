@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import DailyMissions from "../components/Common/DailyMissions";
 import StreakFreeze from "../components/Common/StreakFreeze";
+import TestimonialPopup from "../components/Common/TestimonialPopup";
 import {
   Trophy,
   Brain,
@@ -26,6 +27,7 @@ import { useAuth } from "../context/AuthContext";
 const Dashboard = () => {
   const navigate = useNavigate();
   const { currentUser, loading } = useAuth();
+  const [showTestimonial, setShowTestimonial] = useState(false);
 
   const [stats, setStats] = useState({
     totalQuizzes: 0,
@@ -39,6 +41,18 @@ const Dashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [loadingStats, setLoadingStats] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  useEffect(() => {
+    // Show testimonial popup after loading
+    if (!loading && currentUser) {
+      const hasSeen = localStorage.getItem('cerebrum_testimonial_seen');
+      if (!hasSeen) {
+        setTimeout(() => {
+          setShowTestimonial(true);
+        }, 3000);
+      }
+    }
+  }, [loading, currentUser]);
 
   const loadDashboardData = useCallback(async () => {
     if (!currentUser) return;
@@ -402,6 +416,18 @@ const Dashboard = () => {
           </motion.button>
         </div>
       </motion.div>
+
+      {/* Testimonial Popup */}
+      {showTestimonial && (
+        <TestimonialPopup
+          userId={currentUser?.id}
+          userName={currentUser?.user_metadata?.name || "User"}
+          onClose={() => {
+            setShowTestimonial(false);
+            localStorage.setItem('cerebrum_testimonial_seen', 'true');
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -47,9 +47,13 @@ const LunchBreak = () => {
   const [flippedCards, setFlippedCards] = useState([]);
   const [matchedPairs, setMatchedPairs] = useState(0);
   const [moves, setMoves] = useState(0);
+  const [gameStats, setGameStats] = useState({ correct: 0, wrong: 0 });
 
   const [currentNumber, setCurrentNumber] = useState(null);
   const [currentQuestion, setCurrentQuestion] = useState(null);
+  const [options, setOptions] = useState([]);
+  const [timePerQuestion, setTimePerQuestion] = useState(20);
+  const [questionTimer, setQuestionTimer] = useState(20);
 
   useEffect(() => {
     getCurrentUser();
@@ -64,11 +68,13 @@ const LunchBreak = () => {
   const startSpeedGame = () => {
     setGameMode(GAMES.SPEED);
     setGameActive(true);
-    setTimeLeft(30);
+    setTimeLeft(60);
     setScore(0);
-    setStats({ correct: 0, wrong: 0, total: 0 });
+    setGameStats({ correct: 0, wrong: 0 });
     setCombo(0);
     setMaxCombo(0);
+    setTimePerQuestion(20);
+    setQuestionTimer(20);
     generateNewProblem();
     startTimer();
   };
@@ -94,7 +100,22 @@ const LunchBreak = () => {
         display = `${num1} × ${num2}`;
         break;
     }
+    
+    // Generate 4 options with the correct answer
+    let options = [answer];
+    while (options.length < 4) {
+      let randomOffset = Math.floor(Math.random() * 10) + 1;
+      let newOption = answer + (Math.random() > 0.5 ? randomOffset : -randomOffset);
+      if (!options.includes(newOption) && newOption > 0) {
+        options.push(newOption);
+      }
+    }
+    // Shuffle options
+    options = options.sort(() => Math.random() - 0.5);
+    
     setCurrentNumber({ display, answer });
+    setOptions(options);
+    setQuestionTimer(20);
   };
 
   const handleSpeedAnswer = (selected) => {
@@ -106,12 +127,13 @@ const LunchBreak = () => {
       setCombo(newCombo);
       setMaxCombo(Math.max(maxCombo, newCombo));
       setScore(prev => prev + 10 + (newCombo > 1 ? newCombo * 2 : 0));
-      setStats(prev => ({ ...prev, correct: prev.correct + 1, total: prev.total + 1 }));
+      setGameStats(prev => ({ ...prev, correct: prev.correct + 1 }));
     } else {
       setCombo(0);
-      setStats(prev => ({ ...prev, wrong: prev.wrong + 1, total: prev.total + 1 }));
+      setGameStats(prev => ({ ...prev, wrong: prev.wrong + 1 }));
     }
 
+    // Generate next question immediately
     generateNewProblem();
   };
 
@@ -125,7 +147,7 @@ const LunchBreak = () => {
     setScore(0);
     setCombo(0);
     setMaxCombo(0);
-    setTimeLeft(45);
+    setTimeLeft(60);
     generateMemoryCards();
     startTimer();
   };
@@ -194,12 +216,14 @@ const LunchBreak = () => {
   const startTriviaGame = () => {
     setGameMode(GAMES.TRIVIA);
     setGameActive(true);
-    setTimeLeft(45);
+    setTimeLeft(60);
     setScore(0);
-    setStats({ correct: 0, wrong: 0, total: 0 });
+    setGameStats({ correct: 0, wrong: 0 });
     setCombo(0);
     setMaxCombo(0);
     setCurrentQuestion(null);
+    setTimePerQuestion(20);
+    setQuestionTimer(20);
     generateTriviaQuestion();
     startTimer();
   };
@@ -211,6 +235,10 @@ const LunchBreak = () => {
     { question: "Who painted the Mona Lisa?", options: ["Van Gogh", "Da Vinci", "Picasso", "Monet"], answer: 1 },
     { question: "What is the largest ocean?", options: ["Atlantic", "Pacific", "Indian", "Arctic"], answer: 1 },
     { question: "How many continents are there?", options: ["5", "6", "7", "8"], answer: 2 },
+    { question: "What is the speed of light?", options: ["300,000 km/s", "150,000 km/s", "500,000 km/s", "100,000 km/s"], answer: 0 },
+    { question: "Which gas do plants absorb?", options: ["Oxygen", "Carbon Dioxide", "Nitrogen", "Hydrogen"], answer: 1 },
+    { question: "What is the hardest natural substance?", options: ["Gold", "Diamond", "Iron", "Platinum"], answer: 1 },
+    { question: "How many bones are in the adult human body?", options: ["198", "206", "210", "220"], answer: 1 },
   ];
 
   const generateTriviaQuestion = () => {
@@ -223,6 +251,7 @@ const LunchBreak = () => {
     const randomIndex = Math.floor(Math.random() * available.length);
     const question = available[randomIndex];
     setCurrentQuestion({ ...question, index: triviaQuestions.indexOf(question) });
+    setQuestionTimer(20);
   };
 
   const handleTriviaAnswer = (selected) => {
@@ -234,10 +263,10 @@ const LunchBreak = () => {
       setCombo(newCombo);
       setMaxCombo(Math.max(maxCombo, newCombo));
       setScore(prev => prev + 15 + (newCombo > 1 ? newCombo * 3 : 0));
-      setStats(prev => ({ ...prev, correct: prev.correct + 1, total: prev.total + 1 }));
+      setGameStats(prev => ({ ...prev, correct: prev.correct + 1 }));
     } else {
       setCombo(0);
-      setStats(prev => ({ ...prev, wrong: prev.wrong + 1, total: prev.total + 1 }));
+      setGameStats(prev => ({ ...prev, wrong: prev.wrong + 1 }));
     }
 
     generateTriviaQuestion();
@@ -254,6 +283,24 @@ const LunchBreak = () => {
         }
         return prev - 1;
       });
+      
+      // Question timer for speed and trivia
+      if (gameMode === GAMES.SPEED || gameMode === GAMES.TRIVIA) {
+        setQuestionTimer(prev => {
+          if (prev <= 1) {
+            // Time's up for this question - move to next
+            if (gameMode === GAMES.SPEED) {
+              setCombo(0);
+              generateNewProblem();
+            } else if (gameMode === GAMES.TRIVIA) {
+              setCombo(0);
+              generateTriviaQuestion();
+            }
+            return 20;
+          }
+          return prev - 1;
+        });
+      }
     }, 1000);
   };
 
@@ -286,11 +333,11 @@ const LunchBreak = () => {
               id: GAMES.SPEED,
               icon: Zap,
               title: "Speed Math",
-              desc: "Quick math challenges",
+              desc: "Quick math challenges (20s per question)",
               color: "text-yellow-400",
               bg: "bg-yellow-500/10",
               border: "border-yellow-500/30",
-              time: "30s",
+              time: "60s",
             },
             {
               id: GAMES.MEMORY,
@@ -300,17 +347,17 @@ const LunchBreak = () => {
               color: "text-purple-400",
               bg: "bg-purple-500/10",
               border: "border-purple-500/30",
-              time: "45s",
+              time: "60s",
             },
             {
               id: GAMES.TRIVIA,
               icon: Target,
               title: "Quick Trivia",
-              desc: "Test your knowledge",
+              desc: "Test your knowledge (20s per question)",
               color: "text-green-400",
               bg: "bg-green-500/10",
               border: "border-green-500/30",
-              time: "45s",
+              time: "60s",
             },
           ].map((game) => (
             <button
@@ -379,6 +426,12 @@ const LunchBreak = () => {
                     <Trophy className="w-4 h-4 text-yellow-400" />
                     {score} pts
                   </span>
+                  {gameActive && (gameMode === GAMES.SPEED || gameMode === GAMES.TRIVIA) && (
+                    <span className="flex items-center gap-1 text-blue-400">
+                      <Clock className="w-3 h-3" />
+                      {questionTimer}s
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -391,35 +444,42 @@ const LunchBreak = () => {
 
           {/* Combo Display */}
           {combo > 1 && gameActive && (
-            <div className="flex items-center gap-2 text-orange-400 text-sm mb-3">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="flex items-center gap-2 text-orange-400 text-sm mb-3"
+            >
               <Flame className="w-4 h-4" />
               <span>{combo}x Combo! 🔥</span>
-            </div>
+            </motion.div>
           )}
 
           {/* Speed Game */}
           {gameMode === GAMES.SPEED && (
             <div className="text-center py-4">
-              {gameActive && currentNumber && (
+              {gameActive && currentNumber && options.length > 0 && (
                 <>
-                  <div className="text-4xl font-bold text-white mb-6">
+                  <div className="text-3xl font-bold text-white mb-2">
                     {currentNumber.display} = ?
                   </div>
-                  <div className="grid grid-cols-4 gap-3 max-w-xs mx-auto">
-                    {[
-                      currentNumber.answer,
-                      currentNumber.answer + Math.floor(Math.random() * 5) + 1,
-                      currentNumber.answer - Math.floor(Math.random() * 5) - 1,
-                      currentNumber.answer + Math.floor(Math.random() * 3) + 2,
-                    ].sort(() => Math.random() - 0.5).map((option, i) => (
+                  <div className="text-xs text-gray-400 mb-4">
+                    Choose the correct answer ({questionTimer}s remaining)
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
+                    {options.map((option, i) => (
                       <button
                         key={i}
                         onClick={() => handleSpeedAnswer(option)}
-                        className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors text-xl font-bold text-white"
+                        className="p-4 bg-white/5 hover:bg-white/15 rounded-lg transition-colors text-xl font-bold text-white border border-white/10 hover:border-blue-500/30"
                       >
                         {option}
                       </button>
                     ))}
+                  </div>
+                  <div className="mt-3 text-xs text-gray-500">
+                    <span className="text-green-400">Correct: {gameStats.correct}</span>
+                    {' | '}
+                    <span className="text-red-400">Wrong: {gameStats.wrong}</span>
                   </div>
                 </>
               )}
@@ -429,7 +489,7 @@ const LunchBreak = () => {
                   <h3 className="text-2xl font-bold text-white">Time's Up!</h3>
                   <p className="text-gray-400 mt-2">You scored <span className="text-yellow-400 font-bold">{score}</span> points</p>
                   <p className="text-sm text-gray-500 mt-1">
-                    Correct: {stats.correct} | Wrong: {stats.wrong}
+                    Correct: {gameStats.correct} | Wrong: {gameStats.wrong}
                   </p>
                   {maxCombo > 1 && <p className="text-orange-400 text-sm mt-1">🔥 Best Combo: {maxCombo}x</p>}
                   <button
@@ -499,7 +559,10 @@ const LunchBreak = () => {
             <div className="py-2">
               {gameActive && currentQuestion && (
                 <div>
-                  <p className="text-white font-medium mb-4 text-lg">
+                  <div className="text-xs text-gray-400 mb-2 text-center">
+                    {questionTimer}s remaining
+                  </div>
+                  <p className="text-white font-medium mb-4 text-lg text-center">
                     {currentQuestion.question}
                   </p>
                   <div className="space-y-2 max-w-md mx-auto">
@@ -507,11 +570,16 @@ const LunchBreak = () => {
                       <button
                         key={index}
                         onClick={() => handleTriviaAnswer(index)}
-                        className="w-full text-left px-4 py-3 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white"
+                        className="w-full text-left px-4 py-3 bg-white/5 hover:bg-white/15 rounded-lg transition-colors text-white border border-white/10 hover:border-blue-500/30"
                       >
                         {option}
                       </button>
                     ))}
+                  </div>
+                  <div className="mt-3 text-xs text-gray-500 text-center">
+                    <span className="text-green-400">Correct: {gameStats.correct}</span>
+                    {' | '}
+                    <span className="text-red-400">Wrong: {gameStats.wrong}</span>
                   </div>
                 </div>
               )}
@@ -523,7 +591,7 @@ const LunchBreak = () => {
                     Score: <span className="text-yellow-400 font-bold">{score}</span> points
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
-                    Correct: {stats.correct} | Wrong: {stats.wrong}
+                    Correct: {gameStats.correct} | Wrong: {gameStats.wrong}
                   </p>
                   {maxCombo > 1 && <p className="text-orange-400 text-sm mt-1">🔥 Best Combo: {maxCombo}x</p>}
                   <button

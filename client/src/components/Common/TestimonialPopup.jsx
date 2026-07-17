@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Star, MessageCircle, Send, Loader2 } from 'lucide-react';
+import { X, Star, MessageCircle, Send, Loader2, User } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 import { toast } from 'react-toastify';
 
@@ -9,32 +9,7 @@ const TestimonialPopup = ({ userId, userName, onClose }) => {
   const [hoverRating, setHoverRating] = useState(0);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [dontShowAgain, setDontShowAgain] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
-
-  // Check if user already gave a testimonial
-  const checkExistingTestimonial = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('testimonials')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (data) {
-        setIsVisible(false);
-        onClose?.();
-      }
-    } catch (error) {
-      console.error('Error checking testimonial:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (userId) {
-      checkExistingTestimonial();
-    }
-  }, [userId]);
 
   const handleSubmit = async () => {
     if (rating === 0) {
@@ -55,7 +30,7 @@ const TestimonialPopup = ({ userId, userName, onClose }) => {
           name: userName || 'Anonymous',
           rating: rating,
           content: message.trim(),
-          date: new Date().toISOString(),
+          created_at: new Date().toISOString(),
         });
 
       if (error) throw error;
@@ -71,13 +46,6 @@ const TestimonialPopup = ({ userId, userName, onClose }) => {
     }
   };
 
-  const handleDontShowAgain = () => {
-    setDontShowAgain(true);
-    localStorage.setItem('cerebrum_testimonial_dismissed', 'true');
-    setIsVisible(false);
-    onClose?.();
-  };
-
   const renderStars = () => {
     const stars = [];
     const current = hoverRating || rating;
@@ -91,7 +59,7 @@ const TestimonialPopup = ({ userId, userName, onClose }) => {
           className="text-2xl sm:text-3xl transition-colors"
         >
           <Star
-            className={`w-6 h-6 sm:w-8 sm:h-8 ${
+            className={`w-6 h-6 sm:w-8 h-8 ${
               i <= current
                 ? 'text-yellow-400 fill-yellow-400'
                 : 'text-gray-500'
@@ -106,96 +74,96 @@ const TestimonialPopup = ({ userId, userName, onClose }) => {
   if (!isVisible) return null;
 
   return (
-    <AnimatePresence>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          setIsVisible(false);
+          onClose?.();
+        }
+      }}
+    >
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) {
-            setIsVisible(false);
-            onClose?.();
-          }
-        }}
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 20 }}
+        className="glass-card p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto"
       >
-        <motion.div
-          initial={{ scale: 0.9, y: 20 }}
-          animate={{ scale: 1, y: 0 }}
-          exit={{ scale: 0.9, y: 20 }}
-          className="glass-card p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <MessageCircle className="w-5 h-5 text-blue-400" />
-              <h3 className="text-white font-bold text-lg">Share Your Experience</h3>
-            </div>
-            <button
-              onClick={() => {
-                setIsVisible(false);
-                onClose?.();
-              }}
-              className="p-1 rounded-lg hover:bg-white/5 transition-colors"
-            >
-              <X className="w-5 h-5 text-gray-400" />
-            </button>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="w-5 h-5 text-blue-400" />
+            <h3 className="text-white font-bold text-lg">Share Your Experience</h3>
           </div>
+          <button
+            onClick={() => {
+              setIsVisible(false);
+              onClose?.();
+            }}
+            className="p-1 rounded-lg hover:bg-white/5 transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-400" />
+          </button>
+        </div>
 
-          <p className="text-gray-400 text-sm mb-4">
-            How has your experience been with Cerebrum? Your feedback helps others learn!
-          </p>
+        <p className="text-gray-400 text-sm mb-4">
+          How has your experience been with Cerebrum? Your feedback helps others learn!
+        </p>
 
-          <div className="mb-4">
-            <label className="text-sm text-gray-400 block mb-2">Rating</label>
-            <div className="flex gap-1">{renderStars()}</div>
-            {rating > 0 && (
-              <span className="text-xs text-gray-500 mt-1 block">
-                {rating === 5 ? '🌟 Excellent!' :
-                 rating === 4 ? '😊 Great!' :
-                 rating === 3 ? '👍 Good' :
-                 rating === 2 ? '😐 Okay' :
-                 '😕 Needs improvement'}
-              </span>
+        <div className="mb-4">
+          <label className="text-sm text-gray-400 block mb-2">Rating</label>
+          <div className="flex gap-1">{renderStars()}</div>
+          {rating > 0 && (
+            <span className="text-xs text-gray-500 mt-1 block">
+              {rating === 5 ? '🌟 Excellent!' :
+               rating === 4 ? '😊 Great!' :
+               rating === 3 ? '👍 Good' :
+               rating === 2 ? '😐 Okay' :
+               '😕 Needs improvement'}
+            </span>
+          )}
+        </div>
+
+        <div className="mb-4">
+          <label className="text-sm text-gray-400 block mb-2">Your Story</label>
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="What do you like about Cerebrum? How has it helped you?"
+            className="w-full px-4 py-3 bg-[#262626] rounded-lg border border-white/10 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all resize-none"
+            rows={4}
+          />
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={() => {
+              setIsVisible(false);
+              onClose?.();
+            }}
+            className="flex-1 py-2.5 px-4 text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            Skip
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="flex-1 btn-primary py-2.5 px-4 flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                Send Feedback
+              </>
             )}
-          </div>
-
-          <div className="mb-4">
-            <label className="text-sm text-gray-400 block mb-2">Your Story</label>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="What do you like about Cerebrum? How has it helped you?"
-              className="w-full px-4 py-3 bg-[#262626] rounded-lg border border-white/10 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all resize-none"
-              rows={4}
-            />
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={handleDontShowAgain}
-              disabled={loading}
-              className="flex-1 py-2.5 px-4 text-sm text-gray-400 hover:text-white transition-colors"
-            >
-              Don't show again
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="flex-1 btn-primary py-2.5 px-4 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  Send Feedback
-                </>
-              )}
-            </button>
-          </div>
-        </motion.div>
+          </button>
+        </div>
       </motion.div>
-    </AnimatePresence>
+    </motion.div>
   );
 };
 
