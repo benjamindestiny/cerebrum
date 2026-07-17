@@ -1,23 +1,29 @@
-// Default avatars for users
+// Default Avatars - 16 different options
 export const defaultAvatars = [
-  { id: 1, emoji: '🧠', color: '#3B82F6', bg: '#3b1a6b' },
-  { id: 2, emoji: '🚀', color: '#ec4899', bg: '#6b1a3a' },
-  { id: 3, emoji: '🌟', color: '#f59e0b', bg: '#6b4a1a' },
-  { id: 4, emoji: '🎯', color: '#10b981', bg: '#1a4a3a' },
-  { id: 5, emoji: '💪', color: '#ef4444', bg: '#4a1a1a' },
-  { id: 6, emoji: '🧙', color: '#3B82F6', bg: '#2a1a4a' },
-  { id: 7, emoji: '🦊', color: '#f97316', bg: '#4a2a1a' },
-  { id: 8, emoji: '🐉', color: '#06b6d4', bg: '#1a3a4a' },
-  { id: 9, emoji: '🦅', color: '#3B82F6', bg: '#1a2a4a' },
-  { id: 10, emoji: '🐺', color: '#6b7280', bg: '#2a2a2a' },
-  { id: 11, emoji: '🦄', color: '#a855f7', bg: '#3a1a4a' },
-  { id: 12, emoji: '🐼', color: '#4b5563', bg: '#1a1a1a' },
-  { id: 13, emoji: '🦁', color: '#f59e0b', bg: '#4a3a1a' },
-  { id: 14, emoji: '🐧', color: '#3B82F6', bg: '#1a2a3a' },
-  { id: 15, emoji: '🐱', color: '#3B82F6', bg: '#2a1a3a' },
-  { id: 16, emoji: '🐶', color: '#f97316', bg: '#3a2a1a' },
+  { id: 1, emoji: "🧠", bg: "#7c3aed" },
+  { id: 2, emoji: "🚀", bg: "#2563eb" },
+  { id: 3, emoji: "🌟", bg: "#f59e0b" },
+  { id: 4, emoji: "🎯", bg: "#ef4444" },
+  { id: 5, emoji: "💪", bg: "#22c55e" },
+  { id: 6, emoji: "🧙", bg: "#8b5cf6" },
+  { id: 7, emoji: "🦊", bg: "#f97316" },
+  { id: 8, emoji: "🐉", bg: "#14b8a6" },
+  { id: 9, emoji: "🦅", bg: "#3b82f6" },
+  { id: 10, emoji: "🐺", bg: "#6b7280" },
+  { id: 11, emoji: "🦄", bg: "#ec4899" },
+  { id: 12, emoji: "🐼", bg: "#374151" },
+  { id: 13, emoji: "🦁", bg: "#d97706" },
+  { id: 14, emoji: "🐧", bg: "#1e293b" },
+  { id: 15, emoji: "🐱", bg: "#f43f5e" },
+  { id: 16, emoji: "🐶", bg: "#78350f" },
 ];
 
+// Get random avatar
+export const getRandomAvatar = () => {
+  const randomIndex = Math.floor(Math.random() * defaultAvatars.length);
+  return defaultAvatars[randomIndex];
+};
+
 export const getAvatarById = (id) => {
-  return defaultAvatars.find(a => a.id === id) || defaultAvatars[0];
+  return defaultAvatars.find(avatar => avatar.id === id) || defaultAvatars[0];
 };

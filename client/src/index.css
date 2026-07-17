@@ -605,3 +605,12 @@ svg.arrow-icon {
     font-size: 1.25rem !important;
   }
 }
+
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

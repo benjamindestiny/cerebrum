@@ -82,7 +82,7 @@ const Header = () => {
           <div className="flex items-center justify-between h-14 sm:h-16">
             <div className="flex items-center gap-2">
               <Brain className="w-7 h-7 sm:w-8 sm:h-8 text-blue-400" />
-              <span className="text-lg sm:text-xl font-bold text-white">Cerebrum</span>
+              <span className="text-lg sm:text-xl font-bold text-white hidden xs:block">Cerebrum</span>
             </div>
           </div>
         </div>
@@ -103,21 +103,29 @@ const Header = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1 overflow-x-auto max-w-[60%]">
-            {navLinks.map(({ path, icon: Icon, label }) => (
+          <nav className="hidden lg:flex items-center gap-1 overflow-x-auto max-w-[60%] scrollbar-hide">
+            {navLinks.slice(0, 6).map(({ path, icon: Icon, label }) => (
               <Link
                 key={path}
                 to={path}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-300 text-sm whitespace-nowrap
                   ${isActive(path)
-                    ? "text-blue-400 font-medium"
-                    : "text-gray-400 hover:text-white"
+                    ? "text-blue-400 font-medium bg-blue-500/10"
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
                   }`}
               >
                 <Icon className="w-4 h-4" />
                 <span className="text-sm">{label}</span>
               </Link>
             ))}
+            {navLinks.length > 6 && (
+              <Link
+                to="/more"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all duration-300 text-sm whitespace-nowrap"
+              >
+                More...
+              </Link>
+            )}
           </nav>
 
           {/* Right side */}
@@ -134,7 +142,7 @@ const Header = () => {
               <div className="flex items-center gap-2">
                 <Link
                   to="/profile"
-                  className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition-colors text-sm"
+                  className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-sm"
                 >
                   <UserCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span className="text-sm max-w-[80px] truncate">
@@ -174,10 +182,10 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - Clean and Scrolling */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden border-t" style={{ borderColor: 'var(--border)' }}>
-          <div className="px-3 py-3 max-h-[70vh] overflow-y-auto">
+        <div className="lg:hidden border-t max-h-[80vh] overflow-y-auto" style={{ borderColor: 'var(--border)' }}>
+          <div className="px-3 py-3">
             <nav className="space-y-1">
               {navLinks.map(({ path, icon: Icon, label }) => (
                 <Link
@@ -190,8 +198,8 @@ const Header = () => {
                       : "text-gray-400 hover:text-white hover:bg-white/5"
                     }`}
                 >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium">{label}</span>
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-medium truncate">{label}</span>
                 </Link>
               ))}
               <div className="border-t my-2" style={{ borderColor: 'var(--border)' }} />
@@ -199,7 +207,7 @@ const Header = () => {
                 onClick={toggleTheme}
                 className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors w-full text-base"
               >
-                {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                {isDark ? <Sun className="w-5 h-5 flex-shrink-0" /> : <Moon className="w-5 h-5 flex-shrink-0" />}
                 <span className="font-medium">{isDark ? "Light mode" : "Dark mode"}</span>
               </button>
               {user ? (
@@ -209,7 +217,7 @@ const Header = () => {
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-base"
                   >
-                    <UserCircle className="w-5 h-5" />
+                    <UserCircle className="w-5 h-5 flex-shrink-0" />
                     <span className="font-medium">Profile</span>
                   </Link>
                   <button
@@ -219,7 +227,7 @@ const Header = () => {
                     }}
                     className="flex items-center gap-3 px-4 py-3 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors w-full text-base"
                   >
-                    <LogOut className="w-5 h-5" />
+                    <LogOut className="w-5 h-5 flex-shrink-0" />
                     <span className="font-medium">Sign Out</span>
                   </button>
                 </>
@@ -229,7 +237,7 @@ const Header = () => {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors text-base"
                 >
-                  <LogIn className="w-5 h-5" />
+                  <LogIn className="w-5 h-5 flex-shrink-0" />
                   <span className="font-medium">Sign In</span>
                 </Link>
               )}

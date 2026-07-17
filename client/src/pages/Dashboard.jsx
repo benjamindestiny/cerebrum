@@ -407,3 +407,10 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+import TestimonialPopup from '../components/Common/TestimonialPopup';
+const [showTestimonialPopup, setShowTestimonialPopup] = useState(false);
+<TestimonialPopup 
+  userId={currentUser?.id} 
+  userName={currentUser?.user_metadata?.name || 'User'}
+  onClose={() => setShowTestimonialPopup(false)}
+/>

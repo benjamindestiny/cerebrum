@@ -12,6 +12,7 @@ import {
   Sparkles,
   UserCircle,
   ArrowLeft,
+  Loader2,
 } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
@@ -21,74 +22,34 @@ const Testimonials = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
 
-  // Hardcoded testimonials for now
-  const defaultTestimonials = [
-    {
-      id: 1,
-      name: 'Alex Johnson',
-      role: 'Student',
-      avatar: '🧠',
-      content: 'Cerebrum has completely changed how I study! The quizzes are engaging and the riddles keep my brain sharp. I\'ve improved my grades significantly.',
-      rating: 5,
-      date: '2024-07-15',
-    },
-    {
-      id: 2,
-      name: 'Sarah Williams',
-      role: 'Teacher',
-      avatar: '📚',
-      content: 'I use Cerebrum with my students and they love it! The Read & Test feature is perfect for comprehension checks. Highly recommend for educators.',
-      rating: 5,
-      date: '2024-07-12',
-    },
-    {
-      id: 3,
-      name: 'Michael Chen',
-      role: 'Software Developer',
-      avatar: '💻',
-      content: 'Learning new technologies has never been this fun. The categories are well-organized and the difficulty progression is spot on. Great platform!',
-      rating: 4,
-      date: '2024-07-10',
-    },
-    {
-      id: 4,
-      name: 'Emily Rodriguez',
-      role: 'Lifelong Learner',
-      avatar: '🌟',
-      content: 'I love the daily challenges! It keeps me coming back every day. My streak is currently 45 days and I\'m not planning to stop anytime soon.',
-      rating: 5,
-      date: '2024-07-08',
-    },
-    {
-      id: 5,
-      name: 'David Kim',
-      role: 'University Student',
-      avatar: '🎯',
-      content: 'The leaderboard adds a competitive edge that motivates me to study harder. I\'ve gone from average to top 10% in my class!',
-      rating: 5,
-      date: '2024-07-05',
-    },
-    {
-      id: 6,
-      name: 'Lisa Thompson',
-      role: 'Project Manager',
-      avatar: '🚀',
-      content: 'Perfect for quick learning sessions during breaks. The Read & Test articles are informative and the quizzes are challenging but fair.',
-      rating: 4,
-      date: '2024-07-01',
-    },
-  ];
-
   useEffect(() => {
     getCurrentUser();
-    // Load testimonials from database or use defaults
-    setTestimonials(defaultTestimonials);
-    setLoading(false);
+    loadTestimonials();
   }, []);
 
   const getCurrentUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setUser(user);
+  };
+
+  const loadTestimonials = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('testimonials')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setTestimonials(data);
+      }
+    } catch (error) {
+      console.error('Error loading testimonials:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderStars = (rating) => {
@@ -100,10 +61,15 @@ const Testimonials = () => {
     ));
   };
 
+  const getAvatarEmoji = (index) => {
+    const avatars = ['🧠', '🚀', '🌟', '🎯', '💪', '🧙', '🦊', '🐉', '🦅', '🐺', '🦄', '🐼', '🦁', '🐧', '🐱', '🐶'];
+    return avatars[index % avatars.length];
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
       </div>
     );
   }
@@ -142,94 +108,79 @@ const Testimonials = () => {
         </div>
         <div className="glass-card p-4 text-center">
           <div className="text-2xl font-bold text-yellow-400">
-            {Math.round(testimonials.reduce((acc, t) => acc + t.rating, 0) / testimonials.length)}
+            {testimonials.length > 0 
+              ? Math.round(testimonials.reduce((acc, t) => acc + t.rating, 0) / testimonials.length)
+              : 0}
           </div>
           <div className="text-xs text-gray-400">Average Rating</div>
         </div>
         <div className="glass-card p-4 text-center">
-          <div className="text-2xl font-bold text-blue-400">1000+</div>
+          <div className="text-2xl font-bold text-blue-400">40+</div>
           <div className="text-xs text-gray-400">Active Learners</div>
         </div>
-        <div className="glass-card p-4 text-center">
+        {/* <div className="glass-card p-4 text-center">
           <div className="text-2xl font-bold text-green-400">50+</div>
           <div className="text-xs text-gray-400">Countries</div>
-        </div>
+        </div> */}
       </div>
 
       {/* Testimonials Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {testimonials.map((testimonial, index) => (
-          <motion.div
-            key={testimonial.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.08 }}
-            className="glass-card p-6 hover:border-blue-500/30 transition-all"
-          >
-            <div className="flex items-start gap-3 mb-3">
-              <div className="text-3xl">{testimonial.avatar || '🧠'}</div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-white font-medium">{testimonial.name}</span>
-                  {testimonial.role && (
-                    <span className="text-xs text-gray-500">{testimonial.role}</span>
-                  )}
-                </div>
-                <div className="flex gap-0.5 mt-1">
-                  {renderStars(testimonial.rating)}
+      {testimonials.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {testimonials.map((testimonial, index) => (
+            <motion.div
+              key={testimonial.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.08 }}
+              className="glass-card p-6 hover:border-blue-500/30 transition-all"
+            >
+              <div className="flex items-start gap-3 mb-3">
+                <div className="text-3xl">{getAvatarEmoji(index)}</div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-white font-medium">{testimonial.name || 'Anonymous'}</span>
+                  </div>
+                  <div className="flex gap-0.5 mt-1">
+                    {renderStars(testimonial.rating)}
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="relative">
-              <Quote className="w-4 h-4 text-blue-400 absolute -top-1 -left-1 opacity-50" />
-              <p className="text-gray-300 text-sm leading-relaxed pl-5">
-                "{testimonial.content}"
-              </p>
-            </div>
-            <div className="mt-3 text-xs text-gray-500">
-              {new Date(testimonial.date).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Add Testimonial CTA */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="glass-card p-6 mt-8 border border-blue-500/20 bg-blue-500/5 text-center"
-      >
-        <div className="flex flex-col sm:flex-row items-center gap-4 justify-between">
-          <div>
-            <h3 className="text-white font-semibold flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-yellow-400" />
-              Love Cerebrum?
-            </h3>
-            <p className="text-gray-400 text-sm">
-              Share your experience and help others discover the joy of learning!
-            </p>
-          </div>
-          <button
-            onClick={() => {
-              if (user) {
-                // Open a testimonial form modal or redirect
-                navigate('/profile');
-              } else {
-                navigate('/auth');
-              }
-            }}
-            className="px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm flex items-center gap-2"
-          >
-            <MessageCircle className="w-4 h-4" />
-            Share Your Story
-          </button>
+              <div className="relative">
+                <Quote className="w-4 h-4 text-blue-400 absolute -top-1 -left-1 opacity-50" />
+                <p className="text-gray-300 text-sm leading-relaxed pl-5">
+                  "{testimonial.content}"
+                </p>
+              </div>
+              <div className="mt-3 text-xs text-gray-500">
+                {new Date(testimonial.created_at).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </div>
+            </motion.div>
+          ))}
         </div>
-      </motion.div>
+      ) : (
+        <div className="glass-card p-12 text-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="text-6xl">💬</div>
+            <h3 className="text-xl font-bold text-white">No Testimonials Yet</h3>
+            <p className="text-gray-400 max-w-md">
+              Be the first to share your experience with Cerebrum!
+            </p>
+            {user && (
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Share Your Story
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };
