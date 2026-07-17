@@ -17,6 +17,7 @@ import AdminEmail from './pages/AdminEmail';
 import Dashboard from "./pages/Dashboard";
 import Leaderboard from "./pages/Leaderboard";
 import AdminWeeklyReport from "./pages/AdminWeeklyReport";
+import AdminReengagement from "./pages/AdminReengagement";
 import Riddles from "./pages/Riddles";
 import LunchBreak from './pages/LunchBreak';
 import Testimonials from './pages/Testimonials';
