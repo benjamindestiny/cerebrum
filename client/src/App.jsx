@@ -12,6 +12,7 @@ import AdminSubscribers from "./pages/AdminSubscribers";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import FeatureRequest from "./pages/FeatureRequest";
+import AdminFeatureRequests from "./pages/AdminFeatureRequests";
 import Quiz from "./pages/Quiz";
 import Results from "./pages/Results";
 import AdminEmail from "./pages/AdminEmail";
@@ -27,6 +28,8 @@ import ReadAndTest from "./pages/ReadAndTest";
 import AdminEmailTemplates from "./pages/AdminEmailTemplates";
 import AdminSendMessage from "./pages/AdminSendMessage";
 import AdminReengagement from "./pages/AdminReengagement";
+import FeatureRequest from "./pages/FeatureRequest";
+import AdminFeatureRequests from "./pages/AdminFeatureRequests";
 import ReadAndTestResults from "./pages/ReadAndTestResults";
 import Privacy from "./pages/Privacy";
 import About from "./pages/About";
@@ -200,6 +203,7 @@ function App() {
               <Route path="riddles" element={<Riddles />} />
               <Route path="lunch-break" element={<LunchBreak />} />
               <Route path="testimonials" element={<Testimonials />} />
+              <Route path="feature-request" element={<ProtectedRoute><FeatureRequest /></ProtectedRoute>} />
               <Route path="achievements" element={<Achievements />} />
               <Route path="read-and-test" element={<ReadAndTest />} />
               <Route
@@ -253,3 +257,4 @@ function App() {
 }
 
 export default App;
+import AdminFeatureRequests from './pages/AdminFeatureRequests';

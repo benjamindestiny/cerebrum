@@ -94,7 +94,7 @@ const TestimonialPopup = ({ userId, userName, onClose }) => {
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <MessageCircle className="w-5 h-5 text-blue-400" />
+            <MessageCircle className="w-5 h-5 text-[#2A1535]" />
             <h3 className="text-white font-bold text-lg">Share Your Experience</h3>
           </div>
           <button

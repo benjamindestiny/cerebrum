@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { supabase } from "../../services/supabase";
 import { useTheme } from "../../context/ThemeContext";
+import Logo from "../Common/Logo";
 
 const Header = () => {
   const location = useLocation();
@@ -81,10 +82,7 @@ const Header = () => {
       <header className="border-b" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4">
           <div className="flex items-center justify-between h-14 sm:h-16">
-            <div className="flex items-center gap-2">
-              <Brain className="w-7 h-7 sm:w-8 sm:h-8 text-blue-400" />
-              <span className="text-lg sm:text-xl font-bold text-white hidden xs:block">Cerebrum</span>
-            </div>
+            <Logo size="md" showText={true} />
           </div>
         </div>
       </header>
@@ -97,13 +95,10 @@ const Header = () => {
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo */}
           <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2 shrink-0">
-            <motion.div whileHover={{ rotate: -10, scale: 1.1 }} transition={{ type: "spring", stiffness: 400 }}>
-              <Brain className="w-7 h-7 sm:w-8 sm:h-8 text-blue-400" />
-            </motion.div>
-            <span className="text-lg sm:text-xl font-bold text-white hidden xs:block">Cerebrum</span>
+            <Logo size="md" showText={true} />
           </Link>
 
-          {/* Desktop Navigation - Icon Only */}
+          {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-0.5">
             {navLinks.slice(0, 7).map(({ path, icon: Icon, label }) => {
               const active = isActive(path);
@@ -126,9 +121,8 @@ const Header = () => {
             })}
           </nav>
 
-          {/* Right side - Simplified */}
+          {/* Right side */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
@@ -139,7 +133,6 @@ const Header = () => {
 
             {user ? (
               <>
-                {/* Profile - Single icon with tooltip */}
                 <Link
                   to="/profile"
                   className="group relative flex items-center justify-center w-9 h-9 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
@@ -149,7 +142,6 @@ const Header = () => {
                     Profile
                   </span>
                 </Link>
-                {/* Sign Out - Single icon with tooltip */}
                 <button
                   onClick={handleSignOut}
                   className="group relative flex items-center justify-center w-9 h-9 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
@@ -169,7 +161,6 @@ const Header = () => {
               </Link>
             )}
 
-            {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"

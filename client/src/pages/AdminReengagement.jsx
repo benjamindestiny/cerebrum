@@ -190,7 +190,7 @@ const AdminReengagement = () => {
       label: '👋 We Miss You',
       desc: 'Warm re-engagement with stats',
       icon: MessageCircle,
-      color: 'text-blue-400',
+      color: 'text-[#2A1535]',
       bg: 'bg-blue-500/10',
     },
     {
@@ -222,7 +222,7 @@ const AdminReengagement = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
+        <Loader2 className="w-10 h-10 text-[#2A1535] animate-spin" />
       </div>
     );
   }
@@ -242,7 +242,7 @@ const AdminReengagement = () => {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <Mail className="w-8 h-8 text-blue-400" />
+            <Mail className="w-8 h-8 text-[#2A1535]" />
             Re-engagement Emails
           </h1>
           <p className="text-gray-400 text-sm mt-1">
@@ -260,7 +260,7 @@ const AdminReengagement = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
         {[
-          { label: 'Total Users', value: stats.total, icon: Users, color: 'text-blue-400' },
+          { label: 'Total Users', value: stats.total, icon: Users, color: 'text-[#2A1535]' },
           { label: 'Active', value: stats.active, icon: UserCheck, color: 'text-green-400' },
           { label: 'Inactive (7d)', value: stats.inactive7, icon: UserX, color: 'text-yellow-400' },
           { label: 'Inactive (30d)', value: stats.inactive30, icon: Clock, color: 'text-orange-400' },

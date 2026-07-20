@@ -68,7 +68,7 @@ const Donate = () => {
         {/* Impact Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3  text-white border-[#2A2A4A]">
           <div className="glass-card p-3 text-center  text-white border-[#2A2A4A]">
-            <Users className="w-5 h-5 text-blue-400 mx-auto mb-1  text-white border-[#2A2A4A]" />
+            <Users className="w-5 h-5 text-[#2A1535] mx-auto mb-1  text-white border-[#2A2A4A]" />
             <div className="text-lg font-bold text-white  text-white border-[#2A2A4A]">23+</div>
             <div className="text-[10px] text-gray-400  text-white border-[#2A2A4A]">Active Users</div>
           </div>

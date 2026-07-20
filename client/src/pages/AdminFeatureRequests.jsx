@@ -9,12 +9,8 @@ import {
   ArrowLeft,
   Loader2,
   RefreshCw,
-  MessageSquare,
   Users,
   ThumbsUp,
-  Eye,
-  Filter,
-  Search,
 } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { toast } from 'react-toastify';
@@ -24,7 +20,6 @@ const AdminFeatureRequests = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
-  const [selectedRequest, setSelectedRequest] = useState(null);
 
   useEffect(() => {
     loadRequests();
@@ -52,7 +47,10 @@ const AdminFeatureRequests = () => {
     try {
       const { error } = await supabase
         .from('feature_requests')
-        .update({ status, updated_at: new Date().toISOString() })
+        .update({ 
+          status, 
+          updated_at: new Date().toISOString() 
+        })
         .eq('id', id);
 
       if (error) throw error;
@@ -68,7 +66,7 @@ const AdminFeatureRequests = () => {
   const getStatusBadge = (status) => {
     const badges = {
       pending: { label: '📝 Pending', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
-      reviewing: { label: '🔍 Reviewing', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+      reviewing: { label: '🔍 Reviewing', color: 'bg-blue-500/20 text-[#2A1535] border-blue-500/30' },
       approved: { label: '✅ Approved', color: 'bg-green-500/20 text-green-400 border-green-500/30' },
       rejected: { label: '❌ Rejected', color: 'bg-red-500/20 text-red-400 border-red-500/30' },
       planned: { label: '📋 Planned', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
@@ -87,7 +85,7 @@ const AdminFeatureRequests = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
+        <Loader2 className="w-10 h-10 text-[#2A1535] animate-spin" />
       </div>
     );
   }
@@ -111,7 +109,7 @@ const AdminFeatureRequests = () => {
             Feature Requests
           </h1>
           <p className="text-gray-400 text-sm mt-1">
-            {pendingCount} pending requests • {requests.length} total
+            {pendingCount} pending • {requests.length} total
           </p>
         </div>
       </div>
@@ -119,7 +117,7 @@ const AdminFeatureRequests = () => {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
         {[
-          { label: 'Total', value: requests.length, color: 'text-blue-400' },
+          { label: 'Total', value: requests.length, color: 'text-[#2A1535]' },
           { label: 'Pending', value: pendingCount, color: 'text-yellow-400' },
           { label: 'Approved', value: requests.filter(r => r.status === 'approved').length, color: 'text-green-400' },
           { label: 'Planned', value: requests.filter(r => r.status === 'planned').length, color: 'text-purple-400' },
@@ -196,7 +194,7 @@ const AdminFeatureRequests = () => {
                     <>
                       <button
                         onClick={() => updateStatus(request.id, 'reviewing')}
-                        className="px-3 py-1.5 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors text-sm"
+                        className="px-3 py-1.5 bg-blue-500/20 text-[#2A1535] rounded-lg hover:bg-blue-500/30 transition-colors text-sm"
                       >
                         📝 Review
                       </button>

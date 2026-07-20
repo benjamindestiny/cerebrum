@@ -8,9 +8,6 @@ import {
   CheckCircle,
   Loader2,
   Sparkles,
-  MessageSquare,
-  ThumbsUp,
-  Star,
 } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { toast } from 'react-toastify';
@@ -24,12 +21,12 @@ const FeatureRequest = () => {
   const [submitted, setSubmitted] = useState(false);
 
   const categories = [
-    { id: 'quiz', label: '📝 Quiz Features', icon: '📝' },
-    { id: 'riddle', label: '🧩 Riddle Features', icon: '🧩' },
-    { id: 'social', label: '👥 Social Features', icon: '👥' },
-    { id: 'ui', label: '🎨 UI/UX Improvements', icon: '🎨' },
-    { id: 'general', label: '💡 General Ideas', icon: '💡' },
-    { id: 'other', label: '🚀 Other', icon: '🚀' },
+    { id: 'quiz', label: '📝 Quiz Features' },
+    { id: 'riddle', label: '🧩 Riddle Features' },
+    { id: 'social', label: '👥 Social Features' },
+    { id: 'ui', label: '🎨 UI/UX Improvements' },
+    { id: 'general', label: '💡 General Ideas' },
+    { id: 'other', label: '🚀 Other' },
   ];
 
   const handleSubmit = async (e) => {
@@ -153,7 +150,7 @@ const FeatureRequest = () => {
                   onClick={() => setCategory(cat.id)}
                   className={`px-3 py-2 rounded-lg text-sm transition-all ${
                     category === cat.id
-                      ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                      ? 'bg-blue-500/20 text-[#2A1535] border border-blue-500/30'
                       : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-transparent'
                   }`}
                 >
@@ -171,7 +168,7 @@ const FeatureRequest = () => {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe your feature idea in detail... What problem does it solve? How would it work?"
+              placeholder="Describe your feature idea in detail..."
               className="w-full px-4 py-3 bg-[#262626] rounded-lg border border-white/10 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all resize-none"
               rows={6}
               required
@@ -191,7 +188,6 @@ const FeatureRequest = () => {
               <li>• Be specific about what you want</li>
               <li>• Explain why it would be useful</li>
               <li>• Provide examples if possible</li>
-              <li>• Consider how it would work for other users</li>
             </ul>
           </div>
 

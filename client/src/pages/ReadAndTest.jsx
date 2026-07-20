@@ -253,7 +253,7 @@ const ReadAndTest = () => {
         <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2 sm:gap-3">
-              <BookOpen className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-blue-400" />
+              <BookOpen className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-[#2A1535]" />
               Read & Test
             </h1>
             <p className="text-gray-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
@@ -264,7 +264,7 @@ const ReadAndTest = () => {
             whileHover={{ scale: 1.05 }}
             className="glass-card px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2"
           >
-            <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+            <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-[#2A1535]" />
             <span className="text-xs sm:text-sm text-gray-300">
               {materials.length} Articles
             </span>
@@ -337,7 +337,7 @@ const ReadAndTest = () => {
               <div className="flex items-start justify-between mb-2 sm:mb-3">
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <span className="text-xl sm:text-2xl">{material.icon}</span>
-                  <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 bg-blue-500/20 text-blue-400 rounded-full">
+                  <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 bg-blue-500/20 text-[#2A1535] rounded-full">
                     {material.category}
                   </span>
                 </div>
@@ -414,7 +414,7 @@ const ReadAndTest = () => {
             <div>
               <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
                 <span className="text-xl sm:text-2xl">{selectedMaterial.icon}</span>
-                <span className="text-[10px] sm:text-xs md:text-sm text-blue-400">
+                <span className="text-[10px] sm:text-xs md:text-sm text-[#2A1535]">
                   {selectedMaterial.category}
                 </span>
                 <span className="text-[8px] sm:text-[10px] md:text-xs text-gray-500">

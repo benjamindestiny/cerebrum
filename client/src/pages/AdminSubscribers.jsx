@@ -59,7 +59,7 @@ const AdminSubscribers = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]  text-white border-[#2A2A4A]">
-        <Loader2 className="w-10 h-10 text-blue-400 animate-spin  text-white border-[#2A2A4A]" />
+        <Loader2 className="w-10 h-10 text-[#2A1535] animate-spin  text-white border-[#2A2A4A]" />
       </div>
     );
   }

@@ -28,7 +28,7 @@ const Terms = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-8  text-white border-[#2A2A4A]">
       <div className="text-center  text-white border-[#2A2A4A]">
-        <FileText className="w-16 h-16 text-blue-400 mx-auto mb-4  text-white border-[#2A2A4A]" />
+        <FileText className="w-16 h-16 text-[#2A1535] mx-auto mb-4  text-white border-[#2A2A4A]" />
         <h1 className="text-4xl font-bold text-white  text-white border-[#2A2A4A]">Terms of Service</h1>
         <p className="text-gray-400 mt-2  text-white border-[#2A2A4A]">Effective: July 2025</p>
       </div>
@@ -38,7 +38,7 @@ const Terms = () => {
           <div key={index} className="glass-card p-6 hover:border-blue-500/30 transition-all   text-white border-[#2A2A4A]">
             <div className="flex items-start gap-4  text-white border-[#2A2A4A]">
               <div className="p-3  rounded-lg  text-white border-[#2A2A4A]">
-                <section.icon className="w-6 h-6 text-blue-400  text-white border-[#2A2A4A]" />
+                <section.icon className="w-6 h-6 text-[#2A1535]  text-white border-[#2A2A4A]" />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white mb-2  text-white border-[#2A2A4A]">{section.title}</h2>

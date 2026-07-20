@@ -69,7 +69,7 @@ const Testimonials = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
+        <Loader2 className="w-10 h-10 text-[#2A1535] animate-spin" />
       </div>
     );
   }
@@ -91,7 +91,7 @@ const Testimonials = () => {
         </button>
         <div>
           <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-            <MessageCircle className="w-8 h-8 text-blue-400" />
+            <MessageCircle className="w-8 h-8 text-[#2A1535]" />
             Testimonials
           </h1>
           <p className="text-gray-400 text-sm mt-1">
@@ -115,7 +115,7 @@ const Testimonials = () => {
           <div className="text-xs text-gray-400">Average Rating</div>
         </div>
         <div className="glass-card p-4 text-center">
-          <div className="text-2xl font-bold text-blue-400">40+</div>
+          <div className="text-2xl font-bold text-[#2A1535]">40+</div>
           <div className="text-xs text-gray-400">Active Learners</div>
         </div>
         {/* <div className="glass-card p-4 text-center">
@@ -147,7 +147,7 @@ const Testimonials = () => {
                 </div>
               </div>
               <div className="relative">
-                <Quote className="w-4 h-4 text-blue-400 absolute -top-1 -left-1 opacity-50" />
+                <Quote className="w-4 h-4 text-[#2A1535] absolute -top-1 -left-1 opacity-50" />
                 <p className="text-gray-300 text-sm leading-relaxed pl-5">
                   "{testimonial.content}"
                 </p>

@@ -160,12 +160,12 @@ const Categories = () => {
               </span>
             )}
             {!hasChildren && (
-              <span className="ml-auto text-[10px] sm:text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full flex items-center gap-1 flex-shrink-0">
+              <span className="ml-auto text-[10px] sm:text-xs bg-blue-500/20 text-[#2A1535] px-2 py-1 rounded-full flex items-center gap-1 flex-shrink-0">
                 <Trophy className="w-3 h-3" /> Quiz
               </span>
             )}
             {searchTerm && matchesSearch(item, searchTerm) && (
-              <span className="ml-2 text-[10px] sm:text-xs text-blue-400 bg-blue-500/20 px-2 py-0.5 rounded-full flex-shrink-0">
+              <span className="ml-2 text-[10px] sm:text-xs text-[#2A1535] bg-blue-500/20 px-2 py-0.5 rounded-full flex-shrink-0">
                 Match
               </span>
             )}
@@ -223,7 +223,7 @@ const Categories = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white flex items-center gap-2 sm:gap-3">
-            <FolderTree className="w-7 h-7 sm:w-8 sm:h-9 text-blue-400" />
+            <FolderTree className="w-7 h-7 sm:w-8 sm:h-9 text-[#2A1535]" />
             Category Explorer
           </h1>
           <p className="text-gray-400 text-sm sm:text-base mt-1">
@@ -231,7 +231,7 @@ const Categories = () => {
           </p>
         </div>
         <div className="glass-card px-3 sm:px-5 py-2 sm:py-3 flex items-center gap-2">
-          <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+          <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-[#2A1535]" />
           <span className="text-xs sm:text-sm text-gray-300">
             {totalSubCategories} sub • {totalTopics} topics
           </span>
@@ -287,7 +287,7 @@ const Categories = () => {
       <div className="glass-card p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
-            <FolderTree className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+            <FolderTree className="w-4 h-4 sm:w-5 sm:h-5 text-[#2A1535]" />
             {searchTerm ? 'Search Results' : 'All Categories'}
           </h2>
           <span className="text-xs text-gray-500">
@@ -331,7 +331,7 @@ const Categories = () => {
 
               <div className="text-center mb-6">
                 <div className="w-14 h-14 sm:w-16 sm:h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Brain className="w-6 h-6 sm:w-7 sm:h-8 text-blue-400" />
+                  <Brain className="w-6 h-6 sm:w-7 sm:h-8 text-[#2A1535]" />
                 </div>
                 <h2 className="text-xl sm:text-2xl font-bold text-white">{selectedCategory.name}</h2>
                 <p className="text-gray-400 text-sm mt-1">How many questions?</p>
@@ -380,11 +380,11 @@ const Categories = () => {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="glass-card p-4 sm:p-5 text-center">
-          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-400">{categoryHierarchy.length}</div>
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-[#2A1535]">{categoryHierarchy.length}</div>
           <div className="text-xs sm:text-sm text-gray-400">Main Categories</div>
         </div>
         <div className="glass-card p-4 sm:p-5 text-center">
-          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-400">{totalSubCategories}</div>
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-[#2A1535]">{totalSubCategories}</div>
           <div className="text-xs sm:text-sm text-gray-400">Sub-Categories</div>
         </div>
         <div className="glass-card p-4 sm:p-5 text-center">
@@ -405,7 +405,7 @@ const Categories = () => {
         className="glass-card p-5 sm:p-6 bg-blue-500/5 border border-blue-500/20"
       >
         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-          <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400" />
+          <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-[#2A1535]" />
           <div className="flex-1">
             <h3 className="text-white font-semibold text-base sm:text-lg">Ready to Test Your Knowledge?</h3>
             <p className="text-sm text-gray-400">Click any sub-category to start a quiz! 🚀</p>

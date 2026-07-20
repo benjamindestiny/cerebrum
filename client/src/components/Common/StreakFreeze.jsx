@@ -117,7 +117,7 @@ const StreakFreeze = ({ userId, currentStreak }) => {
           <div className="relative">
             {isFrozen ? (
               <div className="p-3 bg-blue-500/20 rounded-full border border-blue-500/30">
-                <Snowflake className="w-6 h-6 text-blue-400" />
+                <Snowflake className="w-6 h-6 text-[#2A1535]" />
               </div>
             ) : (
               <div className="p-3 bg-orange-500/20 rounded-full border border-orange-500/30">
@@ -181,7 +181,7 @@ const StreakFreeze = ({ userId, currentStreak }) => {
             {daysUntilNext > 0 ? `Next freeze in ${daysUntilNext} days` : 'Freeze available now'}
           </span>
           <span className="flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-blue-400" />
+            <Sparkles className="w-3 h-3 text-[#2A1535]" />
             Earn freezes through achievements
           </span>
           <span className="flex items-center gap-1">

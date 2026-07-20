@@ -6,7 +6,7 @@ export const categoryIcons = {
   11: { icon: '🎬', label: 'Film', color: 'text-red-500' },
   12: { icon: '🎵', label: 'Music', color: 'text-pink-500' },
   13: { icon: '🎭', label: 'Musicals & Theatres', color: 'text-purple-500' },
-  14: { icon: '📺', label: 'Television', color: 'text-blue-400' },
+  14: { icon: '📺', label: 'Television', color: 'text-[#2A1535]' },
   15: { icon: '🎮', label: 'Video Games', color: 'text-green-500' },
   16: { icon: '♟️', label: 'Board Games', color: 'text-amber-700' },
   17: { icon: '🔬', label: 'Science & Nature', color: 'text-emerald-500' },
@@ -48,7 +48,7 @@ export const categoryIcons = {
   116: { icon: '🥗', label: 'Nutrition', color: 'text-green-400' },
   117: { icon: '💊', label: 'Supplements', color: 'text-red-300' },
   
-  118: { icon: '⚾', label: 'Baseball', color: 'text-blue-400' },
+  118: { icon: '⚾', label: 'Baseball', color: 'text-[#2A1535]' },
   119: { icon: '🏀', label: 'Basketball', color: 'text-orange-500' },
   120: { icon: '🏈', label: 'Football', color: 'text-brown-500' },
   121: { icon: '🎾', label: 'Tennis', color: 'text-green-500' },
@@ -66,11 +66,11 @@ export const categoryIcons = {
   131: { icon: '🏝️', label: 'Beaches', color: 'text-cyan-400' },
   132: { icon: '🏔️', label: 'Mountains', color: 'text-green-700' },
   133: { icon: '🌆', label: 'Cities', color: 'text-amber-400' },
-  134: { icon: '🗽', label: 'Landmarks', color: 'text-blue-400' },
+  134: { icon: '🗽', label: 'Landmarks', color: 'text-[#2A1535]' },
   
   135: { icon: '🌿', label: 'Nature', color: 'text-green-500' },
   136: { icon: '🌳', label: 'Forests', color: 'text-green-600' },
-  137: { icon: '🌊', label: 'Oceans', color: 'text-blue-400' },
+  137: { icon: '🌊', label: 'Oceans', color: 'text-[#2A1535]' },
   138: { icon: '🏜️', label: 'Deserts', color: 'text-yellow-600' },
   
   139: { icon: '🎓', label: 'Education', color: 'text-[#3B82F6CC]' },
