@@ -23,7 +23,6 @@ import {
 } from "lucide-react";
 import { supabase } from "../../services/supabase";
 import { useTheme } from "../../context/ThemeContext";
-import Logo from "../Common/Logo";
 
 const Header = () => {
   const location = useLocation();
@@ -82,7 +81,11 @@ const Header = () => {
       <header className="border-b" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4">
           <div className="flex items-center justify-between h-14 sm:h-16">
-            <Logo size="md" showText={true} />
+            {/* ✅ Direct Logo */}
+            <div className="flex items-center gap-2">
+              <Brain className="w-7 h-7 sm:w-8 sm:h-8 text-[#2A1535]" />
+              <span className="text-lg sm:text-xl font-bold text-[#2A1535] hidden xs:block">Cerebrum</span>
+            </div>
           </div>
         </div>
       </header>
@@ -93,9 +96,10 @@ const Header = () => {
     <header className="sticky top-0 z-50 border-b" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
       <div className="max-w-7xl mx-auto px-3 sm:px-4">
         <div className="flex items-center justify-between h-14 sm:h-16">
-          {/* Logo */}
-          <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2 shrink-0">
-            <Logo size="md" showText={true} />
+          {/* ✅ Direct Logo with Link */}
+          <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity">
+            <Brain className="w-7 h-7 sm:w-8 sm:h-8 text-[#2A1535]" />
+            <span className="text-lg sm:text-xl font-bold text-[#2A1535] hidden xs:block">Cerebrum</span>
           </Link>
 
           {/* Desktop Navigation */}
