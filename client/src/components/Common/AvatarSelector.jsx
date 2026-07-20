@@ -32,19 +32,18 @@ const AvatarSelector = ({ currentAvatar, onSelect, onClose }) => {
 
         <div className="grid grid-cols-4 gap-3">
           {defaultAvatars.map((avatar) => {
-            const IconComponent = avatar.icon;
             const isSelected = selectedId === avatar.id;
 
             return (
               <button
                 key={avatar.id}
                 onClick={() => handleSelect(avatar)}
-                className={`relative w-full aspect-square rounded-xl flex items-center justify-center transition-all
+                className={`relative w-full aspect-square rounded-xl flex items-center justify-center text-3xl transition-all
                   ${isSelected ? 'ring-2 ring-blue-500 scale-105' : 'hover:scale-105'}
                 `}
                 style={{ backgroundColor: avatar.bg }}
               >
-                <IconComponent className="w-8 h-8 text-white" />
+                <span>{avatar.emoji}</span>
                 {isSelected && (
                   <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
                     <Check className="w-3 h-3 text-white" />
