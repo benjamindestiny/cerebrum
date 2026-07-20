@@ -68,6 +68,32 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// ✅ New: Redirect logged-in users from public routes
+const PublicRoute = ({ children }) => {
+  const [user, setUser] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>;
+  }
+
+  // ✅ If user is logged in, redirect to dashboard
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+};
+
 function App() {
   return (
     <Router>
@@ -139,7 +165,15 @@ function App() {
 
             {/* Main Layout routes */}
             <Route path="/" element={<Layout />}>
-              <Route index element={<PublicDashboard />} />
+              {/* ✅ Public routes - redirect logged-in users */}
+              <Route 
+                index 
+                element={
+                  <PublicRoute>
+                    <PublicDashboard />
+                  </PublicRoute>
+                } 
+              />
               <Route path="*" element={<NotFound />} />
               <Route path="donate" element={<Donate />} />
               <Route path="categories" element={<Categories />} />
@@ -157,6 +191,7 @@ function App() {
               <Route path="about" element={<About />} />
               <Route path="terms" element={<Terms />} />
 
+              {/* ✅ Protected routes */}
               <Route
                 path="dashboard"
                 element={
