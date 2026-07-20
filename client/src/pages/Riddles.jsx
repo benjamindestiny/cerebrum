@@ -31,7 +31,7 @@ const Riddles = () => {
   const [showAnswer, setShowAnswer] = useState(false);
   const [isCorrect, setIsCorrect] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState("");
-  const [feedbackType, setFeedbackType] = useState(""); // 'success', 'error', 'info'
+  const [feedbackType, setFeedbackType] = useState("");
   const [solvedCount, setSolvedCount] = useState(0);
   const [points, setPoints] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -154,10 +154,7 @@ const Riddles = () => {
 
     const today = new Date().toISOString().split("T")[0];
     const dailySolvedToday = history.some(
-      (h) =>
-        h.riddle_id === daily.id &&
-        h.solved === true &&
-        h.solved_at?.split("T")[0] === today
+      (h) => h.riddle_id === daily.id && h.solved === true && h.solved_at?.split("T")[0] === today
     );
 
     if (dailySolvedToday) {
@@ -254,7 +251,6 @@ const Riddles = () => {
   };
 
   const checkAnswer = (userAnswer, correctAnswer) => {
-    // Normalize both answers
     const normalizedUser = userAnswer.trim().toLowerCase();
     const normalizedCorrect = correctAnswer.trim().toLowerCase();
 
@@ -272,27 +268,6 @@ const Riddles = () => {
     if (normalizedUser.includes(normalizedCorrect) && normalizedCorrect.length > 2) {
       return { correct: true, message: "✅ That's right!" };
     }
-
-    // Check for common variations (singular/plural, etc.)
-    const commonVariations = [
-      { from: "s", to: "" },
-      { from: "es", to: "" },
-      { from: "ies", to: "y" },
-      { from: "ed", to: "" },
-      { from: "ing", to: "" },
-    ];
-
-    let normalizedUserStripped = normalizedUser;
-    let normalizedCorrectStripped = normalizedCorrect;
-
-    commonVariations.forEach(variation => {
-      if (normalizedUserStripped.endsWith(variation.from)) {
-        const test = normalizedUserStripped.slice(0, -variation.from.length) + variation.to;
-        if (test === normalizedCorrectStripped) {
-          return { correct: true, message: "✅ Close enough! That's correct!" };
-        }
-      }
-    });
 
     return { correct: false, message: "❌ Not quite right. Try again!" };
   };
@@ -408,6 +383,7 @@ const Riddles = () => {
     }
   };
 
+  // Refresh stats
   const refreshStats = async () => {
     await loadAllRiddleData();
     toast.success("🔄 Stats refreshed!");
@@ -668,7 +644,6 @@ const Riddles = () => {
                   {feedbackType === "success" && <Check className="w-4 h-4" />}
                   {feedbackType === "error" && <X className="w-4 h-4" />}
                   {feedbackType === "info" && <AlertCircle className="w-4 h-4" />}
-                  {feedbackType === "" && <AlertCircle className="w-4 h-4" />}
                   <span>{feedbackMessage}</span>
                 </motion.div>
               )}

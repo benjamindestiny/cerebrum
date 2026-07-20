@@ -40,7 +40,6 @@ const StreakFreeze = ({ userId, currentStreak }) => {
       setLastFreezeDate(data?.last_freeze_date);
       setFrozenStreakDate(data?.frozen_streak_date);
 
-      // Check if today is frozen
       const today = new Date().toISOString().split('T')[0];
       if (data?.frozen_streak_date === today) {
         setIsFrozen(true);
@@ -55,7 +54,6 @@ const StreakFreeze = ({ userId, currentStreak }) => {
     if (!lastFreezeDate) return true;
     const now = new Date();
     const last = new Date(lastFreezeDate);
-    // Can freeze once per month (30 days)
     const daysSinceLastFreeze = Math.floor((now - last) / (1000 * 60 * 60 * 24));
     return daysSinceLastFreeze >= 30;
   };
@@ -67,8 +65,8 @@ const StreakFreeze = ({ userId, currentStreak }) => {
       return;
     }
     if (!canFreezeToday()) {
-      toast.warning('❄️ You already used a freeze this month. Next freeze available in ' + 
-        `${30 - Math.floor((new Date() - new Date(lastFreezeDate)) / (1000 * 60 * 60 * 24))} days`);
+      const daysLeft = 30 - Math.floor((new Date() - new Date(lastFreezeDate)) / (1000 * 60 * 60 * 24));
+      toast.warning(`❄️ Next freeze available in ${daysLeft} days`);
       return;
     }
 
@@ -76,7 +74,6 @@ const StreakFreeze = ({ userId, currentStreak }) => {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      // Update freeze usage
       const { error } = await supabase
         .from('users')
         .update({
@@ -93,8 +90,6 @@ const StreakFreeze = ({ userId, currentStreak }) => {
       setLastFreezeDate(new Date().toISOString());
 
       toast.success('❄️ Streak frozen! Your streak is safe for today.');
-      
-      // Refresh data
       await loadFreezeData();
 
     } catch (error) {
@@ -179,7 +174,6 @@ const StreakFreeze = ({ userId, currentStreak }) => {
         </div>
       </div>
 
-      {/* Info Banner */}
       <div className="mt-3 pt-3 border-t border-white/10">
         <div className="flex flex-wrap items-center gap-4 text-xs text-gray-400">
           <span className="flex items-center gap-1">
