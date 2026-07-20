@@ -12,6 +12,8 @@ import {
   Zap,
   Loader2,
   RefreshCw,
+  TrendingUp,
+  Flame,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
 
@@ -33,137 +35,135 @@ const Leaderboard = () => {
     setCurrentUser(user);
   };
 
-  const calculateWeightedScore = (records) => {
-    if (!records || records.length === 0) return 0;
-    const sorted = [...records].sort((a, b) => 
-      new Date(b.created_at) - new Date(a.created_at)
-    );
-    let totalWeight = 0;
-    let weightedSum = 0;
-    sorted.forEach((record, index) => {
-      const weight = Math.max(0, 1 - (index * 0.05));
-      let pct = parseFloat(record.percentage) || 0;
-      if (pct === 0 && record.score && record.total_questions) {
-        pct = Math.round((record.score / record.total_questions) * 100);
-      }
-      weightedSum += pct * weight;
-      totalWeight += weight;
-    });
-    return totalWeight > 0 ? Math.round(weightedSum / totalWeight) : 0;
+  // ✅ NEW: Strict ranking calculation
+  const calculateRankScore = (stats) => {
+    if (!stats) return 0;
+    
+    // 1. Average Score (40% weight)
+    const avgScore = stats.average_score || 0;
+    
+    // 2. Quiz Count Bonus (30% weight)
+    const quizCount = stats.total_quizzes || 0;
+    const quizBonus = Math.min(quizCount / 10, 10);
+    
+    // 3. Consistency Bonus (30% weight)
+    const streak = stats.streak || 0;
+    const streakBonus = Math.min(streak / 5, 5);
+    
+    const daysActive = stats.days_active || 0;
+    const daysBonus = Math.min(daysActive / 10, 5);
+    
+    const consistencyBonus = streakBonus + daysBonus;
+    
+    // Final Score
+    const finalScore = (avgScore * 0.4) + (quizBonus * 3) + (consistencyBonus * 3);
+    
+    return Math.round(Math.min(finalScore, 100));
+  };
+
+  // ✅ NEW: Get rank tier
+  const getRankTier = (rankScore) => {
+    if (rankScore >= 90) return { label: '🏆 Grandmaster', color: 'text-yellow-400', bg: 'bg-yellow-500/10' };
+    if (rankScore >= 75) return { label: '👑 Master', color: 'text-purple-400', bg: 'bg-purple-500/10' };
+    if (rankScore >= 60) return { label: '⭐ Expert', color: 'text-blue-400', bg: 'bg-blue-500/10' };
+    if (rankScore >= 45) return { label: '📈 Advanced', color: 'text-green-400', bg: 'bg-green-500/10' };
+    if (rankScore >= 30) return { label: '🌱 Learner', color: 'text-teal-400', bg: 'bg-teal-500/10' };
+    return { label: '🌀 Beginner', color: 'text-gray-400', bg: 'bg-gray-500/10' };
   };
 
   const loadLeaderboard = async () => {
     setLoading(true);
     try {
-      const { data: quizData, error: quizError } = await supabase
-        .from("quiz_results")
-        .select("*");
-
-      if (quizError) {
-        console.error("Error fetching quiz results:", quizError);
-        setPlayers([]);
-        setLoading(false);
-        return;
-      }
-
-      if (!quizData || quizData.length === 0) {
-        setPlayers([]);
-        setLoading(false);
-        return;
-      }
-
-      const userIds = [...new Set(quizData.map((q) => q.user_id))];
-
+      // Get all users with stats
       const { data: usersData, error: usersError } = await supabase
         .from("users")
         .select("id, name, avatar_id, email, stats")
-        .in("id", userIds);
+        .order('created_at', { ascending: false });
 
-      const userMap = {};
-      if (usersData) {
-        usersData.forEach((u) => {
-          userMap[u.id] = {
-            name: u.name || u.email?.split("@")[0] || "Anonymous",
-            avatarId: u.avatar_id || 1,
-            stats: u.stats || {},
-          };
+      if (usersError) {
+        console.error("Error fetching users:", usersError);
+        setPlayers([]);
+        setLoading(false);
+        return;
+      }
+
+      if (!usersData || usersData.length === 0) {
+        setPlayers([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get quiz counts per user
+      const { data: quizData, error: quizError } = await supabase
+        .from("quiz_results")
+        .select("user_id, percentage");
+
+      if (quizError) {
+        console.error("Error fetching quiz data:", quizError);
+      }
+
+      // Build user stats
+      const userQuizCounts = {};
+      if (quizData) {
+        quizData.forEach(q => {
+          userQuizCounts[q.user_id] = (userQuizCounts[q.user_id] || 0) + 1;
         });
       }
 
-      const playerMap = {};
-      quizData.forEach((record) => {
-        const userId = record.user_id;
-        const userInfo = userMap[userId] || {
-          name: "Anonymous",
-          avatarId: 1,
-          stats: {},
+      // Calculate rank score for each user
+      const rankedPlayers = usersData.map((user) => {
+        const stats = user.stats || {};
+        const quizCount = userQuizCounts[user.id] || 0;
+        
+        // Update stats with quiz count
+        const fullStats = {
+          ...stats,
+          total_quizzes: quizCount,
         };
-
-        let percentage = parseFloat(record.percentage) || 0;
-        if (percentage === 0 && record.score && record.total_questions) {
-          percentage = Math.round((record.score / record.total_questions) * 100);
-        }
-        if (percentage === 0 && record.score) {
-          percentage = Math.round(record.score);
-        }
-
-        if (!playerMap[userId]) {
-          playerMap[userId] = {
-            userId: userId,
-            userName: userInfo.name,
-            avatarId: userInfo.avatarId,
-            totalScore: 0,
-            quizCount: 0,
-            bestScore: 0,
-            streak: userInfo.stats?.streak || 0,
-            totalPoints: userInfo.stats?.total_points || 0,
-            lastPlayed: record.created_at,
-            records: [],
-          };
-        }
-
-        const player = playerMap[userId];
-        player.totalScore += percentage;
-        player.quizCount += 1;
-        player.bestScore = Math.max(player.bestScore, percentage);
-        player.records.push(record);
-        if (record.created_at > player.lastPlayed) {
-          player.lastPlayed = record.created_at;
-        }
+        
+        const rankScore = calculateRankScore(fullStats);
+        const tier = getRankTier(rankScore);
+        
+        return {
+          userId: user.id,
+          userName: user.name || user.email?.split("@")[0] || "Anonymous",
+          avatarId: user.avatar_id || 1,
+          rankScore,
+          tier,
+          quizCount: quizCount,
+          streak: stats.streak || 0,
+          averageScore: stats.average_score || 0,
+          totalPoints: stats.total_points || 0,
+          lastPlayed: stats.last_quiz_date,
+        };
       });
 
-      const leaderboard = Object.values(playerMap).map((player) => ({
-        ...player,
-        averageScore: player.quizCount > 0
-          ? Math.round(player.totalScore / player.quizCount)
-          : 0,
-        weightedScore: calculateWeightedScore(player.records),
-      }));
+      // Sort by rank score (highest first)
+      rankedPlayers.sort((a, b) => b.rankScore - a.rankScore);
 
-      leaderboard.sort((a, b) => {
-        if (b.weightedScore !== a.weightedScore) {
-          return b.weightedScore - a.weightedScore;
-        }
-        if (b.averageScore !== a.averageScore) {
-          return b.averageScore - a.averageScore;
-        }
-        return b.quizCount - a.quizCount;
-      });
-
-      leaderboard.forEach((player, index) => {
+      // Add ranks
+      rankedPlayers.forEach((player, index) => {
         player.rank = index + 1;
       });
 
+      // ✅ Require minimum quizzes to be ranked
+      const MIN_QUIZZES = 3;
+      const ranked = rankedPlayers.map(player => ({
+        ...player,
+        isRanked: player.quizCount >= MIN_QUIZZES,
+      }));
+
+      // Avatar map
       const avatarMap = {
-        1: "🧠", 2: "🚀", 3: "🌟", 4: "🎯", 5: "💪",
-        6: "🧙", 7: "🦊", 8: "🐉", 9: "🦅", 10: "🐺",
-        11: "🦄", 12: "🐼", 13: "🦁", 14: "🐧", 15: "🐱", 16: "🐶",
+        1: "🧠", 2: "🦊", 3: "🐉", 4: "🦅", 5: "🐺",
+        6: "🦄", 7: "🐼", 8: "🦁", 9: "🐧", 10: "🐱",
+        11: "🐶", 12: "🦋", 13: "🦉", 14: "🐨", 15: "🦦", 16: "🐘",
       };
-      leaderboard.forEach((player) => {
+      ranked.forEach((player) => {
         player.avatar = avatarMap[player.avatarId] || "🧠";
       });
 
-      setPlayers(leaderboard);
+      setPlayers(ranked);
     } catch (error) {
       console.error("Error loading leaderboard:", error);
       setPlayers([]);
@@ -178,6 +178,13 @@ const Leaderboard = () => {
     setRefreshing(false);
   };
 
+  const getRankIcon = (rank) => {
+    if (rank === 1) return <Crown className="w-6 h-6 text-yellow-400" />;
+    if (rank === 2) return <Medal className="w-6 h-6 text-gray-400" />;
+    if (rank === 3) return <Medal className="w-6 h-6 text-amber-600" />;
+    return <span className="text-gray-500 font-medium">#{rank}</span>;
+  };
+
   const getRankBadge = (rank) => {
     if (rank === 1) return "🥇";
     if (rank === 2) return "🥈";
@@ -186,16 +193,10 @@ const Leaderboard = () => {
   };
 
   const getRankColor = (rank) => {
-    if (rank === 1) return "bg-yellow-500/10 border-yellow-500/30";
-    if (rank === 2) return "bg-gray-400/10 border-gray-400/30";
-    if (rank === 3) return "bg-amber-600/10 border-amber-600/30";
+    if (rank === 1) return "border-yellow-400/30 bg-yellow-400/5";
+    if (rank === 2) return "border-gray-400/30 bg-gray-400/5";
+    if (rank === 3) return "border-amber-600/30 bg-amber-600/5";
     return "";
-  };
-
-  const getScoreColor = (score) => {
-    if (score >= 80) return "text-green-400";
-    if (score >= 50) return "text-[#3B82F6]";
-    return "text-red-400";
   };
 
   const filteredPlayers = players.filter((player) =>
@@ -208,18 +209,13 @@ const Leaderboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-10 h-10 text-[#3B82F6] animate-spin" />
+        <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
       </div>
     );
   }
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
-      className="max-w-6xl mx-auto space-y-6 px-4 pb-12"
-    >
+    <div className="max-w-6xl mx-auto space-y-6 px-4 pb-12">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -228,12 +224,12 @@ const Leaderboard = () => {
             Leaderboard
           </h1>
           <p className="text-gray-400 text-sm mt-1">
-            {players.length} players competing
+            {players.filter(p => p.isRanked).length} ranked players • Min {3} quizzes required
           </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 flex items-center gap-2">
-            <Users className="w-4 h-4 text-[#3B82F6]" />
+            <Users className="w-4 h-4 text-blue-400" />
             <span className="text-sm text-gray-300">{players.length} players</span>
           </div>
           <button
@@ -259,19 +255,19 @@ const Leaderboard = () => {
             </div>
             <div className="flex items-center gap-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-[#3B82F6]">
+                <div className="text-2xl font-bold text-blue-400">
                   #{currentUserRank || "-"}
                 </div>
                 <div className="text-xs text-gray-500">Rank</div>
               </div>
               <div className="text-center">
                 <div className="text-xl font-bold text-white">
-                  {currentUserData.weightedScore || currentUserData.averageScore || 0}%
+                  {currentUserData.rankScore || 0}
                 </div>
-                <div className="text-xs text-gray-500">Score</div>
+                <div className="text-xs text-gray-500">Rank Score</div>
               </div>
               <div className="text-center">
-                <div className="text-xl font-bold text-[#3B82F6]">
+                <div className="text-xl font-bold text-blue-400">
                   {currentUserData.quizCount || 0}
                 </div>
                 <div className="text-xs text-gray-500">Quizzes</div>
@@ -302,10 +298,11 @@ const Leaderboard = () => {
       </div>
 
       {/* Top 3 Podium */}
-      {filteredPlayers.length > 0 && (
+      {filteredPlayers.filter(p => p.isRanked).length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {filteredPlayers.slice(0, 3).map((player, index) => {
+          {filteredPlayers.filter(p => p.isRanked).slice(0, 3).map((player, index) => {
             const rank = index + 1;
+            const tier = player.tier || getRankTier(player.rankScore);
             return (
               <div
                 key={player.userId}
@@ -315,12 +312,11 @@ const Leaderboard = () => {
                 <div className="text-lg font-bold text-white truncate">
                   {player.userName}
                 </div>
-                <div className="text-3xl font-bold text-[#3B82F6] mt-1">
-                  {player.weightedScore || player.averageScore}%
+                <div className="text-3xl font-bold text-blue-400 mt-1">
+                  {player.rankScore}
                 </div>
-                <div className="text-xs text-gray-500">
-                  {player.weightedScore ? '⭐ Weighted Score' : 'Average Score'}
-                </div>
+                <div className="text-xs text-gray-500">Rank Score</div>
+                <div className={`text-xs mt-1 ${tier.color}`}>{tier.label}</div>
                 <div className="flex items-center justify-center gap-4 mt-2 text-sm text-gray-400">
                   <span>{player.quizCount} quizzes</span>
                   {player.streak > 0 && (
@@ -343,15 +339,18 @@ const Leaderboard = () => {
       {/* All Players List */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">
         <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-          <Users className="w-4 h-4 text-[#3B82F6]" />
+          <Users className="w-4 h-4 text-blue-400" />
           All Players
           <span className="text-sm text-gray-500 ml-2">
             ({filteredPlayers.length} players)
           </span>
         </h3>
         <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-          {filteredPlayers.slice(0, 50).map((player, index) => {
+          {filteredPlayers.map((player) => {
             const isCurrentUser = currentUser?.id === player.userId;
+            const isRanked = player.isRanked;
+            const tier = player.tier || getRankTier(player.rankScore);
+            
             return (
               <div
                 key={player.userId}
@@ -359,11 +358,15 @@ const Leaderboard = () => {
                   isCurrentUser
                     ? "bg-blue-500/10 border border-blue-500/20"
                     : "hover:bg-white/5"
-                }`}
+                } ${!isRanked ? "opacity-60" : ""}`}
               >
                 <div className="flex items-center gap-4 flex-1 min-w-0">
                   <div className="w-8 text-center flex-shrink-0">
-                    <span className="text-lg font-bold text-gray-400">#{player.rank}</span>
+                    {isRanked ? (
+                      getRankIcon(player.rank)
+                    ) : (
+                      <span className="text-gray-600 text-sm">—</span>
+                    )}
                   </div>
                   <span className="text-xl flex-shrink-0">
                     {player.avatar || "🧠"}
@@ -371,27 +374,25 @@ const Leaderboard = () => {
                   <span className="text-white font-medium truncate">
                     {player.userName}
                     {isCurrentUser && (
-                      <span className="ml-2 text-sm text-[#3B82F6]">(You)</span>
+                      <span className="ml-2 text-sm text-blue-400">(You)</span>
+                    )}
+                    {!isRanked && (
+                      <span className="ml-2 text-xs text-gray-500">(Needs 3 quizzes)</span>
                     )}
                   </span>
                 </div>
                 <div className="flex items-center gap-4 flex-shrink-0">
-                  <div className="hidden sm:flex items-center gap-2 text-sm text-gray-400">
-                    <Calendar className="w-3 h-3" />
-                    {player.quizCount}
-                  </div>
-                  {player.streak > 0 && (
-                    <div className="flex items-center gap-1 text-sm text-orange-400">
-                      <Zap className="w-3 h-3" />
-                      <span className="hidden sm:inline">{player.streak}d</span>
-                    </div>
+                  {isRanked && (
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${tier.bg} ${tier.color}`}>
+                      {tier.label.split(' ')[1] || tier.label}
+                    </span>
                   )}
                   <div className="text-right">
-                    <div className={`text-lg font-bold ${getScoreColor(player.weightedScore || player.averageScore || 0)}`}>
-                      {player.weightedScore || player.averageScore || 0}%
+                    <div className={`text-lg font-bold ${isRanked ? 'text-white' : 'text-gray-500'}`}>
+                      {isRanked ? player.rankScore : '-'}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {player.weightedScore ? '⭐ Weighted' : 'Avg'}
+                      {isRanked ? 'Score' : 'Not ranked'}
                     </div>
                   </div>
                 </div>
@@ -406,7 +407,7 @@ const Leaderboard = () => {
         <div className="bg-white/5 border border-white/10 rounded-xl p-12 text-center">
           <div className="flex flex-col items-center gap-4">
             <div className="w-20 h-20 rounded-full bg-blue-500/10 flex items-center justify-center">
-              <Users className="w-10 h-10 text-[#3B82F6]" />
+              <Users className="w-10 h-10 text-blue-400" />
             </div>
             <h3 className="text-xl font-bold text-white">No Players Yet</h3>
             <p className="text-gray-400 max-w-md">
@@ -421,7 +422,7 @@ const Leaderboard = () => {
           </div>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 };
 

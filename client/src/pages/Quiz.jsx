@@ -500,8 +500,8 @@ const Quiz = () => {
           time_taken: timeTaken,
           points: totalPoints,
           answers: completedAnswers,
-          combo_bonus: comboBonus,
-          max_combo: maxCombo,
+          
+          
         };
 
         const { data, error } = await supabase
