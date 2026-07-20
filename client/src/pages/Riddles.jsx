@@ -51,7 +51,6 @@ const Riddles = () => {
   const [timeUntilNext, setTimeUntilNext] = useState("");
   const [dailyRiddleData, setDailyRiddleData] = useState(null);
   const [user, setUser] = useState(null);
-  const [loadingHistory, setLoadingHistory] = useState(true);
 
   const inputRefs = useRef({});
 
@@ -71,12 +70,10 @@ const Riddles = () => {
       setUser(user);
       if (!user) {
         setIsLoading(false);
-        setLoadingHistory(false);
       }
     } catch (error) {
       console.error("Error getting user:", error);
       setIsLoading(false);
-      setLoadingHistory(false);
     }
   };
 
@@ -87,14 +84,12 @@ const Riddles = () => {
     try {
       await loadUserStats();
       await loadRiddleHistory();
-      // Load daily riddle AFTER history is loaded
       loadDailyRiddle();
     } catch (error) {
       console.error("Error loading riddle data:", error);
       toast.error("Failed to load riddle data");
     } finally {
       setIsLoading(false);
-      setLoadingHistory(false);
     }
   };
 
@@ -144,7 +139,7 @@ const Riddles = () => {
     }
   };
 
-  // ✅ FIX: Load daily riddle with proper check
+  // ✅ Load daily riddle and check if solved today
   const loadDailyRiddle = () => {
     const daily = getDailyRiddle();
     setDailyRiddleData(daily);
@@ -179,10 +174,12 @@ const Riddles = () => {
     }
   };
 
+  // ✅ Save to database
   const saveRiddleToHistory = async (riddleId, solved, pointsEarned = 0) => {
     if (!user) return;
 
     try {
+      // Check if entry already exists
       const { data: existing } = await supabase
         .from("riddle_history")
         .select("*")
@@ -191,7 +188,7 @@ const Riddles = () => {
         .maybeSingle();
 
       if (existing) {
-        // ✅ Only update if not already solved
+        // Only update if not already solved
         if (!existing.solved) {
           const { error } = await supabase
             .from("riddle_history")
@@ -204,8 +201,12 @@ const Riddles = () => {
             .eq("id", existing.id);
 
           if (error) throw error;
+          console.log("✅ Updated riddle history:", riddleId);
+        } else {
+          console.log("⏭️ Riddle already solved:", riddleId);
         }
       } else {
+        // Insert new
         const { error } = await supabase
           .from("riddle_history")
           .insert({
@@ -219,8 +220,10 @@ const Riddles = () => {
           });
 
         if (error) throw error;
+        console.log("✅ Inserted riddle history:", riddleId);
       }
 
+      // Refresh history
       await loadRiddleHistory();
     } catch (error) {
       console.error("Error saving riddle history:", error);
@@ -283,9 +286,8 @@ const Riddles = () => {
     return { correct: false, message: "❌ Not quite right. Try again!" };
   };
 
-  // ✅ FIX: Prevent multiple completions
+  // ✅ Prevent multiple completions
   const handleDailySubmit = async () => {
-    // ✅ Check if already solved today
     if (dailySolved) {
       setFeedbackMessage("✅ You already solved today's riddle!");
       setFeedbackType("info");
@@ -353,7 +355,6 @@ const Riddles = () => {
     const riddle = riddles.find((r) => r.id === riddleId);
     if (!riddle) return;
 
-    // ✅ Check if already solved
     if (isRiddleSolved(riddleId)) {
       toast.info("✅ You already solved this riddle!");
       return;

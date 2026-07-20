@@ -8,18 +8,19 @@ import {
 import Layout from "./components/Layout/Layout";
 import Home from "./pages/Home";
 import PublicDashboard from "./pages/PublicDashboard";
-import AdminSubscribers from './pages/AdminSubscribers';
+import AdminSubscribers from "./pages/AdminSubscribers";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
+import FeatureRequest from "./pages/FeatureRequest";
 import Quiz from "./pages/Quiz";
 import Results from "./pages/Results";
-import AdminEmail from './pages/AdminEmail';
+import AdminEmail from "./pages/AdminEmail";
 import Dashboard from "./pages/Dashboard";
 import Leaderboard from "./pages/Leaderboard";
 import AdminWeeklyReport from "./pages/AdminWeeklyReport";
 import Riddles from "./pages/Riddles";
-import LunchBreak from './pages/LunchBreak';
-import Testimonials from './pages/Testimonials';
+import LunchBreak from "./pages/LunchBreak";
+import Testimonials from "./pages/Testimonials";
 import Categories from "./pages/Categories";
 import Achievements from "./pages/Achievements";
 import ReadAndTest from "./pages/ReadAndTest";
@@ -81,9 +82,11 @@ const PublicRoute = ({ children }) => {
   }, []);
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">
-      <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-    </div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
   }
 
   // ✅ If user is logged in, redirect to dashboard
@@ -104,75 +107,91 @@ function App() {
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/callback" element={<AdminLogin />} />
+            <Route
+              path="/admin/feature-requests"
+              element={
+                <ProtectedAdminRoute>
+                  <AdminFeatureRequests />
+                </ProtectedAdminRoute>
+              }
+            />
 
             {/* Admin routes (protected) */}
-            <Route 
-              path="/admin/dashboard" 
+            <Route
+              path="/admin/dashboard"
               element={
                 <ProtectedAdminRoute>
                   <AdminDashboard />
                 </ProtectedAdminRoute>
-              } 
+              }
             />
-            <Route 
-              path="/admin/email-templates" 
+            <Route
+              path="/admin/email-templates"
               element={
                 <ProtectedAdminRoute>
                   <AdminEmailTemplates />
                 </ProtectedAdminRoute>
-              } 
+              }
             />
-            <Route 
-              path="/admin/email" 
+            <Route
+              path="feature-request"
+              element={
+                <ProtectedRoute>
+                  <FeatureRequest />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/email"
               element={
                 <ProtectedAdminRoute>
                   <AdminEmail />
                 </ProtectedAdminRoute>
-              } 
+              }
             />
-            <Route 
-              path="/admin/subscribers" 
+            <Route
+              path="/admin/subscribers"
               element={
                 <ProtectedAdminRoute>
                   <AdminSubscribers />
                 </ProtectedAdminRoute>
-              } 
+              }
             />
-            <Route 
-              path="/admin/weekly-report" 
+            <Route
+              path="/admin/weekly-report"
               element={
                 <ProtectedAdminRoute>
                   <AdminWeeklyReport />
                 </ProtectedAdminRoute>
-              } 
+              }
             />
-            <Route 
-              path="/admin/send-message" 
+            <Route
+              path="/admin/send-message"
               element={
                 <ProtectedAdminRoute>
                   <AdminSendMessage />
                 </ProtectedAdminRoute>
-              } 
+              }
             />
-            <Route 
-              path="/admin/reengagement" 
+            <Route
+              path="/admin/reengagement"
               element={
                 <ProtectedAdminRoute>
                   <AdminReengagement />
                 </ProtectedAdminRoute>
-              } 
+              }
             />
 
             {/* Main Layout routes */}
             <Route path="/" element={<Layout />}>
               {/* ✅ Public routes - redirect logged-in users */}
-              <Route 
-                index 
+              <Route
+                index
                 element={
                   <PublicRoute>
                     <PublicDashboard />
                   </PublicRoute>
-                } 
+                }
               />
               <Route path="*" element={<NotFound />} />
               <Route path="donate" element={<Donate />} />
