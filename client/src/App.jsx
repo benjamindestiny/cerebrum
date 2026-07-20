@@ -8,20 +8,18 @@ import {
 import Layout from "./components/Layout/Layout";
 import Home from "./pages/Home";
 import PublicDashboard from "./pages/PublicDashboard";
-import AdminSubscribers from "./pages/AdminSubscribers";
+import AdminSubscribers from './pages/AdminSubscribers';
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
-import FeatureRequest from "./pages/FeatureRequest";
-import AdminFeatureRequests from "./pages/AdminFeatureRequests";
 import Quiz from "./pages/Quiz";
 import Results from "./pages/Results";
-import AdminEmail from "./pages/AdminEmail";
+import AdminEmail from './pages/AdminEmail';
 import Dashboard from "./pages/Dashboard";
 import Leaderboard from "./pages/Leaderboard";
 import AdminWeeklyReport from "./pages/AdminWeeklyReport";
 import Riddles from "./pages/Riddles";
-import LunchBreak from "./pages/LunchBreak";
-import Testimonials from "./pages/Testimonials";
+import LunchBreak from './pages/LunchBreak';
+import Testimonials from './pages/Testimonials';
 import Categories from "./pages/Categories";
 import Achievements from "./pages/Achievements";
 import ReadAndTest from "./pages/ReadAndTest";
@@ -72,7 +70,7 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// ✅ New: Redirect logged-in users from public routes
+// Public Route - redirects logged-in users
 const PublicRoute = ({ children }) => {
   const [user, setUser] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
@@ -92,7 +90,6 @@ const PublicRoute = ({ children }) => {
     );
   }
 
-  // ✅ If user is logged in, redirect to dashboard
   if (user) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -110,91 +107,82 @@ function App() {
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/callback" element={<AdminLogin />} />
-            <Route
-              path="/admin/feature-requests"
-              element={
-                <ProtectedAdminRoute>
-                  <AdminFeatureRequests />
-                </ProtectedAdminRoute>
-              }
-            />
 
             {/* Admin routes (protected) */}
-            <Route
-              path="/admin/dashboard"
+            <Route 
+              path="/admin/dashboard" 
               element={
                 <ProtectedAdminRoute>
                   <AdminDashboard />
                 </ProtectedAdminRoute>
-              }
+              } 
             />
-            <Route
-              path="/admin/email-templates"
+            <Route 
+              path="/admin/email-templates" 
               element={
                 <ProtectedAdminRoute>
                   <AdminEmailTemplates />
                 </ProtectedAdminRoute>
-              }
+              } 
             />
-            <Route
-              path="feature-request"
-              element={
-                <ProtectedRoute>
-                  <FeatureRequest />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/email"
+            <Route 
+              path="/admin/email" 
               element={
                 <ProtectedAdminRoute>
                   <AdminEmail />
                 </ProtectedAdminRoute>
-              }
+              } 
             />
-            <Route
-              path="/admin/subscribers"
+            <Route 
+              path="/admin/subscribers" 
               element={
                 <ProtectedAdminRoute>
                   <AdminSubscribers />
                 </ProtectedAdminRoute>
-              }
+              } 
             />
-            <Route
-              path="/admin/weekly-report"
+            <Route 
+              path="/admin/weekly-report" 
               element={
                 <ProtectedAdminRoute>
                   <AdminWeeklyReport />
                 </ProtectedAdminRoute>
-              }
+              } 
             />
-            <Route
-              path="/admin/send-message"
+            <Route 
+              path="/admin/send-message" 
               element={
                 <ProtectedAdminRoute>
                   <AdminSendMessage />
                 </ProtectedAdminRoute>
-              }
+              } 
             />
-            <Route
-              path="/admin/reengagement"
+            <Route 
+              path="/admin/reengagement" 
               element={
                 <ProtectedAdminRoute>
                   <AdminReengagement />
                 </ProtectedAdminRoute>
-              }
+              } 
+            />
+            <Route 
+              path="/admin/feature-requests" 
+              element={
+                <ProtectedAdminRoute>
+                  <AdminFeatureRequests />
+                </ProtectedAdminRoute>
+              } 
             />
 
             {/* Main Layout routes */}
             <Route path="/" element={<Layout />}>
-              {/* ✅ Public routes - redirect logged-in users */}
-              <Route
-                index
+              <Route 
+                index 
                 element={
                   <PublicRoute>
                     <PublicDashboard />
                   </PublicRoute>
-                }
+                } 
               />
               <Route path="*" element={<NotFound />} />
               <Route path="donate" element={<Donate />} />
@@ -203,7 +191,6 @@ function App() {
               <Route path="riddles" element={<Riddles />} />
               <Route path="lunch-break" element={<LunchBreak />} />
               <Route path="testimonials" element={<Testimonials />} />
-              <Route path="feature-request" element={<ProtectedRoute><FeatureRequest /></ProtectedRoute>} />
               <Route path="achievements" element={<Achievements />} />
               <Route path="read-and-test" element={<ReadAndTest />} />
               <Route
@@ -213,8 +200,9 @@ function App() {
               <Route path="privacy" element={<Privacy />} />
               <Route path="about" element={<About />} />
               <Route path="terms" element={<Terms />} />
+              <Route path="feature-request" element={<ProtectedRoute><FeatureRequest /></ProtectedRoute>} />
 
-              {/* ✅ Protected routes */}
+              {/* Protected routes */}
               <Route
                 path="dashboard"
                 element={
@@ -257,4 +245,3 @@ function App() {
 }
 
 export default App;
-import AdminFeatureRequests from './pages/AdminFeatureRequests';
