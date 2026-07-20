@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import DailyMissions from "../components/Common/DailyMissions";
 import StreakFreeze from "../components/Common/StreakFreeze";
+import PersonalityPrompt from "../components/Common/PersonalityPrompt";
 import TestimonialPopup from "../components/Common/TestimonialPopup";
 import {
   Trophy,
@@ -45,7 +46,7 @@ const Dashboard = () => {
   useEffect(() => {
     // Show testimonial popup after loading
     if (!loading && currentUser) {
-      const hasSeen = localStorage.getItem('cerebrum_testimonial_seen');
+      const hasSeen = localStorage.getItem("cerebrum_testimonial_seen");
       if (!hasSeen) {
         setTimeout(() => {
           setShowTestimonial(true);
@@ -153,13 +154,13 @@ const Dashboard = () => {
   const refreshDashboard = async () => {
     setRefreshing(true);
     await loadDashboardData();
-    setRefreshTrigger(prev => prev + 1);
+    setRefreshTrigger((prev) => prev + 1);
     setRefreshing(false);
   };
 
   if (!currentUser && !loading) {
     return (
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
@@ -172,7 +173,7 @@ const Dashboard = () => {
             transition={{ delay: 0.2, type: "spring", damping: 20 }}
           >
             <div className="flex justify-center">
-              <motion.div 
+              <motion.div
                 animate={{ rotate: [0, 5, -5, 0] }}
                 transition={{ duration: 4, repeat: Infinity }}
                 className="w-20 h-20 rounded-full bg-blue-500/20 flex items-center justify-center"
@@ -184,21 +185,22 @@ const Dashboard = () => {
               Welcome to <span className="text-[#3B82F6]">Cerebrum</span>
             </h1>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto mt-2">
-              Challenge your mind with interactive quizzes, riddles, and brain teasers.
+              Challenge your mind with interactive quizzes, riddles, and brain
+              teasers.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
-              <motion.button 
+              <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => navigate("/auth")} 
+                onClick={() => navigate("/auth")}
                 className="btn-primary"
               >
                 Get Started <ArrowRight className="w-4 h-4 inline" />
               </motion.button>
-              <motion.button 
+              <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => navigate("/categories")} 
+                onClick={() => navigate("/categories")}
                 className="btn-secondary"
               >
                 Browse Quizzes
@@ -221,7 +223,7 @@ const Dashboard = () => {
   return (
     <div className="max-w-6xl mx-auto space-y-6 px-3 sm:px-4 pb-12">
       {/* Welcome Card */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -247,7 +249,9 @@ const Dashboard = () => {
               disabled={refreshing}
               className="px-3 py-2 bg-surface-2 text-gray-300 rounded-lg hover:bg-white/10 transition-colors text-sm flex items-center gap-2"
             >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+              />
               {refreshing ? "Refreshing..." : "Refresh"}
             </button>
             <motion.button
@@ -263,7 +267,7 @@ const Dashboard = () => {
       </motion.div>
 
       {/* Daily Missions */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.4 }}
@@ -276,29 +280,46 @@ const Dashboard = () => {
       </motion.div>
 
       {/* Streak Freeze */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.12, duration: 0.4 }}
       >
-        <StreakFreeze 
-          userId={currentUser?.id} 
-          currentStreak={stats.streak} 
-        />
+        <StreakFreeze userId={currentUser?.id} currentStreak={stats.streak} />
       </motion.div>
 
       {/* Stats Grid */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15, duration: 0.4 }}
         className="grid grid-cols-2 sm:grid-cols-4 gap-4"
       >
         {[
-          { icon: Trophy, label: 'Total Points', value: stats.totalPoints, color: 'text-yellow-400' },
-          { icon: Flame, label: 'Day Streak', value: stats.streak, color: 'text-orange-400' },
-          { icon: Brain, label: 'Quizzes Taken', value: stats.totalQuizzes, color: 'text-[#3B82F6]' },
-          { icon: Target, label: 'Avg Score', value: `${stats.averageScore}%`, color: 'text-teal-400' },
+          {
+            icon: Trophy,
+            label: "Total Points",
+            value: stats.totalPoints,
+            color: "text-yellow-400",
+          },
+          {
+            icon: Flame,
+            label: "Day Streak",
+            value: stats.streak,
+            color: "text-orange-400",
+          },
+          {
+            icon: Brain,
+            label: "Quizzes Taken",
+            value: stats.totalQuizzes,
+            color: "text-[#3B82F6]",
+          },
+          {
+            icon: Target,
+            label: "Avg Score",
+            value: `${stats.averageScore}%`,
+            color: "text-teal-400",
+          },
         ].map((item, index) => (
           <motion.div
             key={index}
@@ -315,17 +336,41 @@ const Dashboard = () => {
       </motion.div>
 
       {/* Quick Actions */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.4 }}
         className="grid grid-cols-2 sm:grid-cols-4 gap-4"
       >
         {[
-          { icon: Play, label: 'Take Quiz', desc: 'Test your knowledge', path: '/categories', color: 'text-[#3B82F6]' },
-          { icon: Puzzle, label: 'Riddles', desc: 'Solve brain teasers', path: '/riddles', color: 'text-purple-400' },
-          { icon: BookOpen, label: 'Read & Test', desc: 'Learn and quiz', path: '/read-and-test', color: 'text-green-400' },
-          { icon: Users, label: 'Leaderboard', desc: 'See top players', path: '/leaderboard', color: 'text-yellow-400' },
+          {
+            icon: Play,
+            label: "Take Quiz",
+            desc: "Test your knowledge",
+            path: "/categories",
+            color: "text-[#3B82F6]",
+          },
+          {
+            icon: Puzzle,
+            label: "Riddles",
+            desc: "Solve brain teasers",
+            path: "/riddles",
+            color: "text-purple-400",
+          },
+          {
+            icon: BookOpen,
+            label: "Read & Test",
+            desc: "Learn and quiz",
+            path: "/read-and-test",
+            color: "text-green-400",
+          },
+          {
+            icon: Users,
+            label: "Leaderboard",
+            desc: "See top players",
+            path: "/leaderboard",
+            color: "text-yellow-400",
+          },
         ].map((item, index) => (
           <motion.button
             key={index}
@@ -337,7 +382,9 @@ const Dashboard = () => {
             onClick={() => navigate(item.path)}
             className="glass-card p-4 text-center hover:border-blue-500/30 transition-all"
           >
-            <div className={`w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-2`}>
+            <div
+              className={`w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-2`}
+            >
               <item.icon className={`w-6 h-6 ${item.color}`} />
             </div>
             <span className="text-white font-medium">{item.label}</span>
@@ -348,7 +395,7 @@ const Dashboard = () => {
 
       {/* Recent Activity */}
       {recentActivity.length > 0 && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.4 }}
@@ -385,7 +432,7 @@ const Dashboard = () => {
       )}
 
       {/* Daily Challenge CTA */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6, duration: 0.4 }}
@@ -424,12 +471,12 @@ const Dashboard = () => {
           userName={currentUser?.user_metadata?.name || "User"}
           onClose={() => {
             setShowTestimonial(false);
-            localStorage.setItem('cerebrum_testimonial_seen', 'true');
+            localStorage.setItem("cerebrum_testimonial_seen", "true");
           }}
         />
       )}
     </div>
   );
+  <PersonalityPrompt userId={currentUser?.id} />;
 };
-
 export default Dashboard;

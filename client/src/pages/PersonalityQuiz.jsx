@@ -8,9 +8,11 @@ import {
   Loader2,
   ChevronRight,
   Zap,
+  CheckCircle,
 } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { toast } from 'react-toastify';
+import personalityService from '../services/personalityService';
 
 const PersonalityQuiz = () => {
   const navigate = useNavigate();
@@ -35,7 +37,6 @@ const PersonalityQuiz = () => {
   const loadQuestions = async () => {
     setLoading(true);
     try {
-      // Personality quiz questions
       const personalityQuestions = [
         {
           id: 1,
@@ -106,7 +107,6 @@ const PersonalityQuiz = () => {
         setCurrentIndex(currentIndex + 1);
       }, 400);
     } else {
-      // Quiz complete
       calculateResult();
     }
   };
@@ -114,13 +114,11 @@ const PersonalityQuiz = () => {
   const calculateResult = async () => {
     setSubmitting(true);
     try {
-      // Count answers
       const counts = {};
       Object.values(answers).forEach(val => {
         counts[val] = (counts[val] || 0) + 1;
       });
 
-      // Find the most common answer
       let maxCount = 0;
       let resultType = 'thinker';
       Object.entries(counts).forEach(([key, count]) => {
@@ -138,15 +136,14 @@ const PersonalityQuiz = () => {
 
       setResult(resultData);
 
-      // Save result to database
       if (user) {
-        await supabase.from('personality_results').insert({
-          user_id: user.id,
-          result_type: resultType,
-          answers: answers,
-          scores: counts,
-          created_at: new Date().toISOString(),
-        });
+        await personalityService.savePersonalityResult(
+          user.id,
+          resultType,
+          answers,
+          counts
+        );
+        toast.success('🎉 Personality saved successfully!');
       }
 
     } catch (error) {
@@ -167,6 +164,7 @@ const PersonalityQuiz = () => {
         bg: 'bg-blue-500/10',
         border: 'border-blue-500/30',
         traits: ['Analytical', 'Curious', 'Strategic', 'Observant'],
+        recommendation: 'Try history, science, and logic quizzes!',
       },
       adventurer: {
         title: '⚡ The Adventurer',
@@ -176,6 +174,7 @@ const PersonalityQuiz = () => {
         bg: 'bg-orange-500/10',
         border: 'border-orange-500/30',
         traits: ['Bold', 'Spontaneous', 'Courageous', 'Explorer'],
+        recommendation: 'Try geography, travel, and world culture quizzes!',
       },
       socializer: {
         title: '👥 The Socializer',
@@ -185,6 +184,7 @@ const PersonalityQuiz = () => {
         bg: 'bg-pink-500/10',
         border: 'border-pink-500/30',
         traits: ['Friendly', 'Collaborative', 'Charismatic', 'Empathetic'],
+        recommendation: 'Try history, literature, and social studies quizzes!',
       },
       creator: {
         title: '🎨 The Creator',
@@ -194,6 +194,7 @@ const PersonalityQuiz = () => {
         bg: 'bg-purple-500/10',
         border: 'border-purple-500/30',
         traits: ['Creative', 'Innovative', 'Imaginative', 'Expressive'],
+        recommendation: 'Try art, music, and creative writing quizzes!',
       },
     };
     return details[type] || details.thinker;
@@ -213,11 +214,11 @@ const PersonalityQuiz = () => {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="max-w-2xl mx-auto glass-card p-8 text-center"
+        className="max-w-2xl mx-auto glass-card p-6 sm:p-8 text-center"
       >
         <div className={`text-6xl mb-4 ${details.color}`}>{details.emoji}</div>
-        <h2 className="text-3xl font-bold text-white mb-2">{details.title}</h2>
-        <p className="text-gray-400 text-sm mb-6">{details.description}</p>
+        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">{details.title}</h2>
+        <p className="text-gray-400 text-sm sm:text-base mb-6">{details.description}</p>
 
         <div className="flex flex-wrap justify-center gap-2 mb-6">
           {details.traits.map((trait) => (
@@ -250,7 +251,13 @@ const PersonalityQuiz = () => {
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-3 mb-6">
+          <p className="text-sm text-gray-300">
+            💡 <span className="text-blue-400">Recommended:</span> {details.recommendation}
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={() => {
               setResult(null);
@@ -265,7 +272,7 @@ const PersonalityQuiz = () => {
             onClick={() => navigate('/dashboard')}
             className="flex-1 btn-primary"
           >
-            Dashboard
+            Go to Dashboard
           </button>
         </div>
       </motion.div>
@@ -285,7 +292,6 @@ const PersonalityQuiz = () => {
       </button>
 
       <div className="glass-card p-6 sm:p-8">
-        {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 bg-blue-500/20 rounded-lg">
             <Brain className="w-6 h-6 text-blue-400" />
@@ -296,7 +302,6 @@ const PersonalityQuiz = () => {
           </div>
         </div>
 
-        {/* Progress */}
         <div className="mb-6">
           <div className="flex justify-between text-xs text-gray-400 mb-1">
             <span>Question {currentIndex + 1} of {questions.length}</span>
@@ -312,7 +317,6 @@ const PersonalityQuiz = () => {
           </div>
         </div>
 
-        {/* Question */}
         <div className="mb-6">
           <h2 className="text-xl font-medium text-white mb-4">
             {currentQuestion?.question}
@@ -333,7 +337,6 @@ const PersonalityQuiz = () => {
           </div>
         </div>
 
-        {/* Progress Dots */}
         <div className="flex gap-1.5 justify-center">
           {questions.map((_, i) => (
             <div
