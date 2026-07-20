@@ -21,6 +21,7 @@ import {
   Puzzle,
   Play,
   RefreshCw,
+  Gift,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -335,6 +336,36 @@ const Dashboard = () => {
           ))}
         </motion.div>
 
+        {/* 🔥 REFERRAL BANNER - ADDED HERE */}
+        {currentUser && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25, duration: 0.4 }}
+            className="glass-card p-4 border border-amber-500/20 bg-amber-500/5 cursor-pointer hover:border-amber-500/40 transition-all"
+            onClick={() => navigate("/referral")}
+          >
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div className="flex items-center gap-3 flex-1">
+                <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <Gift className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="text-white font-medium text-sm">
+                    Invite friends, earn rewards! 🎁
+                  </h3>
+                  <p className="text-gray-400 text-xs">
+                    Share your referral link and unlock exclusive content
+                  </p>
+                </div>
+              </div>
+              <button className="px-4 py-1.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-xs font-medium whitespace-nowrap">
+                Refer Now
+              </button>
+            </div>
+          </motion.div>
+        )}
+
         {/* Quick Actions */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -476,7 +507,6 @@ const Dashboard = () => {
           />
         )}
       </div>
-
 
       <PersonalityPrompt userId={currentUser?.id} />
     </>

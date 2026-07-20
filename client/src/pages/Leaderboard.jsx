@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Trophy,
@@ -14,11 +14,13 @@ import {
   RefreshCw,
   TrendingUp,
   Flame,
+  Gift,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
 
 const Leaderboard = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -35,33 +37,21 @@ const Leaderboard = () => {
     setCurrentUser(user);
   };
 
-  // ✅ NEW: Strict ranking calculation
   const calculateRankScore = (stats) => {
     if (!stats) return 0;
     
-    // 1. Average Score (40% weight)
     const avgScore = stats.average_score || 0;
-    
-    // 2. Quiz Count Bonus (30% weight)
     const quizCount = stats.total_quizzes || 0;
     const quizBonus = Math.min(quizCount / 10, 10);
-    
-    // 3. Consistency Bonus (30% weight)
     const streak = stats.streak || 0;
     const streakBonus = Math.min(streak / 5, 5);
-    
     const daysActive = stats.days_active || 0;
     const daysBonus = Math.min(daysActive / 10, 5);
-    
     const consistencyBonus = streakBonus + daysBonus;
-    
-    // Final Score
     const finalScore = (avgScore * 0.4) + (quizBonus * 3) + (consistencyBonus * 3);
-    
     return Math.round(Math.min(finalScore, 100));
   };
 
-  // ✅ NEW: Get rank tier
   const getRankTier = (rankScore) => {
     if (rankScore >= 90) return { label: '🏆 Grandmaster', color: 'text-yellow-400', bg: 'bg-yellow-500/10' };
     if (rankScore >= 75) return { label: '👑 Master', color: 'text-purple-400', bg: 'bg-purple-500/10' };
@@ -74,7 +64,6 @@ const Leaderboard = () => {
   const loadLeaderboard = async () => {
     setLoading(true);
     try {
-      // Get all users with stats
       const { data: usersData, error: usersError } = await supabase
         .from("users")
         .select("id, name, avatar_id, email, stats")
@@ -93,7 +82,6 @@ const Leaderboard = () => {
         return;
       }
 
-      // Get quiz counts per user
       const { data: quizData, error: quizError } = await supabase
         .from("quiz_results")
         .select("user_id, percentage");
@@ -102,7 +90,6 @@ const Leaderboard = () => {
         console.error("Error fetching quiz data:", quizError);
       }
 
-      // Build user stats
       const userQuizCounts = {};
       if (quizData) {
         quizData.forEach(q => {
@@ -110,12 +97,10 @@ const Leaderboard = () => {
         });
       }
 
-      // Calculate rank score for each user
       const rankedPlayers = usersData.map((user) => {
         const stats = user.stats || {};
         const quizCount = userQuizCounts[user.id] || 0;
         
-        // Update stats with quiz count
         const fullStats = {
           ...stats,
           total_quizzes: quizCount,
@@ -138,22 +123,18 @@ const Leaderboard = () => {
         };
       });
 
-      // Sort by rank score (highest first)
       rankedPlayers.sort((a, b) => b.rankScore - a.rankScore);
 
-      // Add ranks
       rankedPlayers.forEach((player, index) => {
         player.rank = index + 1;
       });
 
-      // ✅ Require minimum quizzes to be ranked
       const MIN_QUIZZES = 3;
       const ranked = rankedPlayers.map(player => ({
         ...player,
         isRanked: player.quizCount >= MIN_QUIZZES,
       }));
 
-      // Avatar map
       const avatarMap = {
         1: "🧠", 2: "🦊", 3: "🐉", 4: "🦅", 5: "🐺",
         6: "🦄", 7: "🐼", 8: "🦁", 9: "🐧", 10: "🐱",
@@ -241,6 +222,34 @@ const Leaderboard = () => {
           </button>
         </div>
       </div>
+
+      {/* 🔥 REFERRAL BANNER - ADDED HERE */}
+      {currentUser && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.4 }}
+          className="glass-card p-4 border border-amber-500/20 bg-amber-500/5 cursor-pointer hover:border-amber-500/40 transition-all"
+          onClick={() => navigate("/referral")}
+        >
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <Gift className="w-5 h-5 text-amber-400" />
+              <div>
+                <p className="text-white text-sm font-medium">
+                  Want to climb the leaderboard faster?
+                </p>
+                <p className="text-gray-400 text-xs">
+                  Refer friends to get bonus rank points!
+                </p>
+              </div>
+            </div>
+            <button className="px-4 py-1.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-xs font-medium">
+              Start Referring
+            </button>
+          </div>
+        </motion.div>
+      )}
 
       {/* Current User Rank */}
       {currentUser && currentUserData && (
