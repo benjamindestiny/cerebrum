@@ -17,7 +17,7 @@ import {
   Sun,
 } from 'lucide-react';
 
-// Default Avatars - 16 different options with Lucide icons
+// 16 different avatars with Lucide icons
 export const defaultAvatars = [
   { id: 1, icon: Brain, bg: "#7c3aed", label: "Brain" },
   { id: 2, icon: Rocket, bg: "#2563eb", label: "Rocket" },
@@ -47,7 +47,6 @@ export const getAvatarById = (id) => {
   return defaultAvatars.find(avatar => avatar.id === id) || defaultAvatars[0];
 };
 
-// Get avatar Icon component
 export const getAvatarIcon = (id) => {
   const avatar = getAvatarById(id);
   return avatar.icon || Brain;

@@ -19,6 +19,7 @@ import {
   Award,
   Coffee,
   MessageCircle,
+  Zap,
 } from "lucide-react";
 import { supabase } from "../../services/supabase";
 import { useTheme } from "../../context/ThemeContext";
@@ -102,66 +103,63 @@ const Header = () => {
             <span className="text-lg sm:text-xl font-bold text-white hidden xs:block">Cerebrum</span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1 overflow-x-auto max-w-[60%] scrollbar-hide">
-            {navLinks.slice(0, 6).map(({ path, icon: Icon, label }) => (
-              <Link
-                key={path}
-                to={path}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-300 text-sm whitespace-nowrap
-                  ${isActive(path)
-                    ? "text-blue-400 font-medium bg-blue-500/10"
-                    : "text-gray-400 hover:text-white hover:bg-white/5"
-                  }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span className="text-sm">{label}</span>
-              </Link>
-            ))}
-            {navLinks.length > 6 && (
-              <Link
-                to="/more"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all duration-300 text-sm whitespace-nowrap"
-              >
-                More...
-              </Link>
-            )}
+          {/* Desktop Navigation - Icon Only */}
+          <nav className="hidden lg:flex items-center gap-0.5">
+            {navLinks.slice(0, 7).map(({ path, icon: Icon, label }) => {
+              const active = isActive(path);
+              return (
+                <Link
+                  key={path}
+                  to={path}
+                  className={`group relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-lg transition-all duration-300
+                    ${active 
+                      ? "text-blue-400 bg-blue-500/10" 
+                      : "text-gray-400 hover:text-white hover:bg-white/5"
+                    }`}
+                >
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-gray-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none">
+                    {label}
+                  </span>
+                </Link>
+              );
+            })}
           </nav>
 
-          {/* Right side */}
+          {/* Right side - Simplified */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-lg text-gray-400 hover:text-white transition-colors"
+              className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
               aria-label="Toggle theme"
             >
               {isDark ? <Sun className="w-4 h-4 sm:w-5 sm:h-5" /> : <Moon className="w-4 h-4 sm:w-5 sm:h-5" />}
             </button>
 
             {user ? (
-              <div className="flex items-center gap-2">
+              <>
+                {/* Profile - Single icon with tooltip */}
                 <Link
                   to="/profile"
-                  className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-sm"
-                >
-                  <UserCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="text-sm max-w-[80px] truncate">
-                    {user.email?.split("@")[0]}
-                  </span>
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="hidden sm:flex p-2 rounded-lg text-gray-400 hover:text-red-400 transition-colors"
-                >
-                  <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
-                <Link
-                  to="/profile"
-                  className="sm:hidden p-2 rounded-lg text-gray-400 hover:text-white transition-colors"
+                  className="group relative flex items-center justify-center w-9 h-9 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
                 >
                   <UserCircle className="w-5 h-5" />
+                  <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-gray-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none">
+                    Profile
+                  </span>
                 </Link>
-              </div>
+                {/* Sign Out - Single icon with tooltip */}
+                <button
+                  onClick={handleSignOut}
+                  className="group relative flex items-center justify-center w-9 h-9 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                >
+                  <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-gray-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none">
+                    Sign Out
+                  </span>
+                </button>
+              </>
             ) : (
               <Link
                 to="/auth"
@@ -174,7 +172,7 @@ const Header = () => {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-white transition-colors"
+              className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
             >
               {isMobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
             </button>
@@ -182,7 +180,7 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Mobile Menu - Clean and Scrolling */}
+      {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="lg:hidden border-t max-h-[80vh] overflow-y-auto" style={{ borderColor: 'var(--border)' }}>
           <div className="px-3 py-3">
@@ -199,7 +197,7 @@ const Header = () => {
                     }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
-                  <span className="font-medium truncate">{label}</span>
+                  <span className="font-medium">{label}</span>
                 </Link>
               ))}
               <div className="border-t my-2" style={{ borderColor: 'var(--border)' }} />

@@ -51,6 +51,7 @@ const Riddles = () => {
   const [timeUntilNext, setTimeUntilNext] = useState("");
   const [dailyRiddleData, setDailyRiddleData] = useState(null);
   const [user, setUser] = useState(null);
+  const [loadingHistory, setLoadingHistory] = useState(true);
 
   const inputRefs = useRef({});
 
@@ -70,10 +71,12 @@ const Riddles = () => {
       setUser(user);
       if (!user) {
         setIsLoading(false);
+        setLoadingHistory(false);
       }
     } catch (error) {
       console.error("Error getting user:", error);
       setIsLoading(false);
+      setLoadingHistory(false);
     }
   };
 
@@ -84,12 +87,14 @@ const Riddles = () => {
     try {
       await loadUserStats();
       await loadRiddleHistory();
+      // Load daily riddle AFTER history is loaded
       loadDailyRiddle();
     } catch (error) {
       console.error("Error loading riddle data:", error);
       toast.error("Failed to load riddle data");
     } finally {
       setIsLoading(false);
+      setLoadingHistory(false);
     }
   };
 
@@ -139,6 +144,7 @@ const Riddles = () => {
     }
   };
 
+  // ✅ FIX: Load daily riddle with proper check
   const loadDailyRiddle = () => {
     const daily = getDailyRiddle();
     setDailyRiddleData(daily);
@@ -152,9 +158,14 @@ const Riddles = () => {
     setDailyHintUsed(false);
     setDailyAnswerRevealed(false);
 
+    // ✅ Check if today's riddle is already solved
     const today = new Date().toISOString().split("T")[0];
     const dailySolvedToday = history.some(
-      (h) => h.riddle_id === daily.id && h.solved === true && h.solved_at?.split("T")[0] === today
+      (h) => 
+        h.riddle_id === daily.id && 
+        h.solved === true && 
+        h.solved_at && 
+        h.solved_at.split("T")[0] === today
     );
 
     if (dailySolvedToday) {
@@ -180,17 +191,20 @@ const Riddles = () => {
         .maybeSingle();
 
       if (existing) {
-        const { error } = await supabase
-          .from("riddle_history")
-          .update({
-            solved: solved,
-            solved_at: solved ? new Date().toISOString() : null,
-            points: pointsEarned,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", existing.id);
+        // ✅ Only update if not already solved
+        if (!existing.solved) {
+          const { error } = await supabase
+            .from("riddle_history")
+            .update({
+              solved: solved,
+              solved_at: solved ? new Date().toISOString() : null,
+              points: pointsEarned,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", existing.id);
 
-        if (error) throw error;
+          if (error) throw error;
+        }
       } else {
         const { error } = await supabase
           .from("riddle_history")
@@ -254,17 +268,14 @@ const Riddles = () => {
     const normalizedUser = userAnswer.trim().toLowerCase();
     const normalizedCorrect = correctAnswer.trim().toLowerCase();
 
-    // Exact match
     if (normalizedUser === normalizedCorrect) {
       return { correct: true, message: "✅ Perfect! That's exactly right!" };
     }
 
-    // Check if user answer contains the correct answer
     if (normalizedCorrect.includes(normalizedUser) && normalizedUser.length > 2) {
       return { correct: true, message: "✅ Close enough! That works!" };
     }
 
-    // Check if correct answer contains user answer (partial)
     if (normalizedUser.includes(normalizedCorrect) && normalizedCorrect.length > 2) {
       return { correct: true, message: "✅ That's right!" };
     }
@@ -272,10 +283,18 @@ const Riddles = () => {
     return { correct: false, message: "❌ Not quite right. Try again!" };
   };
 
+  // ✅ FIX: Prevent multiple completions
   const handleDailySubmit = async () => {
-    if (dailySolved || !dailyRiddleData) {
-      setFeedbackMessage("✅ You already solved this riddle!");
+    // ✅ Check if already solved today
+    if (dailySolved) {
+      setFeedbackMessage("✅ You already solved today's riddle!");
       setFeedbackType("info");
+      return;
+    }
+
+    if (!dailyRiddleData) {
+      setFeedbackMessage("No riddle available today.");
+      setFeedbackType("error");
       return;
     }
 
@@ -334,6 +353,12 @@ const Riddles = () => {
     const riddle = riddles.find((r) => r.id === riddleId);
     if (!riddle) return;
 
+    // ✅ Check if already solved
+    if (isRiddleSolved(riddleId)) {
+      toast.info("✅ You already solved this riddle!");
+      return;
+    }
+
     const userAnswer = inputValues[riddleId]?.trim() || "";
     if (!userAnswer) {
       toast.warning("📝 Please type an answer first!");
@@ -371,28 +396,37 @@ const Riddles = () => {
       setFeedbackMessage(result.message);
       setFeedbackType("error");
 
-      if ((attemptsMap[riddleId] || 0) + 1 >= 3) {
+      const attempts = attemptsMap[riddleId] || 0;
+      if (attempts + 1 >= 3) {
         setShowAnswerMap((prev) => ({ ...prev, [riddleId]: true }));
         setFeedbackMessage(`💡 The answer is: "${riddle.answer}"`);
         setFeedbackType("info");
         toast.info("💡 Answer revealed after 3 attempts");
       } else {
-        const remaining = 3 - ((attemptsMap[riddleId] || 0) + 1);
+        const remaining = 3 - (attempts + 1);
         toast.error(`❌ Not quite right. ${remaining} attempts remaining!`);
       }
     }
   };
 
-  // Refresh stats
   const refreshStats = async () => {
     await loadAllRiddleData();
     toast.success("🔄 Stats refreshed!");
   };
 
   const handleDailyHint = () => {
-    if (dailySolved) return;
-    if (dailyHintUsed) return;
-    if (dailyAttempts < 2) return;
+    if (dailySolved) {
+      toast.info("✅ You already solved today's riddle!");
+      return;
+    }
+    if (dailyHintUsed) {
+      toast.info("💡 You already used the hint!");
+      return;
+    }
+    if (dailyAttempts < 2) {
+      toast.warning("💡 Hint available after 2 attempts!");
+      return;
+    }
     setShowHint(true);
     setDailyHintUsed(true);
     setFeedbackMessage("💡 Hint revealed!");
@@ -400,9 +434,18 @@ const Riddles = () => {
   };
 
   const handleDailyReveal = () => {
-    if (dailySolved) return;
-    if (dailyAnswerRevealed) return;
-    if (dailyAttempts < 3) return;
+    if (dailySolved) {
+      toast.info("✅ You already solved today's riddle!");
+      return;
+    }
+    if (dailyAnswerRevealed) {
+      toast.info("💡 Answer already revealed!");
+      return;
+    }
+    if (dailyAttempts < 3) {
+      toast.warning("💡 Answer revealed after 3 attempts!");
+      return;
+    }
     setShowAnswer(true);
     setDailyAnswerRevealed(true);
     setFeedbackMessage(`💡 The answer is: "${dailyRiddleData.answer}"`);
@@ -411,13 +454,19 @@ const Riddles = () => {
 
   const handleRiddleHint = (riddleId) => {
     const attempts = attemptsMap[riddleId] || 0;
-    if (attempts < 2) return;
+    if (attempts < 2) {
+      toast.warning("💡 Hint available after 2 attempts!");
+      return;
+    }
     setShowHintMap((prev) => ({ ...prev, [riddleId]: !prev[riddleId] }));
   };
 
   const handleRiddleReveal = (riddleId) => {
     const attempts = attemptsMap[riddleId] || 0;
-    if (attempts < 3) return;
+    if (attempts < 3) {
+      toast.warning("💡 Answer revealed after 3 attempts!");
+      return;
+    }
     setShowAnswerMap((prev) => ({ ...prev, [riddleId]: !prev[riddleId] }));
   };
 
@@ -626,7 +675,6 @@ const Riddles = () => {
                 </button>
               </div>
 
-              {/* Feedback Message */}
               {feedbackMessage && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}

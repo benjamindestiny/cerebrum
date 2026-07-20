@@ -6,14 +6,21 @@ export const ThemeProvider = ({ children }) => {
   const [isDark, setIsDark] = useState(() => {
     if (typeof window === "undefined") return true;
     const savedTheme = window.localStorage.getItem("theme");
-    return savedTheme ? savedTheme === "dark" : true;
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    return savedTheme ? savedTheme === "dark" : prefersDark;
   });
 
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.toggle("dark", isDark);
-    root.classList.toggle("light", !isDark);
-    root.style.colorScheme = isDark ? "dark" : "light";
+    if (isDark) {
+      root.classList.remove("light");
+      root.classList.add("dark");
+      root.style.colorScheme = "dark";
+    } else {
+      root.classList.remove("dark");
+      root.classList.add("light");
+      root.style.colorScheme = "light";
+    }
     window.localStorage.setItem("theme", isDark ? "dark" : "light");
   }, [isDark]);
 
