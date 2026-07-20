@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import {
   Brain,
   LayoutDashboard,
@@ -37,9 +36,14 @@ const Header = () => {
   }, []);
 
   const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setUser(user);
-    setLoading(false);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    } catch (error) {
+      console.error("Error checking user:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const isActive = (path) => {
@@ -81,10 +85,9 @@ const Header = () => {
       <header className="border-b" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4">
           <div className="flex items-center justify-between h-14 sm:h-16">
-            {/* ✅ Direct Logo */}
             <div className="flex items-center gap-2">
-              <Brain className="w-7 h-7 sm:w-8 sm:h-8 text-[#2A1535]" />
-              <span className="text-lg sm:text-xl font-bold text-[#2A1535] hidden xs:block">Cerebrum</span>
+              <Brain className="w-7 h-7 sm:w-8 sm:h-8 text-blue-400" />
+              <span className="text-lg sm:text-xl font-bold text-white hidden xs:block">Cerebrum</span>
             </div>
           </div>
         </div>
@@ -96,10 +99,10 @@ const Header = () => {
     <header className="sticky top-0 z-50 border-b" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
       <div className="max-w-7xl mx-auto px-3 sm:px-4">
         <div className="flex items-center justify-between h-14 sm:h-16">
-          {/* ✅ Direct Logo with Link */}
+          {/* ✅ Logo - Blue color */}
           <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity">
-            <Brain className="w-7 h-7 sm:w-8 sm:h-8 text-[#2A1535]" />
-            <span className="text-lg sm:text-xl font-bold text-[#2A1535] hidden xs:block">Cerebrum</span>
+            <Brain className="w-7 h-7 sm:w-8 sm:h-8 text-blue-400" />
+            <span className="text-lg sm:text-xl font-bold text-white hidden xs:block">Cerebrum</span>
           </Link>
 
           {/* Desktop Navigation */}

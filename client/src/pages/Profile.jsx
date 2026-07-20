@@ -388,7 +388,7 @@ const Profile = () => {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 text-[#2A1535] animate-spin mx-auto mb-3" />
+          <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 text-[#3B82F6] animate-spin mx-auto mb-3" />
           <p className="text-gray-400 text-sm">Loading profile...</p>
         </div>
       </div>
@@ -419,7 +419,7 @@ const Profile = () => {
             <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
           </motion.button>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
-            <UserCircle className="w-6 h-6 sm:w-7 sm:h-7 text-[#2A1535]" />
+            <UserCircle className="w-6 h-6 sm:w-7 sm:h-7 text-[#3B82F6]" />
             Profile
           </h1>
         </div>
@@ -513,7 +513,7 @@ const Profile = () => {
                   onClick={() => setShowBioSelector(!showBioSelector)}
                   className="w-full bg-[#262626] text-white px-3 py-2 rounded-lg border border-gray-700 hover:border-blue-500 transition-colors text-left text-sm flex items-center gap-2"
                 >
-                  <Sparkles className="w-3 h-3 text-[#2A1535]" />
+                  <Sparkles className="w-3 h-3 text-[#3B82F6]" />
                   <span className="truncate">{formData.bio || "Select or write a bio"}</span>
                 </motion.button>
                 {showBioSelector && (
@@ -555,7 +555,7 @@ const Profile = () => {
                 <p className="text-gray-400 text-xs sm:text-sm">{user?.email}</p>
                 {profile?.bio && (
                   <p className="text-gray-300 text-sm mt-1 flex items-center gap-2">
-                    <Sparkles className="w-3 h-3 text-[#2A1535]" /> {profile.bio}
+                    <Sparkles className="w-3 h-3 text-[#3B82F6]" /> {profile.bio}
                   </p>
                 )}
                 <div className="flex flex-wrap gap-3 mt-1 text-xs text-gray-500">
@@ -601,9 +601,9 @@ const Profile = () => {
       >
         {[
           { icon: Trophy, label: 'Total Points', value: stats.totalPoints, color: 'text-teal-400' },
-          { icon: Award, label: 'Average Score', value: `${stats.averageScore || 0}%`, color: 'text-[#2A1535]' },
+          { icon: Award, label: 'Average Score', value: `${stats.averageScore || 0}%`, color: 'text-[#3B82F6]' },
           { icon: Flame, label: 'Day Streak', value: stats.streak || 0, color: 'text-orange-400' },
-          { icon: Brain, label: 'Quizzes Taken', value: stats.totalQuizzes, color: 'text-[#2A1535]' },
+          { icon: Brain, label: 'Quizzes Taken', value: stats.totalQuizzes, color: 'text-[#3B82F6]' },
         ].map((item, index) => (
           <motion.div
             key={index}
@@ -628,7 +628,7 @@ const Profile = () => {
         className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3"
       >
         {[
-          { icon: Brain, label: 'Riddles Solved', value: stats.riddlesSolved || 0, color: 'text-[#2A1535]' },
+          { icon: Brain, label: 'Riddles Solved', value: stats.riddlesSolved || 0, color: 'text-[#3B82F6]' },
           { icon: BookOpen, label: 'Articles Read', value: stats.readArticles || 0, color: 'text-green-400' },
           { icon: Star, label: 'Perfect Scores', value: stats.perfectScores || 0, color: 'text-purple-400' },
         ].map((item, index) => (
@@ -667,7 +667,7 @@ const Profile = () => {
             whileTap={{ scale: 0.95 }}
             onClick={refreshStats}
             disabled={refreshing}
-            className="text-xs text-[#2A1535] hover:text-white transition-colors flex items-center gap-1"
+            className="text-xs text-[#3B82F6] hover:text-white transition-colors flex items-center gap-1"
           >
             <RefreshCw className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`} /> Refresh
           </motion.button>

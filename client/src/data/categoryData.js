@@ -92,10 +92,10 @@ export const categoryHierarchy = [
     id: 'television',
     name: 'Television',
     icon: '📺',
-    color: 'text-[#2A1535]',
+    color: 'text-[#3B82F6]',
     description: 'TV shows, sitcoms, and television history',
     children: [
-      { id: 'tv-shows', name: 'TV Shows', icon: '📺', color: 'text-[#2A1535]', description: 'TV series', source: 'api', apiId: 14 },
+      { id: 'tv-shows', name: 'TV Shows', icon: '📺', color: 'text-[#3B82F6]', description: 'TV series', source: 'api', apiId: 14 },
       { id: 'sitcoms', name: 'Sitcoms', icon: '😂', color: 'text-green-400', description: 'Situation comedies', source: 'api', apiId: 14 },
       { id: 'drama-shows', name: 'Drama Shows', icon: '🎭', color: 'text-purple-400', description: 'Drama TV series', source: 'api', apiId: 14 },
       { id: 'reality-tv', name: 'Reality TV', icon: '📸', color: 'text-pink-400', description: 'Reality shows', source: 'api', apiId: 14 },
@@ -341,7 +341,7 @@ export const categoryHierarchy = [
     children: [
       { id: 'comics-trivia', name: 'Comics', icon: '🦸', color: 'text-red-600', description: 'Comic book facts', source: 'api', apiId: 29 },
       { id: 'marvel', name: 'Marvel', icon: '🦸', color: 'text-red-500', description: 'Marvel universe', source: 'api', apiId: 29 },
-      { id: 'dc', name: 'DC Comics', icon: '🦸', color: 'text-[#2A1535]', description: 'DC universe', source: 'api', apiId: 29 },
+      { id: 'dc', name: 'DC Comics', icon: '🦸', color: 'text-[#3B82F6]', description: 'DC universe', source: 'api', apiId: 29 },
       { id: 'superheroes', name: 'Superheroes', icon: '🦸', color: 'text-purple-400', description: 'Superhero facts', source: 'api', apiId: 29 },
       { id: 'villains', name: 'Villains', icon: '🦹', color: 'text-red-400', description: 'Supervillains', source: 'api', apiId: 29 },
       { id: 'graphic-novels', name: 'Graphic Novels', icon: '📚', color: 'text-amber-400', description: 'Graphic novels', source: 'api', apiId: 29 },

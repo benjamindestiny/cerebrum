@@ -39,7 +39,7 @@ const About = () => {
   ];
 
   const stats = [
-    { value: "24+", label: "Categories", color: "text-[#2A1535]" },
+    { value: "24+", label: "Categories", color: "text-[#3B82F6]" },
     { value: "100+", label: "Questions", color: "text-[#00C9A7]" },
     { value: "1K+", label: "Active Users", color: "text-teal-400" },
   ];
@@ -55,14 +55,14 @@ const About = () => {
           <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400  text-white border-[#2A2A4A]" />
         </button>
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white flex items-center gap-2 sm:gap-3  text-white border-[#2A2A4A]">
-          <Brain className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-[#2A1535]  text-white border-[#2A2A4A]" />
+          <Brain className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-[#3B82F6]  text-white border-[#2A2A4A]" />
           About Cerebrum
         </h1>
       </div>
 
       {/* Hero Section */}
       <div className="glass-card p-6 sm:p-8 md:p-12 text-center  text-white border-[#2A2A4A]">
-        <Brain className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 text-[#2A1535] mx-auto mb-3 sm:mb-4 animate-pulse  text-white border-[#2A2A4A]" />
+        <Brain className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 text-[#3B82F6] mx-auto mb-3 sm:mb-4 animate-pulse  text-white border-[#2A2A4A]" />
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4  text-white border-[#2A2A4A]">
           Empowering Minds Through Knowledge
         </h2>
@@ -82,7 +82,7 @@ const About = () => {
           >
             <div className="flex items-start gap-3 sm:gap-4  text-white border-[#2A2A4A]">
               <div className="p-2.5 sm:p-3  rounded-lg group-/30 transition-all flex-shrink-0  text-white border-[#2A2A4A]">
-                <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 text-[#2A1535]  text-white border-[#2A2A4A]" />
+                <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 text-[#3B82F6]  text-white border-[#2A2A4A]" />
               </div>
               <div>
                 <h3 className="text-white font-semibold text-sm sm:text-base  text-white border-[#2A2A4A]">

@@ -630,7 +630,7 @@ const Quiz = () => {
               transition={{ delay: 0.1, type: "spring" }}
               className="flex items-center justify-center gap-2 mb-2"
             >
-              <Brain className="w-6 h-6 sm:w-8 sm:h-8 text-[#2A1535]" />
+              <Brain className="w-6 h-6 sm:w-8 sm:h-8 text-[#3B82F6]" />
               <span className="text-xs sm:text-sm text-gray-400">Quiz</span>
             </motion.div>
             <h2 className="text-xl sm:text-2xl font-bold text-white">
@@ -662,7 +662,7 @@ const Quiz = () => {
                 </div>
                 <div className="text-right">
                   <div className="text-[10px] sm:text-xs text-gray-500">{questionCount} questions</div>
-                  <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 group-hover:text-[#2A1535] transition-colors" />
+                  <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 group-hover:text-[#3B82F6] transition-colors" />
                 </div>
               </motion.button>
             ))}
@@ -702,7 +702,7 @@ const Quiz = () => {
               transition={{ delay: 0.1, type: "spring" }}
               className="flex items-center justify-center gap-2 mb-2"
             >
-              <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-[#2A1535]" />
+              <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-[#3B82F6]" />
               <span className="text-xs sm:text-sm text-gray-400">Time per Question</span>
             </motion.div>
             <h2 className="text-xl sm:text-2xl font-bold text-white">Set Your Pace</h2>
@@ -726,7 +726,7 @@ const Quiz = () => {
                     : "border-white/10 bg-white/5 text-gray-400 hover:border-white/30"
                 }`}
               >
-                <div className={`text-lg font-bold ${selectedTimePerQuestion === option.value ? "text-[#2A1535]" : "text-gray-400"}`}>
+                <div className={`text-lg font-bold ${selectedTimePerQuestion === option.value ? "text-[#3B82F6]" : "text-gray-400"}`}>
                   {option.label}
                 </div>
                 <div className="text-[10px] text-gray-500">per question</div>
@@ -770,7 +770,7 @@ const Quiz = () => {
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
           >
-            <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 text-[#2A1535] mx-auto mb-3" />
+            <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 text-[#3B82F6] mx-auto mb-3" />
           </motion.div>
           <p className="text-gray-400 text-xs sm:text-sm">Loading {difficulty} questions...</p>
         </div>
@@ -967,7 +967,7 @@ const Quiz = () => {
                     </span>
                   )}
                   {!isAnswered && wasAnswered && hasAnswer && (
-                    <span className="flex-shrink-0 text-[#2A1535] text-xs">✓</span>
+                    <span className="flex-shrink-0 text-[#3B82F6] text-xs">✓</span>
                   )}
                 </div>
               </motion.button>
@@ -997,7 +997,7 @@ const Quiz = () => {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={goToCurrent}
-          className="text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg flex items-center gap-1 sm:gap-2 transition-colors bg-blue-500/20 text-[#2A1535] hover:bg-blue-500/30 border border-blue-500/30"
+          className="text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg flex items-center gap-1 sm:gap-2 transition-colors bg-blue-500/20 text-[#3B82F6] hover:bg-blue-500/30 border border-blue-500/30"
         >
           <SkipForward className="w-3 h-3 sm:w-4 sm:h-4" /> Go to Current
         </motion.button>

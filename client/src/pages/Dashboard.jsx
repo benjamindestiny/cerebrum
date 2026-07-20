@@ -177,11 +177,11 @@ const Dashboard = () => {
                 transition={{ duration: 4, repeat: Infinity }}
                 className="w-20 h-20 rounded-full bg-blue-500/20 flex items-center justify-center"
               >
-                <Brain className="w-10 h-10 text-[#2A1535]" />
+                <Brain className="w-10 h-10 text-[#3B82F6]" />
               </motion.div>
             </div>
             <h1 className="text-4xl font-bold text-white mt-4">
-              Welcome to <span className="text-[#2A1535]">Cerebrum</span>
+              Welcome to <span className="text-[#3B82F6]">Cerebrum</span>
             </h1>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto mt-2">
               Challenge your mind with interactive quizzes, riddles, and brain teasers.
@@ -213,7 +213,7 @@ const Dashboard = () => {
   if (loadingStats) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-10 h-10 text-[#2A1535] animate-spin" />
+        <Loader2 className="w-10 h-10 text-[#3B82F6] animate-spin" />
       </div>
     );
   }
@@ -231,7 +231,7 @@ const Dashboard = () => {
           <div>
             <h1 className="text-2xl font-bold text-white">
               Welcome back,{" "}
-              <span className="text-[#2A1535]">
+              <span className="text-[#3B82F6]">
                 {currentUser?.user_metadata?.name || "Learner"}! 👋
               </span>
             </h1>
@@ -297,7 +297,7 @@ const Dashboard = () => {
         {[
           { icon: Trophy, label: 'Total Points', value: stats.totalPoints, color: 'text-yellow-400' },
           { icon: Flame, label: 'Day Streak', value: stats.streak, color: 'text-orange-400' },
-          { icon: Brain, label: 'Quizzes Taken', value: stats.totalQuizzes, color: 'text-[#2A1535]' },
+          { icon: Brain, label: 'Quizzes Taken', value: stats.totalQuizzes, color: 'text-[#3B82F6]' },
           { icon: Target, label: 'Avg Score', value: `${stats.averageScore}%`, color: 'text-teal-400' },
         ].map((item, index) => (
           <motion.div
@@ -322,7 +322,7 @@ const Dashboard = () => {
         className="grid grid-cols-2 sm:grid-cols-4 gap-4"
       >
         {[
-          { icon: Play, label: 'Take Quiz', desc: 'Test your knowledge', path: '/categories', color: 'text-[#2A1535]' },
+          { icon: Play, label: 'Take Quiz', desc: 'Test your knowledge', path: '/categories', color: 'text-[#3B82F6]' },
           { icon: Puzzle, label: 'Riddles', desc: 'Solve brain teasers', path: '/riddles', color: 'text-purple-400' },
           { icon: BookOpen, label: 'Read & Test', desc: 'Learn and quiz', path: '/read-and-test', color: 'text-green-400' },
           { icon: Users, label: 'Leaderboard', desc: 'See top players', path: '/leaderboard', color: 'text-yellow-400' },

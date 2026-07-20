@@ -187,7 +187,7 @@ const AdminSendMessage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]  text-white border-[#2A2A4A]">
-        <Loader2 className="w-10 h-10 text-[#2A1535] animate-spin  text-white border-[#2A2A4A]" />
+        <Loader2 className="w-10 h-10 text-[#3B82F6] animate-spin  text-white border-[#2A2A4A]" />
       </div>
     );
   }
@@ -203,7 +203,7 @@ const AdminSendMessage = () => {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2  text-white border-[#2A2A4A]">
-            <MessageSquare className="w-7 h-7 text-[#2A1535]  text-white border-[#2A2A4A]" />
+            <MessageSquare className="w-7 h-7 text-[#3B82F6]  text-white border-[#2A2A4A]" />
             Send Message
           </h1>
           <p className="text-gray-400 text-sm mt-1  text-white border-[#2A2A4A]">
@@ -260,7 +260,7 @@ const AdminSendMessage = () => {
                 </span>
                 <button
                   onClick={handleSelectAll}
-                  className="text-[#2A1535] hover:text-[#3B82F6CC] transition-colors  text-white border-[#2A2A4A]"
+                  className="text-[#3B82F6] hover:text-[#3B82F6CC] transition-colors  text-white border-[#2A2A4A]"
                 >
                   {selectedUserIds.length === filteredUsers.length && filteredUsers.length > 0
                     ? 'Deselect All'
@@ -279,7 +279,7 @@ const AdminSendMessage = () => {
                     type="checkbox"
                     checked={selectedUserIds.includes(user.id)}
                     onChange={() => handleSelectUser(user.id)}
-                    className="w-4 h-4 rounded border-gray-600 text-[#2A1535] focus:ring-[#3B82F6]  text-white border-[#2A2A4A]"
+                    className="w-4 h-4 rounded border-gray-600 text-[#3B82F6] focus:ring-[#3B82F6]  text-white border-[#2A2A4A]"
                   />
                   <div className="flex-1 min-w-0  text-white border-[#2A2A4A]">
                     <div className="text-sm text-white truncate  text-white border-[#2A2A4A]">

@@ -18,9 +18,9 @@ const Logo = ({
   
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <Brain className={`${sizeClasses.icon} text-[#2A1535]`} />
+      <Brain className={`${sizeClasses.icon} text-[#3B82F6]`} />
       {showText && (
-        <span className={`font-bold ${sizeClasses.text} text-[#2A1535]`}>
+        <span className={`font-bold ${sizeClasses.text} text-[#3B82F6]`}>
           Cerebrum
         </span>
       )}

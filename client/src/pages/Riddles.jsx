@@ -561,7 +561,7 @@ const Riddles = () => {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-[#2A1535] animate-spin mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 text-[#3B82F6] animate-spin mx-auto mb-4" />
           <p className="text-gray-400">Loading riddles...</p>
         </div>
       </div>
@@ -579,7 +579,7 @@ const Riddles = () => {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-            <Puzzle className="w-8 h-8 text-[#2A1535]" />
+            <Puzzle className="w-8 h-8 text-[#3B82F6]" />
             Riddle Challenge
           </h1>
           <p className="text-gray-400 mt-1">Test your lateral thinking skills</p>
@@ -606,7 +606,7 @@ const Riddles = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="glass-card p-4 text-center">
-          <div className="text-2xl font-bold text-[#2A1535]">{solvedCount}</div>
+          <div className="text-2xl font-bold text-[#3B82F6]">{solvedCount}</div>
           <div className="text-xs text-gray-400">Solved</div>
         </div>
         <div className="glass-card p-4 text-center">
@@ -686,7 +686,7 @@ const Riddles = () => {
                       : feedbackType === "error"
                       ? "bg-red-500/20 text-red-400 border border-red-500/30"
                       : feedbackType === "info"
-                      ? "bg-blue-500/20 text-[#2A1535] border border-blue-500/30"
+                      ? "bg-blue-500/20 text-[#3B82F6] border border-blue-500/30"
                       : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
                   }`}
                 >
@@ -729,7 +729,7 @@ const Riddles = () => {
                   dailySolved || dailyAttempts < 3
                     ? "bg-gray-700/50 text-gray-500 cursor-not-allowed"
                     : showAnswer
-                    ? "text-[#2A1535] border border-blue-400/30 cursor-pointer hover:bg-blue-500/30"
+                    ? "text-[#3B82F6] border border-blue-400/30 cursor-pointer hover:bg-blue-500/30"
                     : "bg-gray-700 text-gray-400 cursor-not-allowed"
                 }`}
               >
@@ -759,7 +759,7 @@ const Riddles = () => {
       <div className="glass-card p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-[#2A1535]" />
+            <BookOpen className="w-5 h-5 text-[#3B82F6]" />
             All Riddles ({riddles.length})
           </h3>
           <div className="flex gap-2">
@@ -897,7 +897,7 @@ const Riddles = () => {
                               result === true || attempts < 3
                                 ? "bg-gray-700/50 text-gray-500 cursor-not-allowed"
                                 : showAnswerForRiddle
-                                ? "text-[#2A1535] border border-blue-400/30 cursor-pointer hover:bg-blue-500/30"
+                                ? "text-[#3B82F6] border border-blue-400/30 cursor-pointer hover:bg-blue-500/30"
                                 : "bg-gray-700 text-gray-400 cursor-not-allowed"
                             }`}
                           >

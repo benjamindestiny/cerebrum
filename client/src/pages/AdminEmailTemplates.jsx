@@ -393,7 +393,7 @@ const AdminEmailTemplates = () => {
   if (loading && templates.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]  text-white border-[#2A2A4A]">
-        <Loader2 className="w-10 h-10 text-[#2A1535] animate-spin  text-white border-[#2A2A4A]" />
+        <Loader2 className="w-10 h-10 text-[#3B82F6] animate-spin  text-white border-[#2A2A4A]" />
       </div>
     );
   }
@@ -403,7 +403,7 @@ const AdminEmailTemplates = () => {
       <div className="flex items-center justify-between mb-6  text-white border-[#2A2A4A]">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2  text-white border-[#2A2A4A]">
-            <Mail className="w-7 h-7 text-[#2A1535]  text-white border-[#2A2A4A]" />
+            <Mail className="w-7 h-7 text-[#3B82F6]  text-white border-[#2A2A4A]" />
             Email Templates
           </h1>
           <p className="text-gray-400 text-sm mt-1  text-white border-[#2A2A4A]">
@@ -655,7 +655,7 @@ const AdminEmailTemplates = () => {
               {!isEditing && (
                 <div className="mt-6 pt-6 border-t border-white/10  text-white border-[#2A2A4A]">
                   <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2  text-white border-[#2A2A4A]">
-                    <Send className="w-4 h-4 text-[#2A1535]  text-white border-[#2A2A4A]" />
+                    <Send className="w-4 h-4 text-[#3B82F6]  text-white border-[#2A2A4A]" />
                     Send Email
                   </h4>
                   <div className="space-y-3  text-white border-[#2A2A4A]">

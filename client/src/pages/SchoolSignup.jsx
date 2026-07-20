@@ -472,7 +472,7 @@ const SchoolSignup = () => {
                   </span>
                 )}
                 <div className="text-lg font-bold text-white mt-1  text-white border-[#2A2A4A]">{plan.name}</div>
-                <div className="text-2xl font-bold text-[#2A1535]  text-white border-[#2A2A4A]">{plan.price}</div>
+                <div className="text-2xl font-bold text-[#3B82F6]  text-white border-[#2A2A4A]">{plan.price}</div>
                 <ul className="mt-2 space-y-1  text-white border-[#2A2A4A]">
                   {plan.features.map((feature, i) => (
                     <li key={i} className="text-xs text-gray-400 flex items-center gap-1  text-white border-[#2A2A4A]">
@@ -495,7 +495,7 @@ const SchoolSignup = () => {
         {/* Header */}
         <div className="text-center mb-8  text-white border-[#2A2A4A]">
           <div className="flex items-center justify-center gap-3 mb-3  text-white border-[#2A2A4A]">
-            <School className="w-12 h-12 text-[#2A1535]  text-white border-[#2A2A4A]" />
+            <School className="w-12 h-12 text-[#3B82F6]  text-white border-[#2A2A4A]" />
             <h1 className="text-2xl font-bold text-white  text-white border-[#2A2A4A]">School Sign Up</h1>
           </div>
           <p className="text-gray-400 text-sm  text-white border-[#2A2A4A]">

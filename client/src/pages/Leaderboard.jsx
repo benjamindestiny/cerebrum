@@ -194,7 +194,7 @@ const Leaderboard = () => {
 
   const getScoreColor = (score) => {
     if (score >= 80) return "text-green-400";
-    if (score >= 50) return "text-[#2A1535]";
+    if (score >= 50) return "text-[#3B82F6]";
     return "text-red-400";
   };
 
@@ -208,7 +208,7 @@ const Leaderboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-10 h-10 text-[#2A1535] animate-spin" />
+        <Loader2 className="w-10 h-10 text-[#3B82F6] animate-spin" />
       </div>
     );
   }
@@ -233,7 +233,7 @@ const Leaderboard = () => {
         </div>
         <div className="flex items-center gap-3">
           <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 flex items-center gap-2">
-            <Users className="w-4 h-4 text-[#2A1535]" />
+            <Users className="w-4 h-4 text-[#3B82F6]" />
             <span className="text-sm text-gray-300">{players.length} players</span>
           </div>
           <button
@@ -259,7 +259,7 @@ const Leaderboard = () => {
             </div>
             <div className="flex items-center gap-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-[#2A1535]">
+                <div className="text-2xl font-bold text-[#3B82F6]">
                   #{currentUserRank || "-"}
                 </div>
                 <div className="text-xs text-gray-500">Rank</div>
@@ -271,7 +271,7 @@ const Leaderboard = () => {
                 <div className="text-xs text-gray-500">Score</div>
               </div>
               <div className="text-center">
-                <div className="text-xl font-bold text-[#2A1535]">
+                <div className="text-xl font-bold text-[#3B82F6]">
                   {currentUserData.quizCount || 0}
                 </div>
                 <div className="text-xs text-gray-500">Quizzes</div>
@@ -315,7 +315,7 @@ const Leaderboard = () => {
                 <div className="text-lg font-bold text-white truncate">
                   {player.userName}
                 </div>
-                <div className="text-3xl font-bold text-[#2A1535] mt-1">
+                <div className="text-3xl font-bold text-[#3B82F6] mt-1">
                   {player.weightedScore || player.averageScore}%
                 </div>
                 <div className="text-xs text-gray-500">
@@ -343,7 +343,7 @@ const Leaderboard = () => {
       {/* All Players List */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">
         <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-          <Users className="w-4 h-4 text-[#2A1535]" />
+          <Users className="w-4 h-4 text-[#3B82F6]" />
           All Players
           <span className="text-sm text-gray-500 ml-2">
             ({filteredPlayers.length} players)
@@ -371,7 +371,7 @@ const Leaderboard = () => {
                   <span className="text-white font-medium truncate">
                     {player.userName}
                     {isCurrentUser && (
-                      <span className="ml-2 text-sm text-[#2A1535]">(You)</span>
+                      <span className="ml-2 text-sm text-[#3B82F6]">(You)</span>
                     )}
                   </span>
                 </div>
@@ -406,7 +406,7 @@ const Leaderboard = () => {
         <div className="bg-white/5 border border-white/10 rounded-xl p-12 text-center">
           <div className="flex flex-col items-center gap-4">
             <div className="w-20 h-20 rounded-full bg-blue-500/10 flex items-center justify-center">
-              <Users className="w-10 h-10 text-[#2A1535]" />
+              <Users className="w-10 h-10 text-[#3B82F6]" />
             </div>
             <h3 className="text-xl font-bold text-white">No Players Yet</h3>
             <p className="text-gray-400 max-w-md">

@@ -64,7 +64,7 @@ const ReadAndTestResults = () => {
     return (
       <div className="flex items-center justify-center min-h-[300px] sm:min-h-[400px]  text-white border-[#2A2A4A]">
         <div className="text-center  text-white border-[#2A2A4A]">
-          <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-[#2A1535] animate-spin mx-auto mb-3 sm:mb-4  text-white border-[#2A2A4A]" />
+          <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-[#3B82F6] animate-spin mx-auto mb-3 sm:mb-4  text-white border-[#2A2A4A]" />
           <p className="text-gray-400 text-sm sm:text-base  text-white border-[#2A2A4A]">
             Loading your results...
           </p>
@@ -119,7 +119,7 @@ const ReadAndTestResults = () => {
     if (score >= 70)
       return { label: "Great Job! 🌟", color: "text-[#00C9A7]", emoji: "🌟" };
     if (score >= 50)
-      return { label: "Good Effort! 💪", color: "text-[#2A1535]", emoji: "💪" };
+      return { label: "Good Effort! 💪", color: "text-[#3B82F6]", emoji: "💪" };
     return { label: "Keep Learning! 📚", color: "text-gray-400", emoji: "📚" };
   };
 
@@ -167,7 +167,7 @@ const ReadAndTestResults = () => {
       >
         <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4  text-white border-[#2A2A4A]">
           <span className="text-2xl sm:text-3xl  text-white border-[#2A2A4A]">{icon || "📚"}</span>
-          <span className="text-[10px] sm:text-xs md:text-sm text-[#2A1535]  text-white border-[#2A2A4A]">
+          <span className="text-[10px] sm:text-xs md:text-sm text-[#3B82F6]  text-white border-[#2A2A4A]">
             {category}
           </span>
           <span className="text-[8px] sm:text-[10px] md:text-xs text-gray-500  text-white border-[#2A2A4A]">
@@ -281,7 +281,7 @@ const ReadAndTestResults = () => {
           className="glass-card p-4 sm:p-5 md:p-6  text-white border-[#2A2A4A]"
         >
           <h3 className="text-base sm:text-lg md:text-xl font-bold text-white mb-3 sm:mb-4 flex items-center gap-2  text-white border-[#2A2A4A]">
-            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-[#2A1535]  text-white border-[#2A2A4A]" />
+            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-[#3B82F6]  text-white border-[#2A2A4A]" />
             Answer Review
           </h3>
           <div className="space-y-3 sm:space-y-4 max-h-80 sm:max-h-96 overflow-y-auto pr-1 sm:pr-2  text-white border-[#2A2A4A]">
@@ -348,7 +348,7 @@ const ReadAndTestResults = () => {
         className="glass-card p-4 sm:p-5 md:p-6  /10 /10 border border-blue-500/20  text-white border-[#2A2A4A]"
       >
         <div className="flex items-start gap-3 sm:gap-4  text-white border-[#2A2A4A]">
-          <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-[#2A1535] mt-1  text-white border-[#2A2A4A]" />
+          <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-[#3B82F6] mt-1  text-white border-[#2A2A4A]" />
           <div>
             <h3 className="text-white font-semibold text-sm sm:text-base  text-white border-[#2A2A4A]">
               Recommended for You
@@ -360,7 +360,7 @@ const ReadAndTestResults = () => {
             </p>
             <button
               onClick={() => navigate("/read-and-test")}
-              className="mt-2 sm:mt-3 text-[10px] sm:text-xs md:text-sm text-[#2A1535] hover:text-[#3B82F6CC] transition-colors flex items-center gap-1  text-white border-[#2A2A4A]"
+              className="mt-2 sm:mt-3 text-[10px] sm:text-xs md:text-sm text-[#3B82F6] hover:text-[#3B82F6CC] transition-colors flex items-center gap-1  text-white border-[#2A2A4A]"
             >
               Browse more articles <ArrowRight className="w-3 h-3  text-white border-[#2A2A4A]" />
             </button>

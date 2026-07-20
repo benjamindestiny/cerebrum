@@ -165,7 +165,7 @@ const Multiplayer = () => {
           <div className="flex items-center justify-between  text-white border-[#2A2A4A]">
             <div>
               <h2 className="text-xl font-bold text-white flex items-center gap-2  text-white border-[#2A2A4A]">
-                <Users className="w-5 h-5 text-[#2A1535]  text-white border-[#2A2A4A]" />
+                <Users className="w-5 h-5 text-[#3B82F6]  text-white border-[#2A2A4A]" />
                 Game Lobby
               </h2>
               <p className="text-sm text-gray-400  text-white border-[#2A2A4A]">Waiting for players to join...</p>
@@ -196,10 +196,10 @@ const Multiplayer = () => {
               onClick={copyRoomCode}
               className="p-3  rounded-lg /30 transition-colors  text-white border-[#2A2A4A]"
             >
-              {copied ? <Check className="w-5 h-5 text-green-400  text-white border-[#2A2A4A]" /> : <Copy className="w-5 h-5 text-[#2A1535]  text-white border-[#2A2A4A]" />}
+              {copied ? <Check className="w-5 h-5 text-green-400  text-white border-[#2A2A4A]" /> : <Copy className="w-5 h-5 text-[#3B82F6]  text-white border-[#2A2A4A]" />}
             </button>
             <button className="p-3  rounded-lg /30 transition-colors  text-white border-[#2A2A4A]">
-              <Share2 className="w-5 h-5 text-[#2A1535]  text-white border-[#2A2A4A]" />
+              <Share2 className="w-5 h-5 text-[#3B82F6]  text-white border-[#2A2A4A]" />
             </button>
           </div>
           <div className="mt-3 text-xs text-gray-500  text-white border-[#2A2A4A]">
@@ -211,7 +211,7 @@ const Multiplayer = () => {
         <div className="glass-card p-6  text-white border-[#2A2A4A]">
           <div className="flex items-center justify-between mb-4  text-white border-[#2A2A4A]">
             <h3 className="text-white font-semibold flex items-center gap-2  text-white border-[#2A2A4A]">
-              <Users className="w-4 h-4 text-[#2A1535]  text-white border-[#2A2A4A]" />
+              <Users className="w-4 h-4 text-[#3B82F6]  text-white border-[#2A2A4A]" />
               Players ({totalPlayers})
               <span className="text-xs text-gray-400  text-white border-[#2A2A4A]">({readyCount} ready)</span>
             </h3>
@@ -232,7 +232,7 @@ const Multiplayer = () => {
               }`}>
                 <div className="text-2xl  text-white border-[#2A2A4A]">{player.avatar}</div>
                 <div className="text-sm text-white font-medium truncate  text-white border-[#2A2A4A]">{player.name}</div>
-                {player.isHost && <span className="text-xs text-[#2A1535]  text-white border-[#2A2A4A]">👑 Host</span>}
+                {player.isHost && <span className="text-xs text-[#3B82F6]  text-white border-[#2A2A4A]">👑 Host</span>}
                 {player.isReady && <span className="text-xs text-green-400  text-white border-[#2A2A4A]">✅ Ready</span>}
               </div>
             ))}
@@ -258,7 +258,7 @@ const Multiplayer = () => {
           <div className="h-24 overflow-y-auto mb-3 space-y-1  text-white border-[#2A2A4A]">
             {messages.map((msg) => (
               <div key={msg.id} className="flex items-start gap-2 text-xs  text-white border-[#2A2A4A]">
-                <span className="text-[#2A1535] font-medium  text-white border-[#2A2A4A]">{msg.sender}:</span>
+                <span className="text-[#3B82F6] font-medium  text-white border-[#2A2A4A]">{msg.sender}:</span>
                 <span className="text-gray-300  text-white border-[#2A2A4A]">{msg.message}</span>
                 <span className="text-gray-500 ml-auto  text-white border-[#2A2A4A]">{msg.time}</span>
               </div>

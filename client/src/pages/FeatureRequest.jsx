@@ -150,7 +150,7 @@ const FeatureRequest = () => {
                   onClick={() => setCategory(cat.id)}
                   className={`px-3 py-2 rounded-lg text-sm transition-all ${
                     category === cat.id
-                      ? 'bg-blue-500/20 text-[#2A1535] border border-blue-500/30'
+                      ? 'bg-blue-500/20 text-[#3B82F6] border border-blue-500/30'
                       : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-transparent'
                   }`}
                 >

@@ -163,7 +163,7 @@ const Profile = () => {
     return (
       <div className="flex items-center justify-center min-h-[400px]  text-white border-[#2A2A4A]">
         <div className="text-center  text-white border-[#2A2A4A]">
-          <Loader2 className="w-12 h-12 text-[#2A1535] animate-spin mx-auto mb-4  text-white border-[#2A2A4A]" />
+          <Loader2 className="w-12 h-12 text-[#3B82F6] animate-spin mx-auto mb-4  text-white border-[#2A2A4A]" />
           <p className="text-gray-400  text-white border-[#2A2A4A]">Loading profile...</p>
         </div>
       </div>

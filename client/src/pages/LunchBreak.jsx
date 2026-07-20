@@ -427,7 +427,7 @@ const LunchBreak = () => {
                     {score} pts
                   </span>
                   {gameActive && (gameMode === GAMES.SPEED || gameMode === GAMES.TRIVIA) && (
-                    <span className="flex items-center gap-1 text-[#2A1535]">
+                    <span className="flex items-center gap-1 text-[#3B82F6]">
                       <Clock className="w-3 h-3" />
                       {questionTimer}s
                     </span>

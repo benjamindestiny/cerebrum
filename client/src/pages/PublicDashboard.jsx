@@ -135,7 +135,7 @@ const PublicDashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-10 h-10 text-[#2A1535] animate-spin" />
+        <Loader2 className="w-10 h-10 text-[#3B82F6] animate-spin" />
       </div>
     );
   }
@@ -162,7 +162,7 @@ const PublicDashboard = () => {
 
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-4 leading-tight">
               Master Any Subject with{" "}
-              <span className="text-[#2A1535]">Cerebrum</span>
+              <span className="text-[#3B82F6]">Cerebrum</span>
             </h1>
 
             <p className="text-gray-300 text-lg max-w-2xl mx-auto mb-8">
@@ -193,7 +193,7 @@ const PublicDashboard = () => {
               </span>
               <span className="text-gray-600">•</span>
               <span className="flex items-center gap-2">
-                <Rocket className="w-4 h-4 text-[#2A1535]" />
+                <Rocket className="w-4 h-4 text-[#3B82F6]" />
                 Start instantly
               </span>
               <span className="text-gray-600">•</span>
@@ -214,7 +214,7 @@ const PublicDashboard = () => {
               key={index}
               className="bg-white/5 border border-white/10 rounded-xl p-4 text-center hover:border-blue-500/30 transition-all"
             >
-              <stat.icon className="w-6 h-6 text-[#2A1535] mx-auto mb-2" />
+              <stat.icon className="w-6 h-6 text-[#3B82F6] mx-auto mb-2" />
               <div className="text-2xl font-bold text-white">
                 {stat.value > 1000
                   ? `${(stat.value / 1000).toFixed(1)}K+`
@@ -230,7 +230,7 @@ const PublicDashboard = () => {
       <section className="container mx-auto max-w-7xl">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-white mb-2">
-            Why Choose <span className="text-[#2A1535]">Cerebrum</span>?
+            Why Choose <span className="text-[#3B82F6]">Cerebrum</span>?
           </h2>
           <p className="text-gray-400 max-w-xl mx-auto">
             Everything you need to learn, test, and master any subject
@@ -244,7 +244,7 @@ const PublicDashboard = () => {
               className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-blue-500/30 transition-all"
             >
               <div className="p-3 bg-blue-500/10 rounded-lg inline-block mb-3">
-                <feature.icon className="w-6 h-6 text-[#2A1535]" />
+                <feature.icon className="w-6 h-6 text-[#3B82F6]" />
               </div>
               <h3 className="text-white font-semibold text-lg mb-1">
                 {feature.title}

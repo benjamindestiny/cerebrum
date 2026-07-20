@@ -29,6 +29,6 @@ export const getTimeAgo = (date) => {
 export const getScoreMessage = (score) => {
   if (score >= 90) return { label: 'Outstanding! 🏆', color: 'text-teal-400' };
   if (score >= 70) return { label: 'Great Job! 🌟', color: 'text-[#00C9A7]' };
-  if (score >= 50) return { label: 'Good Effort! 💪', color: 'text-[#2A1535]' };
+  if (score >= 50) return { label: 'Good Effort! 💪', color: 'text-[#3B82F6]' };
   return { label: 'Keep Learning! 📚', color: 'text-gray-400' };
 };

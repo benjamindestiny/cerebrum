@@ -58,7 +58,7 @@ const Results = () => {
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
           >
-            <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-[#2A1535] mx-auto mb-3 sm:mb-4" />
+            <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-[#3B82F6] mx-auto mb-3 sm:mb-4" />
           </motion.div>
           <p className="text-gray-400 text-sm sm:text-base">Loading your results...</p>
         </div>
@@ -95,7 +95,7 @@ const Results = () => {
   const getGrade = () => {
     if (score >= 90) return { label: "Outstanding! 🏆", color: "text-teal-400", emoji: "🏆" };
     if (score >= 70) return { label: "Great Job! 🌟", color: "text-[#00C9A7]", emoji: "🌟" };
-    if (score >= 50) return { label: "Good Effort! 💪", color: "text-[#2A1535]", emoji: "💪" };
+    if (score >= 50) return { label: "Good Effort! 💪", color: "text-[#3B82F6]", emoji: "💪" };
     return { label: "Keep Learning! 📚", color: "text-gray-400", emoji: "📚" };
   };
 
@@ -300,7 +300,7 @@ const Results = () => {
             className="glass-card p-4 sm:p-5 md:p-6 overflow-hidden"
           >
             <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
-              <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-[#2A1535]" />
+              <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-[#3B82F6]" />
               Answer Review
             </h3>
             <div className="space-y-2 sm:space-y-3 max-h-60 sm:max-h-80 overflow-y-auto pr-1 sm:pr-2">

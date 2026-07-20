@@ -239,7 +239,7 @@ const AdminLogin = () => {
       <div className="glass-card p-6 md:p-8 max-w-md w-full  text-white border-[#2A2A4A]">
         <div className="text-center mb-6  text-white border-[#2A2A4A]">
           <div className="inline-block p-3  rounded-full mb-3  text-white border-[#2A2A4A]">
-            <Shield className="w-10 h-10 text-[#2A1535]  text-white border-[#2A2A4A]" />
+            <Shield className="w-10 h-10 text-[#3B82F6]  text-white border-[#2A2A4A]" />
           </div>
           <h1 className="text-2xl font-bold text-white  text-white border-[#2A2A4A]">Admin Access</h1>
           <p className="text-gray-400 text-sm mt-1  text-white border-[#2A2A4A]">

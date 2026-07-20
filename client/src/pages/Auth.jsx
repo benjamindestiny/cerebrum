@@ -359,7 +359,7 @@ const Auth = () => {
               transition={{ delay: 0.1, type: "spring" }}
               className="inline-block p-3 bg-blue-500/20 rounded-full mb-4"
             >
-              <Mail className="w-10 h-10 text-[#2A1535]" />
+              <Mail className="w-10 h-10 text-[#3B82F6]" />
             </motion.div>
             <h2 className="text-2xl font-bold text-white">Reset Password</h2>
             <p className="text-gray-400 text-sm mt-2">
@@ -444,7 +444,7 @@ const Auth = () => {
             transition={{ delay: 0.1, type: "spring" }}
             className="inline-block p-3 bg-blue-500/20 rounded-full mb-4"
           >
-            <Brain className="w-10 h-10 text-[#2A1535]" />
+            <Brain className="w-10 h-10 text-[#3B82F6]" />
           </motion.div>
           <motion.h1 
             initial={{ opacity: 0, y: 10 }}
@@ -599,7 +599,7 @@ const Auth = () => {
                   setError("");
                   setSuccess("");
                 }}
-                className="text-sm text-gray-400 hover:text-[#2A1535] transition-colors"
+                className="text-sm text-gray-400 hover:text-[#3B82F6] transition-colors"
               >
                 Forgot Password?
               </button>
@@ -652,7 +652,7 @@ const Auth = () => {
             className="w-full py-3 rounded-xl border border-white/10 hover:border-blue-500/30 bg-white/5 hover:bg-white/10 transition-all duration-300 flex items-center justify-center gap-3 text-gray-300 font-medium text-sm disabled:opacity-50"
           >
             {githubLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin text-[#2A1535]" />
+              <Loader2 className="w-5 h-5 animate-spin text-[#3B82F6]" />
             ) : (
               <Github className="w-5 h-5" />
             )}
@@ -670,7 +670,7 @@ const Auth = () => {
             className="w-full py-3 rounded-xl border border-white/10 hover:border-blue-500/30 bg-white/5 hover:bg-white/10 transition-all duration-300 flex items-center justify-center gap-3 text-gray-300 font-medium text-sm disabled:opacity-50"
           >
             {googleLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin text-[#2A1535]" />
+              <Loader2 className="w-5 h-5 animate-spin text-[#3B82F6]" />
             ) : (
               <Chrome className="w-5 h-5" />
             )}
@@ -696,17 +696,17 @@ const Auth = () => {
                 confirmPassword: "",
               });
             }}
-            className="text-sm text-gray-400 hover:text-[#2A1535] transition-colors"
+            className="text-sm text-gray-400 hover:text-[#3B82F6] transition-colors"
           >
             {isLogin ? (
               <span>
                 Don't have an account?{" "}
-                <span className="text-[#2A1535] font-medium">Sign Up</span>
+                <span className="text-[#3B82F6] font-medium">Sign Up</span>
               </span>
             ) : (
               <span>
                 Already have an account?{" "}
-                <span className="text-[#2A1535] font-medium">Sign In</span>
+                <span className="text-[#3B82F6] font-medium">Sign In</span>
               </span>
             )}
           </button>

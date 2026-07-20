@@ -77,7 +77,7 @@ const CookieConsent = () => {
               {/* Icon */}
               <div className="flex-shrink-0  text-white border-[#2A2A4A]">
                 <div className="p-2  rounded-full  text-white border-[#2A2A4A]">
-                  <Cookie className="w-6 h-6 text-[#2A1535]  text-white border-[#2A2A4A]" />
+                  <Cookie className="w-6 h-6 text-[#3B82F6]  text-white border-[#2A2A4A]" />
                 </div>
               </div>
 
@@ -93,7 +93,7 @@ const CookieConsent = () => {
                 <div className="flex flex-wrap gap-3 mt-2  text-white border-[#2A2A4A]">
                   <button
                     onClick={() => setShowSettings(!showSettings)}
-                    className="text-xs text-[#2A1535] hover:text-[#8B5CF6] transition-colors flex items-center gap-1  text-white border-[#2A2A4A]"
+                    className="text-xs text-[#3B82F6] hover:text-[#8B5CF6] transition-colors flex items-center gap-1  text-white border-[#2A2A4A]"
                   >
                     <Settings className="w-3 h-3  text-white border-[#2A2A4A]" />
                     {showSettings ? 'Hide Settings' : 'Customize Settings'}

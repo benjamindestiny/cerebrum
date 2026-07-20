@@ -496,7 +496,7 @@ const Achievements = () => {
     return (
       <div className="flex items-center justify-center min-h-[300px] px-4  text-white border-[#2A2A4A]">
         <div className="text-center  text-white border-[#2A2A4A]">
-          <Loader2 className="w-8 h-8 sm:w-12 sm:h-12 text-[#2A1535] animate-spin mx-auto mb-3  text-white border-[#2A2A4A]" />
+          <Loader2 className="w-8 h-8 sm:w-12 sm:h-12 text-[#3B82F6] animate-spin mx-auto mb-3  text-white border-[#2A2A4A]" />
           <p className="text-gray-400 text-sm  text-white border-[#2A2A4A]">Loading achievements...</p>
         </div>
       </div>
@@ -535,7 +535,7 @@ const Achievements = () => {
             </span>
           </div>
           <div className="glass-card px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2  text-white border-[#2A2A4A]">
-            <Sparkles className="w-4 h-4 text-[#2A1535]  text-white border-[#2A2A4A]" />
+            <Sparkles className="w-4 h-4 text-[#3B82F6]  text-white border-[#2A2A4A]" />
             <span className="text-xs sm:text-sm text-white  text-white border-[#2A2A4A]">
               {totalPoints} pts
             </span>
@@ -558,7 +558,7 @@ const Achievements = () => {
           <div className="text-[10px] sm:text-xs text-gray-400  text-white border-[#2A2A4A]">Day Streak</div>
         </div>
         <div className="glass-card p-3 sm:p-4 text-center  text-white border-[#2A2A4A]">
-          <div className="text-lg sm:text-xl font-bold text-[#2A1535]  text-white border-[#2A2A4A]">{stats.totalPoints}</div>
+          <div className="text-lg sm:text-xl font-bold text-[#3B82F6]  text-white border-[#2A2A4A]">{stats.totalPoints}</div>
           <div className="text-[10px] sm:text-xs text-gray-400  text-white border-[#2A2A4A]">Total Points</div>
         </div>
       </div>
@@ -617,7 +617,7 @@ const Achievements = () => {
                         <div className="mt-2  text-white border-[#2A2A4A]">
                           <div className="flex items-center justify-between text-[10px] sm:text-xs text-gray-500  text-white border-[#2A2A4A]">
                             <span>{isEarned ? "✅ Completed!" : progressText}</span>
-                            <span className="text-[#2A1535]  text-white border-[#2A2A4A]">+{achievement.points} pts</span>
+                            <span className="text-[#3B82F6]  text-white border-[#2A2A4A]">+{achievement.points} pts</span>
                           </div>
                           <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mt-1  text-white border-[#2A2A4A]">
                             <div
@@ -685,7 +685,7 @@ const Achievements = () => {
       {/* Total Stats */}
       <div className="glass-card p-4 sm:p-5 md:p-6  text-white border-[#2A2A4A]">
         <h3 className="text-sm sm:text-base font-bold text-white mb-3 flex items-center gap-2  text-white border-[#2A2A4A]">
-          <TrendingUp className="w-4 h-4 text-[#2A1535]  text-white border-[#2A2A4A]" />
+          <TrendingUp className="w-4 h-4 text-[#3B82F6]  text-white border-[#2A2A4A]" />
           Achievement Progress
         </h3>
         <div className="space-y-2 sm:space-y-3  text-white border-[#2A2A4A]">

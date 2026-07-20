@@ -105,7 +105,7 @@ const AdminDashboard = () => {
       label: 'Send Message',
       description: 'Send messages to all users',
       path: '/admin/send-message',
-      color: 'text-[#2A1535]',
+      color: 'text-[#3B82F6]',
     },
     {
       icon: MessageCircle,
@@ -160,7 +160,7 @@ const AdminDashboard = () => {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Shield className="w-7 h-7 text-[#2A1535]" />
+            <Shield className="w-7 h-7 text-[#3B82F6]" />
             Admin Dashboard
           </h1>
           <p className="text-gray-400 text-sm mt-1">
@@ -195,7 +195,7 @@ const AdminDashboard = () => {
           <div className="text-xs text-gray-400">Riddles Solved</div>
         </div>
         <div className="glass-card p-4 text-center">
-          <div className="text-2xl font-bold text-[#2A1535]">{stats.totalPoints || 0}</div>
+          <div className="text-2xl font-bold text-[#3B82F6]">{stats.totalPoints || 0}</div>
           <div className="text-xs text-gray-400">Total Points</div>
         </div>
       </div>
@@ -210,7 +210,7 @@ const AdminDashboard = () => {
           >
             <div className="flex items-start gap-4">
               <div className={`p-3 bg-blue-500/10 rounded-lg group-hover:bg-blue-500/20 transition-colors`}>
-                <link.icon className={`w-6 h-6 ${link.color || 'text-[#2A1535]'}`} />
+                <link.icon className={`w-6 h-6 ${link.color || 'text-[#3B82F6]'}`} />
               </div>
               <div>
                 <h3 className="text-white font-medium">{link.label}</h3>
