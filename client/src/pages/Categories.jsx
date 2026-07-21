@@ -54,8 +54,8 @@ const Categories = () => {
     { value: 5, label: "5", free: true },
     { value: 10, label: "10", free: true },
     { value: 15, label: "15", free: true },
-    { value: 20, label: "20", free: false },
-    { value: 30, label: "30", free: false },
+    // { value: 20, label: "20", free: false },
+    // { value: 30, label: "30", free: false },
   ];
 
   const toggleExpand = (id) => {
