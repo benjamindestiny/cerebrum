@@ -105,11 +105,9 @@ const Quiz = () => {
   // Auto-fade combo after 30 seconds
   useEffect(() => {
     if (combo >= 2) {
-      // Clear any existing timer
       if (comboFadeTimer) {
         clearTimeout(comboFadeTimer);
       }
-      // Set new timer to fade after 30 seconds
       const timer = setTimeout(() => {
         setShowComboCelebration(false);
       }, 30000);
@@ -150,9 +148,13 @@ const Quiz = () => {
         setCategoryInfo(category);
       }
 
+      console.log(`📊 Loading ${count} questions for ${categoryName} (${diff})`);
+
       let fetchedQuestions = [];
 
+      // ✅ TRY 1: Groq AI questions (most reliable for exact count)
       try {
+        console.log("🤖 Trying Groq AI...");
         const groqQuestions = await generateQuestionsWithGroq(
           categoryName,
           count,
@@ -171,13 +173,16 @@ const Quiz = () => {
               : shuffleArray([q.correct_answer, ...q.incorrect_answers]),
             explanation: q.explanation || "",
           }));
+          console.log(`✅ Groq generated ${fetchedQuestions.length} questions`);
         }
       } catch (e) {
         console.warn("Groq failed:", e);
       }
 
+      // ✅ TRY 2: Custom questions (if available)
       if (fetchedQuestions.length === 0 && typeof categoryId === "string") {
         try {
+          console.log("📚 Trying custom questions...");
           const customQ = getCustomQuestions(categoryId, count);
           if (customQ && customQ.length > 0) {
             fetchedQuestions = customQ.map((q) => ({
@@ -187,16 +192,20 @@ const Quiz = () => {
                 ...q.incorrect_answers,
               ]),
             }));
+            console.log(`✅ Custom questions loaded: ${fetchedQuestions.length}`);
           }
         } catch (e) {
           console.warn("Custom questions failed:", e);
         }
       }
 
+      // ✅ TRY 3: Open Trivia DB API
       if (fetchedQuestions.length === 0) {
         try {
+          console.log("🌐 Trying Open Trivia DB...");
+          // Request more than needed to ensure we get enough
           const apiQuestions = await fetchQuestions(
-            count,
+            count + 10, // Request extra to account for missing
             categoryId,
             diff,
             "multiple",
@@ -209,17 +218,37 @@ const Quiz = () => {
                 ...q.incorrect_answers,
               ]),
             }));
+            console.log(`✅ API questions loaded: ${fetchedQuestions.length}`);
           }
         } catch (e) {
           console.warn("Trivia DB failed:", e);
         }
       }
 
+      // ✅ Ensure we have exactly the requested number of questions
+      if (fetchedQuestions.length > count) {
+        // If we have more than needed, slice to exact count
+        fetchedQuestions = fetchedQuestions.slice(0, count);
+        console.log(`✂️ Sliced to exactly ${count} questions`);
+      } else if (fetchedQuestions.length < count && fetchedQuestions.length > 0) {
+        // If we have fewer than needed, pad with fallback questions
+        console.log(`⚠️ Only ${fetchedQuestions.length} questions available, padding with fallback`);
+        const fallbackNeeded = count - fetchedQuestions.length;
+        const fallbackQs = FALLBACK_QUESTIONS.slice(0, fallbackNeeded).map((q) => ({
+          ...q,
+          shuffledOptions: shuffleArray([
+            q.correct_answer,
+            ...q.incorrect_answers,
+          ]),
+        }));
+        fetchedQuestions = [...fetchedQuestions, ...fallbackQs];
+        console.log(`✅ Padded to ${fetchedQuestions.length} questions`);
+      }
+
+      // ✅ Final fallback - if still no questions
       if (fetchedQuestions.length === 0) {
-        const fallback = FALLBACK_QUESTIONS.slice(
-          0,
-          Math.min(count, FALLBACK_QUESTIONS.length),
-        );
+        console.warn("⚠️ No questions from any source, using fallback");
+        const fallback = FALLBACK_QUESTIONS.slice(0, Math.min(count, FALLBACK_QUESTIONS.length));
         fetchedQuestions = fallback.map((q) => ({
           ...q,
           shuffledOptions: shuffleArray([
@@ -227,15 +256,32 @@ const Quiz = () => {
             ...q.incorrect_answers,
           ]),
         }));
+        console.log(`✅ Using ${fetchedQuestions.length} fallback questions`);
       }
+
+      // ✅ Log final count
+      console.log(`📊 FINAL: ${fetchedQuestions.length} questions loaded (requested: ${count})`);
 
       setQuestions(fetchedQuestions);
       setAnswers({});
       setCurrentIndex(0);
       setSelectedAnswer(null);
       setIsAnswered(false);
+      
+      // Update question count to match actual loaded questions
+      setQuestionCount(fetchedQuestions.length);
+
     } catch (error) {
       console.error("Error loading questions:", error);
+      // Use fallback as last resort
+      const fallback = FALLBACK_QUESTIONS.slice(0, Math.min(questionCount, FALLBACK_QUESTIONS.length));
+      setQuestions(fallback.map((q) => ({
+        ...q,
+        shuffledOptions: shuffleArray([
+          q.correct_answer,
+          ...q.incorrect_answers,
+        ]),
+      })));
     } finally {
       setLoading(false);
     }
@@ -315,7 +361,6 @@ const Quiz = () => {
       let multiplier = 1;
       let celebrationText = "";
 
-      // Start combo at 2 correct answers
       if (newCombo >= 10) {
         multiplier = 2.0;
         celebrationText = "🔥 LEGENDARY! 10x COMBO!";
@@ -337,11 +382,9 @@ const Quiz = () => {
         setComboBonus((prev) => prev + bonus);
       }
 
-      // Show celebration at 2, 5, 8, 10
       if (newCombo === 2 || newCombo === 5 || newCombo === 8 || newCombo === 10) {
         setComboCelebrationText(celebrationText);
         setShowComboCelebration(true);
-        // Clear existing timer
         if (comboFadeTimer) {
           clearTimeout(comboFadeTimer);
         }
@@ -500,8 +543,6 @@ const Quiz = () => {
           time_taken: timeTaken,
           points: totalPoints,
           answers: completedAnswers,
-          
-          
         };
 
         const { data, error } = await supabase
