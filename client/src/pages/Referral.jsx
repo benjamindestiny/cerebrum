@@ -79,7 +79,7 @@ const Referral = () => {
 
       // Generate referral link
       const baseUrl = window.location.origin;
-      setReferralLink(`${baseUrl}/signup?ref=${code}`);
+      setReferralLink(`${baseUrl}/auth?ref=${code}`);
 
       // Load referral history
       await loadReferralHistory(userId);
