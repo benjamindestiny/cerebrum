@@ -16,6 +16,8 @@ import {
   ChevronRight,
   Zap,
   Target,
+  UserPlus,
+  Clock,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
 
@@ -23,9 +25,11 @@ const Referral = () => {
   const [user, setUser] = useState(null);
   const [referralCode, setReferralCode] = useState("");
   const [referralCount, setReferralCount] = useState(0);
+  const [referralHistory, setReferralHistory] = useState([]);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [referralLink, setReferralLink] = useState("");
+  const [referredBy, setReferredBy] = useState(null);
 
   useEffect(() => {
     getCurrentUser();
@@ -49,29 +53,74 @@ const Referral = () => {
 
   const loadReferralData = async (userId) => {
     try {
-      // Get user's referral code
+      // Get user's referral data
       const { data: userData, error: userError } = await supabase
         .from("users")
-        .select("referral_code, referral_count")
+        .select("referral_code, referral_count, referred_by")
         .eq("id", userId)
         .single();
 
       if (userError) throw userError;
 
-      const code = userData?.referral_code || generateReferralCode(userId);
+      // Get or generate referral code
+      let code = userData?.referral_code;
+      if (!code) {
+        code = generateReferralCode(userId);
+        // Save the code to database
+        await supabase
+          .from("users")
+          .update({ referral_code: code })
+          .eq("id", userId);
+      }
+
       setReferralCode(code);
       setReferralCount(userData?.referral_count || 0);
+      setReferredBy(userData?.referred_by);
 
       // Generate referral link
       const baseUrl = window.location.origin;
       setReferralLink(`${baseUrl}/signup?ref=${code}`);
+
+      // Load referral history
+      await loadReferralHistory(userId);
     } catch (error) {
       console.error("Error loading referral data:", error);
     }
   };
 
+  const loadReferralHistory = async (userId) => {
+    try {
+      const { data: history, error: historyError } = await supabase
+        .from("referrals")
+        .select(
+          `
+          id,
+          referred_user_id,
+          status,
+          created_at,
+          referred_user:users!referred_user_id (
+            name,
+            email
+          )
+        `,
+        )
+        .eq("referrer_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (historyError) throw historyError;
+      setReferralHistory(history || []);
+    } catch (error) {
+      console.error("Error loading referral history:", error);
+    }
+  };
+
   const generateReferralCode = (userId) => {
-    const code = userId.slice(0, 8).toUpperCase();
+    // Generate a unique referral code
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let code = "";
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
     return code;
   };
 
@@ -95,6 +144,15 @@ const Referral = () => {
     } else {
       copyToClipboard();
     }
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
   if (loading) {
@@ -125,7 +183,7 @@ const Referral = () => {
       </motion.div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -163,13 +221,28 @@ const Referral = () => {
                   : "Start Referring"}
           </div>
         </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+          className="glass-card p-5 text-center"
+        >
+          <UserPlus className="w-6 h-6 text-green-400 mx-auto mb-1" />
+          <div className="text-2xl font-bold text-white">
+            {referredBy ? "✅" : "—"}
+          </div>
+          <div className="text-xs text-gray-400">
+            {referredBy ? "Referred by someone" : "Not referred"}
+          </div>
+        </motion.div>
       </div>
 
       {/* Referral Link Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.4 }}
+        transition={{ delay: 0.25, duration: 0.4 }}
         className="glass-card p-6 md:p-8 mb-6 border border-amber-500/20 bg-amber-500/5"
       >
         <div className="mb-4">
@@ -322,11 +395,49 @@ const Referral = () => {
         </div>
       </motion.div>
 
+      {/* Referral History */}
+      {referralHistory.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.4 }}
+          className="glass-card p-6 md:p-8 mb-6"
+        >
+          <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-gray-400" />
+            Referral History
+          </h3>
+          <div className="space-y-2">
+            {referralHistory.map((referral, index) => (
+              <div
+                key={referral.id}
+                className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                  <span className="text-white text-sm">
+                    {referral.referred_user?.name ||
+                      referral.referred_user?.email?.split("@")[0] ||
+                      "New User"}
+                  </span>
+                  <span className="text-gray-400 text-xs">
+                    {referral.status === "completed" ? "✅" : "⏳"}
+                  </span>
+                </div>
+                <span className="text-gray-500 text-xs">
+                  {formatDate(referral.created_at)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* Cool Message */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.4 }}
+        transition={{ delay: 0.45, duration: 0.4 }}
         className="glass-card p-6 md:p-8 text-center border border-blue-500/20 bg-blue-500/5"
       >
         <div className="flex justify-center mb-3">

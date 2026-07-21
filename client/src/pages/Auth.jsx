@@ -15,6 +15,7 @@ import {
   EyeOff,
   AlertCircle,
   CheckCircle,
+  Gift,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
 import { authService } from "../services/authService";
@@ -33,6 +34,8 @@ const Auth = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [referralCode, setReferralCode] = useState("");
+  const [referrerInfo, setReferrerInfo] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -48,7 +51,9 @@ const Auth = () => {
 
     if (!supabaseUrl || !supabaseKey) {
       setIsSupabaseConfigured(false);
-      setError("⚠️ Supabase is not configured. Please check your environment variables.");
+      setError(
+        "⚠️ Supabase is not configured. Please check your environment variables.",
+      );
       console.error("❌ Missing Supabase environment variables!");
     }
   }, []);
@@ -56,7 +61,9 @@ const Auth = () => {
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (user) {
           navigate("/dashboard");
         }
@@ -67,6 +74,34 @@ const Auth = () => {
     checkUser();
   }, [navigate]);
 
+  // Check for referral code in URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const ref = params.get("ref");
+    if (ref) {
+      setReferralCode(ref);
+      checkReferrer(ref);
+    }
+  }, [location]);
+
+  const checkReferrer = async (code) => {
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, name")
+        .eq("referral_code", code)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setReferrerInfo(data);
+      }
+    } catch (error) {
+      console.error("Error checking referrer:", error);
+    }
+  };
+
   useEffect(() => {
     const handleVerification = async () => {
       const params = new URLSearchParams(location.search);
@@ -75,22 +110,35 @@ const Auth = () => {
       if (code) {
         setLoading(true);
         try {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          const { data, error } =
+            await supabase.auth.exchangeCodeForSession(code);
           if (error) {
             console.error("Verification error:", error);
             setError("Verification failed. Please try again.");
-            window.history.replaceState({}, document.title, window.location.pathname);
+            window.history.replaceState(
+              {},
+              document.title,
+              window.location.pathname,
+            );
             setLoading(false);
             return;
           }
           if (data?.session) {
-            window.history.replaceState({}, document.title, window.location.pathname);
+            window.history.replaceState(
+              {},
+              document.title,
+              window.location.pathname,
+            );
             navigate("/dashboard");
           }
         } catch (error) {
           console.error("Verification error:", error);
           setError("Verification failed. Please try again.");
-          window.history.replaceState({}, document.title, window.location.pathname);
+          window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname,
+          );
         } finally {
           setLoading(false);
         }
@@ -104,6 +152,42 @@ const Auth = () => {
     setError("");
   };
 
+  const generateReferralCode = (userId) => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let code = "";
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  };
+
+  const handleReferral = async (newUserId, referrerId) => {
+    try {
+      // 1. Update new user's referred_by field
+      await supabase
+        .from("users")
+        .update({ referred_by: referrerId })
+        .eq("id", newUserId);
+
+      // 2. Increment referrer's count
+      await supabase
+        .from("users")
+        .update({ referral_count: supabase.sql`referral_count + 1` })
+        .eq("id", referrerId);
+
+      // 3. Create referral record
+      await supabase.from("referrals").insert({
+        referrer_id: referrerId,
+        referred_user_id: newUserId,
+        status: "completed",
+      });
+
+      console.log("✅ Referral tracked successfully!");
+    } catch (error) {
+      console.error("Error tracking referral:", error);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -112,7 +196,9 @@ const Auth = () => {
 
     try {
       if (!isSupabaseConfigured) {
-        setError("⚠️ Supabase is not configured. Please check your environment variables.");
+        setError(
+          "⚠️ Supabase is not configured. Please check your environment variables.",
+        );
         setLoading(false);
         return;
       }
@@ -173,7 +259,7 @@ const Auth = () => {
         const { data, error } = await authService.signUp(
           formData.email.trim(),
           formData.password,
-          formData.name
+          formData.name,
         );
 
         if (error) {
@@ -198,12 +284,26 @@ const Auth = () => {
             return;
           }
 
+          // Create user profile with referral code
+          const referralCode = generateReferralCode(data.user.id);
+          await supabase.from("users").insert({
+            id: data.user.id,
+            name: formData.name || formData.email.split("@")[0],
+            email: formData.email,
+            referral_code: referralCode,
+          });
+
+          // Handle referral if exists
+          if (referralCode && referrerInfo) {
+            await handleReferral(data.user.id, referrerInfo.id);
+          }
+
           try {
             await sendEmail({
               to: formData.email,
               subject: "🎉 Welcome to Cerebrum!",
               html: emailTemplates.welcome(
-                formData.name || formData.email.split("@")[0]
+                formData.name || formData.email.split("@")[0],
               ).html,
             });
             console.log("✅ Welcome email sent");
@@ -219,8 +319,13 @@ const Auth = () => {
       }
     } catch (error) {
       console.error("Auth error:", error);
-      if (error.message?.includes("fetch") || error.message?.includes("network")) {
-        setError("Network error. Please check your internet connection and try again.");
+      if (
+        error.message?.includes("fetch") ||
+        error.message?.includes("network")
+      ) {
+        setError(
+          "Network error. Please check your internet connection and try again.",
+        );
       } else {
         setError("Something went wrong. Please try again.");
       }
@@ -328,13 +433,13 @@ const Auth = () => {
 
   if (showReset) {
     return (
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className="min-h-screen flex items-center justify-center p-4"
-        style={{ backgroundColor: 'var(--app-bg)' }}
+        style={{ backgroundColor: "var(--app-bg)" }}
       >
-        <motion.div 
+        <motion.div
           initial={{ scale: 0.9, y: 20 }}
           animate={{ scale: 1, y: 0 }}
           transition={{ type: "spring", damping: 25 }}
@@ -353,7 +458,7 @@ const Auth = () => {
           </button>
 
           <div className="text-center mb-8">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.1, type: "spring" }}
@@ -363,12 +468,13 @@ const Auth = () => {
             </motion.div>
             <h2 className="text-2xl font-bold text-white">Reset Password</h2>
             <p className="text-gray-400 text-sm mt-2">
-              Enter your email address and we'll send you a link to reset your password.
+              Enter your email address and we'll send you a link to reset your
+              password.
             </p>
           </div>
 
           {error && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm flex items-center gap-2"
@@ -379,7 +485,7 @@ const Auth = () => {
           )}
 
           {success && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400 text-sm flex items-center gap-2"
@@ -429,16 +535,16 @@ const Auth = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
       className="min-h-screen flex items-center justify-center p-4"
-      style={{ backgroundColor: 'var(--app-bg)' }}
+      style={{ backgroundColor: "var(--app-bg)" }}
     >
-      <motion.div 
+      <motion.div
         initial={{ scale: 0.95, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         transition={{ type: "spring", damping: 25 }}
         className="glass-card p-8 max-w-md w-full"
       >
         <div className="text-center mb-8">
-          <motion.div 
+          <motion.div
             initial={{ scale: 0, rotate: -10 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ delay: 0.1, type: "spring" }}
@@ -446,7 +552,7 @@ const Auth = () => {
           >
             <Brain className="w-10 h-10 text-[#3B82F6]" />
           </motion.div>
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
@@ -454,7 +560,7 @@ const Auth = () => {
           >
             Cerebrum
           </motion.h1>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
@@ -464,8 +570,27 @@ const Auth = () => {
           </motion.p>
         </div>
 
+        {/* 🔥 Referral Banner - Show when user is signing up with a referral code */}
+        {!isLogin && referrerInfo && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center gap-3"
+          >
+            <Gift className="w-5 h-5 text-green-400 flex-shrink-0" />
+            <div>
+              <p className="text-white text-sm font-medium">
+                You were invited by {referrerInfo.name || "a friend"}! 🎁
+              </p>
+              <p className="text-gray-400 text-xs">
+                You'll both earn rewards when you sign up!
+              </p>
+            </div>
+          </motion.div>
+        )}
+
         {error && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm flex items-center gap-2"
@@ -476,7 +601,7 @@ const Auth = () => {
         )}
 
         {success && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400 text-sm flex items-center gap-2"
@@ -488,7 +613,7 @@ const Auth = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
@@ -506,7 +631,7 @@ const Auth = () => {
               />
             </motion.div>
           )}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: isLogin ? 0.1 : 0.15 }}
@@ -524,7 +649,7 @@ const Auth = () => {
             />
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: isLogin ? 0.15 : 0.2 }}
@@ -555,7 +680,7 @@ const Auth = () => {
           </motion.div>
 
           {!isLogin && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.25 }}
@@ -586,7 +711,7 @@ const Auth = () => {
           )}
 
           {isLogin && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
@@ -624,7 +749,7 @@ const Auth = () => {
           </motion.button>
         </form>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
@@ -678,7 +803,7 @@ const Auth = () => {
           </motion.button>
         </div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.45 }}
@@ -695,6 +820,8 @@ const Auth = () => {
                 password: "",
                 confirmPassword: "",
               });
+              setReferrerInfo(null);
+              setReferralCode("");
             }}
             className="text-sm text-gray-400 hover:text-[#3B82F6] transition-colors"
           >
