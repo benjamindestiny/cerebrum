@@ -89,7 +89,7 @@ const Dashboard = () => {
         setReferralLink(`${baseUrl}/auth?ref=${code}`);
         console.log(
           "✅ Referral link generated:",
-          `${baseUrl}/signup?ref=${code}`,
+          `${baseUrl}/auth?ref=${code}`,
         );
       } else {
         console.warn("⚠️ No referral code found for user:", userId);
