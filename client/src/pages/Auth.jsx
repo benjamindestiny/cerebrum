@@ -78,6 +78,7 @@ const Auth = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const ref = params.get("ref");
+    console.log("🔍 Referral code from URL:", ref);
     if (ref) {
       setReferralCode(ref);
       checkReferrer(ref);
@@ -86,16 +87,23 @@ const Auth = () => {
 
   const checkReferrer = async (code) => {
     try {
+      console.log("🔍 Checking referrer with code:", code);
       const { data, error } = await supabase
         .from("users")
-        .select("id, name")
+        .select("id, name, email")
         .eq("referral_code", code)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("❌ Error checking referrer:", error);
+        return;
+      }
 
       if (data) {
+        console.log("✅ Found referrer:", data);
         setReferrerInfo(data);
+      } else {
+        console.log("❌ No referrer found with code:", code);
       }
     } catch (error) {
       console.error("Error checking referrer:", error);
@@ -163,24 +171,41 @@ const Auth = () => {
 
   const handleReferral = async (newUserId, referrerId) => {
     try {
+      console.log("🔄 Processing referral:", { newUserId, referrerId });
+
       // 1. Update new user's referred_by field
-      await supabase
+      const { error: updateError } = await supabase
         .from("users")
         .update({ referred_by: referrerId })
         .eq("id", newUserId);
 
+      if (updateError) {
+        console.error("❌ Error updating referred_by:", updateError);
+        throw updateError;
+      }
+
       // 2. Increment referrer's count
-      await supabase
+      const { error: incrementError } = await supabase
         .from("users")
         .update({ referral_count: supabase.sql`referral_count + 1` })
         .eq("id", referrerId);
 
+      if (incrementError) {
+        console.error("❌ Error incrementing referral_count:", incrementError);
+        throw incrementError;
+      }
+
       // 3. Create referral record
-      await supabase.from("referrals").insert({
+      const { error: recordError } = await supabase.from("referrals").insert({
         referrer_id: referrerId,
         referred_user_id: newUserId,
         status: "completed",
       });
+
+      if (recordError) {
+        console.error("❌ Error creating referral record:", recordError);
+        throw recordError;
+      }
 
       console.log("✅ Referral tracked successfully!");
     } catch (error) {
@@ -256,6 +281,8 @@ const Auth = () => {
           return;
         }
 
+        // 1. Create auth user
+        console.log("📝 Creating user account...");
         const { data, error } = await authService.signUp(
           formData.email.trim(),
           formData.password,
@@ -284,20 +311,37 @@ const Auth = () => {
             return;
           }
 
-          // Create user profile with referral code
-          const referralCode = generateReferralCode(data.user.id);
-          await supabase.from("users").insert({
+          // 2. Generate referral code for the new user
+          const newReferralCode = generateReferralCode(data.user.id);
+          console.log("🔑 Generated referral code:", newReferralCode);
+
+          // 3. Create user profile with referral code
+          const { error: profileError } = await supabase.from("users").insert({
             id: data.user.id,
             name: formData.name || formData.email.split("@")[0],
             email: formData.email,
-            referral_code: referralCode,
+            referral_code: newReferralCode,
           });
 
-          // Handle referral if exists
+          if (profileError) {
+            console.error("❌ Error creating user profile:", profileError);
+            setError("Failed to create user profile. Please try again.");
+            setLoading(false);
+            return;
+          }
+
+          console.log(
+            "✅ User profile created with referral code:",
+            newReferralCode,
+          );
+
+          // 4. Handle referral if exists
           if (referralCode && referrerInfo) {
+            console.log("🔄 Processing referral...");
             await handleReferral(data.user.id, referrerInfo.id);
           }
 
+          // 5. Send welcome email
           try {
             await sendEmail({
               to: formData.email,
