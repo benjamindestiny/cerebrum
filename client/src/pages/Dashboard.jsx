@@ -86,7 +86,7 @@ const Dashboard = () => {
 
         // Generate referral link
         const baseUrl = window.location.origin;
-        setReferralLink(`${baseUrl}/signup?ref=${code}`);
+        setReferralLink(`${baseUrl}/auth?ref=${code}`);
         console.log(
           "✅ Referral link generated:",
           `${baseUrl}/signup?ref=${code}`,
