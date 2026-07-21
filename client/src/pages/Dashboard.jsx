@@ -22,6 +22,9 @@ import {
   Play,
   RefreshCw,
   Gift,
+  Copy,
+  Check,
+  Share2,
 } from "lucide-react";
 import { supabase } from "../services/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -44,6 +47,13 @@ const Dashboard = () => {
   const [loadingStats, setLoadingStats] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  // ✅ Referral state
+  const [referralCode, setReferralCode] = useState("");
+  const [referralCount, setReferralCount] = useState(0);
+  const [referralLink, setReferralLink] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [loadingReferral, setLoadingReferral] = useState(true);
+
   useEffect(() => {
     if (!loading && currentUser) {
       const hasSeen = localStorage.getItem("cerebrum_testimonial_seen");
@@ -52,8 +62,66 @@ const Dashboard = () => {
           setShowTestimonial(true);
         }, 3000);
       }
+      loadReferralData(currentUser.id);
     }
   }, [loading, currentUser]);
+
+  const loadReferralData = async (userId) => {
+    if (!userId) return;
+    setLoadingReferral(true);
+    try {
+      // Get user's referral data
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("referral_code, referral_count")
+        .eq("id", userId)
+        .single();
+
+      if (userError) throw userError;
+
+      const code = userData?.referral_code;
+      if (code) {
+        setReferralCode(code);
+        setReferralCount(userData?.referral_count || 0);
+
+        // Generate referral link
+        const baseUrl = window.location.origin;
+        setReferralLink(`${baseUrl}/signup?ref=${code}`);
+        console.log(
+          "✅ Referral link generated:",
+          `${baseUrl}/signup?ref=${code}`,
+        );
+      } else {
+        console.warn("⚠️ No referral code found for user:", userId);
+      }
+    } catch (error) {
+      console.error("Error loading referral data:", error);
+    } finally {
+      setLoadingReferral(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(referralLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 3000);
+  };
+
+  const shareReferral = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Join Cerebrum - Brain Training Platform",
+          text: "🧠 Challenge your mind with quizzes, riddles, and personality tests! Use my referral link to get started:",
+          url: referralLink,
+        });
+      } catch (error) {
+        console.error("Error sharing:", error);
+      }
+    } else {
+      copyToClipboard();
+    }
+  };
 
   const loadDashboardData = useCallback(async () => {
     if (!currentUser) return;
@@ -154,6 +222,7 @@ const Dashboard = () => {
   const refreshDashboard = async () => {
     setRefreshing(true);
     await loadDashboardData();
+    await loadReferralData(currentUser.id);
     setRefreshTrigger((prev) => prev + 1);
     setRefreshing(false);
   };
@@ -336,32 +405,74 @@ const Dashboard = () => {
           ))}
         </motion.div>
 
-        {/* 🔥 REFERRAL BANNER - ADDED HERE */}
-        {currentUser && (
+        {/* 🔥 REFERRAL SECTION - Display referral link to user */}
+        {currentUser && referralLink && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25, duration: 0.4 }}
-            className="glass-card p-4 border border-amber-500/20 bg-amber-500/5 cursor-pointer hover:border-amber-500/40 transition-all"
-            onClick={() => navigate("/referral")}
+            transition={{ delay: 0.2, duration: 0.4 }}
+            className="glass-card p-6 border border-amber-500/20 bg-amber-500/5"
           >
-            <div className="flex flex-col sm:flex-row items-center gap-3">
-              <div className="flex items-center gap-3 flex-1">
-                <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
-                  <Gift className="w-5 h-5 text-amber-400" />
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <Gift className="w-6 h-6 text-amber-400" />
                 </div>
                 <div>
-                  <h3 className="text-white font-medium text-sm">
-                    Invite friends, earn rewards! 🎁
+                  <h3 className="text-white font-semibold text-lg">
+                    Your Referral Link 🎁
                   </h3>
-                  <p className="text-gray-400 text-xs">
-                    Share your referral link and unlock exclusive content
+                  <p className="text-gray-400 text-sm">
+                    Share this link with friends and earn rewards for each new
+                    user who joins!
                   </p>
+                  <div className="flex items-center gap-4 mt-1 text-xs">
+                    <span className="text-gray-400">
+                      <Users className="w-3 h-3 inline mr-1" />
+                      {referralCount} people referred
+                    </span>
+                    <span className="text-amber-400">
+                      <Sparkles className="w-3 h-3 inline mr-1" />
+                      Earn rewards
+                    </span>
+                  </div>
                 </div>
               </div>
-              <button className="px-4 py-1.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-xs font-medium whitespace-nowrap">
-                Refer Now
-              </button>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                <div className="flex-1 bg-black/30 rounded-lg px-3 py-2 border border-white/10 min-w-[200px]">
+                  <code className="text-xs sm:text-sm text-gray-300 break-all">
+                    {referralLink}
+                  </code>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={copyToClipboard}
+                    className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-1.5 text-xs font-medium"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-3 h-3" /> Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3" /> Copy
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={shareReferral}
+                    className="px-3 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors flex items-center gap-1.5 text-xs font-medium"
+                  >
+                    <Share2 className="w-3 h-3" /> Share
+                  </button>
+                  <button
+                    onClick={() => navigate("/referral")}
+                    className="px-3 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors flex items-center gap-1.5 text-xs font-medium"
+                  >
+                    <ArrowRight className="w-3 h-3" /> Details
+                  </button>
+                </div>
+              </div>
             </div>
           </motion.div>
         )}
