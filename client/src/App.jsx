@@ -21,6 +21,7 @@ import AdminWeeklyReport from "./pages/AdminWeeklyReport";
 import Riddles from "./pages/Riddles";
 import LunchBreak from "./pages/LunchBreak";
 import Testimonials from "./pages/Testimonials";
+import Referral from "./pages/Referral";
 import Categories from "./pages/Categories";
 import Achievements from "./pages/Achievements";
 import ReadAndTest from "./pages/ReadAndTest";
@@ -208,6 +209,7 @@ function App() {
               />
               <Route path="privacy" element={<Privacy />} />
               <Route path="about" element={<About />} />
+              <Route path="referral" element={<Referral />} />
               <Route path="terms" element={<Terms />} />
               <Route
                 path="feature-request"
